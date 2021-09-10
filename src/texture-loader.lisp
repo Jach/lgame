@@ -8,6 +8,10 @@
    (default-dir :accessor default-dir-of :initarg :default-dir)))
 
 @export
+(defun create-texture-loader (default-dir)
+  (setf *texture-loader* (make-instance 'texture-loader :default-dir default-dir)))
+
+@export
 (defmethod load-texture ((self texture-loader) key &optional dir)
   "Load asset specified by converting given key to lowercase png file name inside dir,
    returning an SDL_Texture.
@@ -29,3 +33,4 @@
              (declare (ignore key))
              (sdl-destroy-texture val))
            (textures-of self)))
+

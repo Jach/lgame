@@ -17,3 +17,6 @@
 @export
 (defvar *texture-loader*)
 
+(defun null-ptr? (alien-val)
+  (cffi:null-pointer-p (autowrap:ptr alien-val)))
+

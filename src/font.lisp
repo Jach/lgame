@@ -6,10 +6,10 @@
 
 @export
 (defun load-font (font-path pt-size)
-  (multiple-value-bind (font present?) (gethash (namestring font-path) *loaded-fonts*
-                                                (ttf-open-font (namestring font-path) pt-size))
+  (multiple-value-bind (font present?) (gethash (namestring font-path) *loaded-fonts*)
     ; check null-ptr
     (unless present?
+      (setf font (ttf-open-font (namestring font-path) pt-size))
       (setf (gethash (namestring font-path) *loaded-fonts*) font))
     font))
 
@@ -18,5 +18,6 @@
   (maphash (lambda (k v)
              (declare (ignore k))
              (ttf-close-font v))
-           *loaded-fonts*))
+           *loaded-fonts*)
+  (clrhash *loaded-fonts*))
 

@@ -13,3 +13,5 @@
 ;    #:main ; launches game and blocks until window closes
 ;    #:launch-game ; meant for dev to run to get a non-blocking game window
 ;    ))
+
+(in-package #:lgame)

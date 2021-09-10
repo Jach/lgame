@@ -10,7 +10,8 @@
                         :serial t
                         :components ((:file "package")
                                      (:file "globals")
-                                     (:file "velocity")
+                                     (:file "init")
+                                     (:file "display")
                                      (:file "event")
                                      (:file "rect")
                                      (:file "time")
