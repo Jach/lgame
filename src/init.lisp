@@ -25,7 +25,7 @@
               (sdl-init +sdl-init-everything+))
       (error "Could not initialize SDL"))
 
-    (sdl2-image:init '(:png))
+    (sdl2-image:init '(:png :jpg))
     (sdl2-mixer:init :mp3); :wave)
     (sdl2-mixer:open-audio 44100 :s16sys 2 4096)
 

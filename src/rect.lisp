@@ -80,3 +80,22 @@ Utils around SDL Rects
 @export
 (defun rect-center-y (rect)
   (+ (sdl2:rect-y rect) (/ (sdl2:rect-height rect) 2)))
+
+@export
+(defun rect-left (rect)
+  (sdl2:rect-x rect))
+
+@export
+(defun rect-right (rect)
+  (+ (sdl2:rect-x rect)
+     (sdl2:rect-width rect)))
+
+@export
+(defun rect-top (rect)
+  (sdl2:rect-y rect))
+
+@export
+(defun rect-bottom (rect)
+  (+ (sdl2:rect-y rect)
+     (sdl2:rect-height rect)))
+
