@@ -35,6 +35,8 @@ Utils around SDL Rects
 
 @export
 (defun move-rect (rect x y)
+  "Destructively updates the given rect to move its x and y the specified amount.
+   x and y are rounded so that the caller doesn't need to worry about converting fractional moves."
   (incf (sdl2:rect-x rect) (round x))
   (incf (sdl2:rect-y rect) (round y))
   rect)

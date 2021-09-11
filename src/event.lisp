@@ -28,6 +28,15 @@ utils/wrappers around SDL2 events, at least until I decide I like the CL lib's w
        ,@body)))
 
 @export
+(defmacro do-event ((event) &body loop-body)
+  "Helper macro to iterate through SDL's event list until it is empty,
+   binding each SDL_Event to event."
+  `(with-event (,event)
+     (loop until (zerop (sdl-poll-event ,event))
+           do
+           ,@loop-body)))
+
+@export
 (defmacro event-ref (event &rest fields)
   `(plus-c:c-ref ,event sdl-event ,@fields))
 

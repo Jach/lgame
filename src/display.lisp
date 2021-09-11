@@ -3,7 +3,7 @@
 (annot:enable-annot-syntax)
 
 @export
-(defun create-window (title x y w h flags)
+(defun create-window (title x y w h &optional (flags +sdl-window-opengl+))
   "Wrapper around sdl-create-window, binds to lgame:*screen* and returns it.
    Also sets lgame:*screen-rect* to use the window width and height."
   (setf *screen* (sdl-create-window title x y w h flags))
