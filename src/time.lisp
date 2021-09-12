@@ -6,6 +6,7 @@ Routines to help with time
 (annot:enable-annot-syntax)
 
 (defvar *prev-frame-time* 0.0)
+(defvar *frame-tick-start* 0)
 
 (defparameter +FPS+ 60)
 
@@ -35,3 +36,18 @@ Routines to help with time
     (when (< frame-dur +millis-per-frame+)
       (sdl-delay (floor (- +millis-per-frame+ frame-dur))))))
 
+;; delete above, or rework it, *dt* should be part of a physics concept instead,
+;; and also should be a fixed timestep anyway...
+
+@export
+(defun clock-start ()
+  (setf *frame-tick-start* (sdl-get-ticks)))
+
+@export
+(defun clock-tick (&optional fps-limit)
+  (let* ((frame-tick-end (sdl-get-ticks))
+         (frame-duration (- frame-tick-end *frame-tick-start*))
+         (millis-per-frame-limit (and fps-limit (/ 1000.0 fps-limit))))
+    (when (and millis-per-frame-limit (< frame-duration millis-per-frame-limit))
+      (sdl-delay (truncate (- millis-per-frame-limit frame-duration))))
+    (clock-start)))
