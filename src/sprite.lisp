@@ -22,6 +22,13 @@ Perhaps later other kinds of groups or sprite types will be added.
     "Render the Sprite image, or each sprite in a Group"))
 
 @export
+(defgeneric cleanup (sprite-or-group)
+  (:documentation
+    "Frees the Sprite's image and rect, or those of each sprite in a Group.
+     Note that even if an image was loaded with the *texture-loader*, neither
+     will double-free when unloading."))
+
+@export
 (defgeneric add-groups (sprite &rest groups)
   (:documentation
     "Add the sprite to any given groups it's not already a member of."))
@@ -84,6 +91,11 @@ Perhaps later other kinds of groups or sprite types will be added.
    If flip is +sdl-flip-horizontal+ or +sdl-flip-vertical+ the image will be flipped accordingly."
   (sdl-render-copy-ex *renderer* (image-of self) nil (rect-of self) (angle-of self) nil (flip-of self)))
 
+(defmethod cleanup ((self sprite))
+  (sdl2:free-rect (rect-of self))
+  (if (autowrap:valid-p (image-of self))
+    (sdl2:destroy-texture (image-of self))))
+
 (defmethod add-groups ((self sprite) &rest groups)
   (dolist (group groups)
     (add-sprites group self)))
@@ -99,6 +111,10 @@ Perhaps later other kinds of groups or sprite types will be added.
 (defmethod draw ((self group))
   (dolist (sprite (sprites-of self))
     (draw sprite)))
+
+(defmethod cleanup ((self group))
+  (dolist (sprite (sprites-of self))
+    (cleanup sprite)))
 
 (defmethod add-sprites ((self group) &rest sprites)
   (setf (sprites-of self) (union (sprites-of self) sprites))

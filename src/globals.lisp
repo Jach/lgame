@@ -6,16 +6,16 @@
 (defvar *dt* 0.0)
 
 @export
-(defvar *screen*)
+(defvar *screen* nil)
 
 @export
-(defvar *screen-rect*)
+(defvar *screen-rect* nil)
 
 @export
-(defvar *renderer*)
+(defvar *renderer* nil)
 
 @export
-(defvar *texture-loader*)
+(defvar *texture-loader* nil)
 
 (defun null-ptr? (alien-val)
   (cffi:null-pointer-p (autowrap:ptr alien-val)))

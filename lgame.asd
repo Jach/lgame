@@ -13,6 +13,7 @@
                                      (:file "init")
                                      (:file "display")
                                      (:file "event")
+                                     (:file "mouse")
                                      (:file "rect")
                                      (:file "time")
                                      (:file "sprite")

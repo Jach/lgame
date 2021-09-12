@@ -17,6 +17,22 @@ Utils around SDL Rects
      ,@body)))
 
 @export
+(defmacro with-rect-from-rect ((rect from-rect) &body body)
+  "Helper to use an existing rect for the initial data load"
+  (let ((%from-rect (gensym)))
+    `(let ((,%from-rect ,from-rect))
+       (with-rect (,rect (sdl2:rect-x ,%from-rect) (sdl2:rect-y ,%from-rect) (sdl2:rect-width ,%from-rect) (sdl2:rect-height ,%from-rect))
+       ,@body))))
+
+@export
+(defmacro with-inflated-rect ((inflated-rect from-rect width-change height-change) &body body)
+  "Helper to inflate/deflate a from-rect"
+  `(with-rect-from-rect (,inflated-rect ,from-rect)
+     (incf (sdl2:rect-width ,inflated-rect) ,width-change)
+     (incf (sdl2:rect-height ,inflated-rect) ,height-change)
+     ,@body))
+
+@export
 (defmacro with-point ((point x y) &body body)
   "Helper macro for a stack point"
   (let ((sz (autowrap:foreign-type-size (autowrap:find-type 'sdl2-ffi:sdl-point))))
@@ -58,7 +74,7 @@ Utils around SDL Rects
     rect))
 
 @export
-(defun collide-rect (rect1 rect2)
+(defun collide-rect? (rect1 rect2)
   (multiple-value-bind (x1 y1 w1 h1) (rect-dims rect1)
     (multiple-value-bind (x2 y2 w2 h2) (rect-dims rect2)
       (and
@@ -73,7 +89,7 @@ Utils around SDL Rects
 
 @export
 (defun outside-screen? (rect)
-  (not (collide-rect *screen-rect* rect)))
+  (not (collide-rect? *screen-rect* rect)))
 
 @export
 (defun rect-center-x (rect)

@@ -29,9 +29,7 @@
     (sdl2-mixer:init :mp3); :wave)
     (sdl2-mixer:open-audio 44100 :s16sys 2 4096)
 
-    (unless (zerop
-              (ttf-init))
-      (error "Could not initialize sdl-ttf"))))
+    (sdl2-ttf:init)))
 
 @export
 (defun quit ()
