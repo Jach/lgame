@@ -77,8 +77,18 @@ Perhaps later other kinds of groups or sprite types will be added.
    )
   (:documentation
     "A container for holding Sprites. The main benefit is as a proxy to call update/draw methods of each sprite in sequence.
-    Additional methods to handle group membership are provided."
+    Additional methods to handle group membership are provided.
+    Note that the order of the sprites is not guaranteed when adding/removing, which affects render order. Consider one of the
+    Group subclasses if you need different behavior.
+    Note also that none of the add/removes are implemented efficiently."
     ))
+
+@export-class
+(defclass ordered-group (group)
+  ((seen-map :initform (make-hash-table :test #'equal) :documentation "Collection of seen sprites to avoid duplicate entries"))
+  (:documentation
+    "A group container that retains the order of existing sprites as you add/remove them, so you can count on
+     draws to happen in order that you added sprites."))
 
 (defmethod update ((self sprite))
   "Default update for a sprite is a no-op"
@@ -125,6 +135,27 @@ Perhaps later other kinds of groups or sprite types will be added.
   (setf (sprites-of self) (set-difference (sprites-of self) sprites))
   (dolist (sprite sprites)
     (setf (groups-of sprite) (set-difference (groups-of sprite) (list self)))))
+
+(defmethod add-sprites ((self ordered-group) &rest sprites)
+  (let ((unique-sprites (remove-if (lambda (v) (gethash v (slot-value self 'seen-map)))
+                                   sprites)))
+    (setf (sprites-of self) (append (sprites-of self) unique-sprites))
+    (dolist (sprite unique-sprites)
+      (setf (gethash sprite (slot-value self 'seen-map)) T)
+      (setf (groups-of sprite) (union (groups-of sprite) (list self))))))
+
+(defmethod remove-sprites ((self group) &rest sprites)
+  (dolist (sprite sprites)
+    (setf (gethash sprite (slot-value self 'seen-map)) nil)
+    (setf (sprites-of self) (remove sprite (sprites-of self) :test #'equal))
+    (setf (groups-of sprite) (set-difference (groups-of sprite) (list self)))))
+
+
+
+
+
+
+
 
 ;; example using https://opengameart.org/content/various-gem-stone-animations
 ;;(load-spritesheet (format nil "~a/sapphirespinning.png" +sprites-dir+)
