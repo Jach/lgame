@@ -74,6 +74,10 @@ Utils around SDL Rects
     rect))
 
 @export
+(defun get-texture-rect (texture)
+  (sdl2:make-rect 0 0 (sdl2:texture-width texture) (sdl2:texture-height texture)))
+
+@export
 (defun collide-rect? (rect1 rect2)
   (multiple-value-bind (x1 y1 w1 h1) (rect-dims rect1)
     (multiple-value-bind (x2 y2 w2 h2) (rect-dims rect2)
@@ -84,12 +88,18 @@ Utils around SDL Rects
             (and (>= y2 y1) (< y2 (+ y1 h1)))))))) ; r1 bottom edge inside r2, or r2 bottom edge inside r1
 
 @export
-(defun get-texture-rect (texture)
-  (sdl2:make-rect 0 0 (sdl2:texture-width texture) (sdl2:texture-height texture)))
-
-@export
 (defun outside-screen? (rect)
   (not (collide-rect? *screen-rect* rect)))
+
+@export
+(defun contains? (rect1 rect2)
+  "Does rect1 completely contain rect2?
+   If the rects share edges, that counts as containing."
+  (multiple-value-bind (x1 y1 w1 h1) (rect-dims rect1)
+    (multiple-value-bind (x2 y2 w2 h2) (rect-dims rect2)
+      (and
+        (<= x1 x2) (> (+ x1 w1) x2) (>= (+ x1 w1) (+ x2 w2))
+        (<= y1 y2) (> (+ y1 h1) y2) (>= (+ y1 h1) (+ y2 h2))))))
 
 @export
 (defun rect-center-x (rect)
