@@ -65,6 +65,9 @@ the license information of all dependencies.
 
 # Projects
 
+Files are designed to be runnable with `sbcl --script`, some may be load-able as
+well in your REPL to run as you please.
+
 Each project has its own folder, here is a suggested order to look at:
 
 * Taste
