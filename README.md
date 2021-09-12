@@ -33,6 +33,15 @@ Basically I'm a fan of having program-wide managers for various things that
 other objects subscribe themselves to or pluck copies of assets from, instead of
 having them manage everything on their own.
 
+I am planning multiple breaking changes to lgame, but I'll try not to release
+this repo until most of them have been made! For example, I'd like to modularize
+lgame into more namespaces. For example, instead of the sprite and group classes
+just being part of the lgame package, I think it'd be better to have an
+lgame.sprite package and they live in there. On the one hand this may lead to
+slightly more verbose code, e.g. typing lgame.sprite:draw instead of lgame:draw,
+but on the other hand now draw can be a function or method as part of another
+package, and users can import-from or use what they want anyway.
+
 The goal of this project is to whip lgame into something resembling working
 order. At the time of writing I've barely got anything, only starting to extract
 bits I'm starting to get satisfied with from what I thought was going to be a
@@ -72,4 +81,5 @@ Each project has its own folder, here is a suggested order to look at:
 
 * Taste
 * Moveit
+* Liquid
 * Chimp
