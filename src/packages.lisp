@@ -59,7 +59,7 @@ Undecided if this will be a thing, currently lgame:get-mouse-pos is the only thi
     "Provides functions to handle time-related tasks like fixing a max FPS framerate."))
 
 (defpackage #:lgame.rect
-  (:use #:common-lisp)
+  (:use #:common-lisp #:annot.std)
   (:documentation
     "Utils around handling SDL_Rects. Several with- macros like 'with-rect are included to efficiently
      use a stack-allocated object instead of allocating and freeing, though for any longer-lasting rects
@@ -75,7 +75,8 @@ Undecided if this will be a thing, currently lgame:get-mouse-pos is the only thi
      concept is provided to manage collections of sprites."))
 
 (defpackage #:lgame.font
-  (:use #:common-lisp)
+  (:use #:common-lisp #:annot.std)
   (:documentation
-    ""))
+    "Wrapper around sdl2-ttf, loads (and caches) fonts, provides a default font, and a render-text function that returns
+     a texture."))
 

@@ -29,7 +29,7 @@
     (sdl2-ttf:init)))
 
 (defun quit ()
-  (lgame:unload-fonts)
+  (lgame.font:unload-fonts)
   (sdl2-ttf:quit)
   (sdl2-mixer:close-audio)
   (sdl2-mixer:quit)

@@ -1,4 +1,4 @@
-(in-package #:lgame)
+(in-package #:lgame.font)
 
 (annot:enable-annot-syntax)
 
@@ -9,8 +9,8 @@
   (multiple-value-bind (font present?) (gethash (namestring font-path) *loaded-fonts*)
     (unless present?
       (setf font (sdl2-ttf::ttf-open-font (namestring font-path) pt-size))
-      (if (null-ptr? font)
-          (error 'sdl-error :msg (sdl-get-error))) ; add restart to use default font
+      (if (lgame:null-ptr? font)
+          (error 'sdl-error :msg (lgame::sdl-get-error))) ; add restart to use default font
       (setf (gethash (namestring font-path) *loaded-fonts*) font))
     font))
 
@@ -18,7 +18,7 @@
 (defun unload-fonts ()
   (maphash (lambda (k v)
              (declare (ignore k))
-             (ttf-close-font v))
+             (lgame::ttf-close-font v))
            *loaded-fonts*)
   (clrhash *loaded-fonts*))
 
@@ -33,8 +33,8 @@
                 (sdl2-ttf::%sdl-render-text-solid (sdl2-ttf::ptr font)
                                                   text
                                                   (sdl2-ttf::create-sdl-color-list r g b a)))))
-    (if (null-ptr? surf)
-        (error 'sdl-error :msg (sdl-get-error))
+    (if (lgame:null-ptr? surf)
+        (error 'sdl-error :msg (lgame::sdl-get-error))
         surf)))
 
 @export
