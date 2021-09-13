@@ -45,15 +45,18 @@
     "Provides utils and wrappers around SDL2 events, particularly handling the event loop nicely with 'do-event
      and being able to reference event data with 'ref."))
 
+#|
+Undecided if this will be a thing, currently lgame:get-mouse-pos is the only thing here.
 (defpackage #:lgame.mouse
   (:use #:common-lisp)
   (:documentation
     ""))
+|#
 
 (defpackage #:lgame.time
   (:use #:common-lisp)
   (:documentation
-    ""))
+    "Provides functions to handle time-related tasks like fixing a max FPS framerate."))
 
 (defpackage #:lgame.rect
   (:use #:common-lisp)

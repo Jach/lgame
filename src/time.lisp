@@ -1,53 +1,34 @@
-#|
-Routines to help with time
-|#
-(in-package #:lgame)
+(in-package #:lgame.time)
 
 (annot:enable-annot-syntax)
 
-(defvar *prev-frame-time* 0.0)
-(defvar *frame-tick-start* 0)
-
-(defparameter +FPS+ 60)
-
-(defparameter +millis-per-frame+ (/ 1000.0 +FPS+))
-
 @export
-(defun now ()
-  (float (/ (get-internal-real-time) internal-time-units-per-second)))
-
-@export
-(defun init-dt ()
-  (setf *prev-frame-time* (now)))
-
-@export
-(defun update-dt ()
-  "Called at the end of the frame, sets global *dt* to the frame duration.
-   Should be consistently 1/+FPS+, but on slower systems it could be larger
-   due to poor framerate."
-  (setf *dt* (- (now) *prev-frame-time*))
-  (setf *prev-frame-time* (now)))
-
-@export
-(defun sleep-rest-of-frame (tick-start)
-  "If the time between now and tick-start is less than +millis-per-frame+,
-   sleep so that our frame rate is capped to +FPS+"
-  (let ((frame-dur (- (sdl-get-ticks) tick-start)))
-    (when (< frame-dur +millis-per-frame+)
-      (sdl-delay (floor (- +millis-per-frame+ frame-dur))))))
-
-;; delete above, or rework it, *dt* should be part of a physics concept instead,
-;; and also should be a fixed timestep anyway...
+(defvar *tick-ms* 0
+  "Clock state, represents the number of milliseconds since the SDL library initialized.
+   Updated by the clock functions.")
 
 @export
 (defun clock-start ()
-  (setf *frame-tick-start* (sdl-get-ticks)))
+  "Starts/restarts the clock, users should call this before
+   entering their main loop and call 'clock-tick at the end
+   of each loop."
+  (setf *tick-ms* (lgame::sdl-get-ticks)))
+
+@export
+(defun clock-time ()
+  "Returns the time in milliseconds since the last call to
+   'clock-start or 'clock-tick."
+  (- (lgame::sdl-get-ticks) *tick-ms*))
 
 @export
 (defun clock-tick (&optional fps-limit)
-  (let* ((frame-tick-end (sdl-get-ticks))
-         (frame-duration (- frame-tick-end *frame-tick-start*))
+  "Ticks the clock. If 'fps-limit is specified,
+   uses sdl-delay to wait the remainder of the frame time
+   needed so that the game loop does not exceed the fps-limit.
+   e.g. if 'fps-limit is 60, and a frame takes 10ms, this will
+   cause the main loop to sleep for the remaining 6ms."
+  (let* ((frame-duration (clock-time))
          (millis-per-frame-limit (and fps-limit (/ 1000.0 fps-limit))))
     (when (and millis-per-frame-limit (< frame-duration millis-per-frame-limit))
-      (sdl-delay (truncate (- millis-per-frame-limit frame-duration))))
+      (lgame::sdl-delay (truncate (- millis-per-frame-limit frame-duration))))
     (clock-start)))

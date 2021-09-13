@@ -1,4 +1,3 @@
-
 (in-package #:lgame)
 
 (annot:enable-annot-syntax)
