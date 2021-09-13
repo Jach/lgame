@@ -40,12 +40,12 @@ original to accomplish that.
 
 (defmethod initialize-instance :after ((self fist) &key)
   (let ((image (lgame:get-texture lgame:*texture-loader* :fist :color-key '(0 0 0))))
-    (setf (lgame.sprite:image-of self) image)
-    (setf (lgame.sprite:rect-of self) (lgame.rect:get-texture-rect image))))
+    (setf (lgame.sprite:.image self) image)
+    (setf (lgame.sprite:.rect self) (lgame.rect:get-texture-rect image))))
 
 (defmethod lgame.sprite:update ((self fist))
   "Move the fist based on mouse position"
-  (with-accessors ((rect lgame.sprite:rect-of) (punching? .punching?)) self
+  (with-accessors ((rect lgame.sprite:.rect) (punching? .punching?)) self
     (multiple-value-bind (x y) (sdl2:mouse-state)
       (lgame.rect:set-rect rect :x x :y y)
       (lgame.rect:move-rect rect (/ (sdl2:rect-width rect) -2) 0))
@@ -56,8 +56,8 @@ original to accomplish that.
   "Set punch state, returns true if the fist collides with the target"
   (unless (.punching? self)
     (setf (.punching? self) t)
-    (lgame.rect:with-inflated-rect (hitbox (lgame.sprite:rect-of self) -5 -5)
-      (lgame.rect:collide-rect? (lgame.sprite:rect-of target) hitbox))))
+    (lgame.rect:with-inflated-rect (hitbox (lgame.sprite:.rect self) -5 -5)
+      (lgame.rect:collide-rect? (lgame.sprite:.rect target) hitbox))))
 
 (defmethod unpunch ((self fist))
   "Pull the fist back"
@@ -70,18 +70,18 @@ original to accomplish that.
 
 (defmethod initialize-instance :after ((self chimp) &key)
   (let ((image (lgame:get-texture lgame:*texture-loader* :chimp :color-key '(255 0 0))))
-    (setf (lgame.sprite:image-of self) image)
-    (setf (lgame.sprite:rect-of self) (lgame.rect:get-texture-rect image))
-    (lgame.rect:move-rect (lgame.sprite:rect-of self) 10 10)))
+    (setf (lgame.sprite:.image self) image)
+    (setf (lgame.sprite:.rect self) (lgame.rect:get-texture-rect image))
+    (lgame.rect:move-rect (lgame.sprite:.rect self) 10 10)))
 
 (defmethod lgame.sprite:update ((self chimp))
-  (if (zerop (lgame.sprite:angle-of self))
+  (if (zerop (lgame.sprite:.angle self))
       (walk self)
       (spin self)))
 
 (defmethod walk ((self chimp))
   "Moves monkey back and forth across the screen"
-  (with-accessors ((rect lgame.sprite:rect-of) (speed .move) (flip lgame.sprite:flip-of)) self
+  (with-accessors ((rect lgame.sprite:.rect) (speed .move) (flip lgame.sprite:.flip)) self
     (lgame.rect:move-rect rect speed 0)
     (when (or (<= (lgame.rect:rect-dim rect :left) 0) (>= (lgame.rect:rect-dim rect :right) (lgame.rect:rect-dim lgame:*screen-rect* :right)))
       (setf speed (- speed))
@@ -92,14 +92,14 @@ original to accomplish that.
 
 (defmethod spin ((self chimp))
   "Spin monkey image"
-  (incf (lgame.sprite:angle-of self) 12)
-  (if (>= (lgame.sprite:angle-of self) 360) ; complete rotation
-      (setf (lgame.sprite:angle-of self) 0.0d0)))
+  (incf (lgame.sprite:.angle self) 12)
+  (if (>= (lgame.sprite:.angle self) 360) ; complete rotation
+      (setf (lgame.sprite:.angle self) 0.0d0)))
 
 (defmethod punched ((self chimp))
   "Cause the monkey to start spinning"
-  (if (zerop (lgame.sprite:angle-of self))
-      (setf (lgame.sprite:angle-of self) 1)))
+  (if (zerop (lgame.sprite:.angle self))
+      (setf (lgame.sprite:.angle self) 1)))
 
 (defun main ()
   (lgame:init)
