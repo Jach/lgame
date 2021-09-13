@@ -36,7 +36,7 @@
   (sdl2-image:quit)
 
   (when *texture-loader*
-    (lgame:unload-textures *texture-loader*)
+    (lgame.loader:unload-textures *texture-loader*)
     (setf *texture-loader* nil))
 
   (unless (lgame::null-ptr? *renderer*)

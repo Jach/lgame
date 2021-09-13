@@ -72,3 +72,9 @@
     "Wrapper around sdl2-ttf, loads (and caches) fonts, provides a default font, and a render-text function that returns
      a texture."))
 
+(defpackage #:lgame.loader
+  (:use #:common-lisp #:annot.std #:annot.class)
+  (:documentation
+    "Provides loader wrappers for various assets (currently just *texture-loader*) that may be easier
+     than calling the underlying functions directly."))
+
