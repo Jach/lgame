@@ -11,13 +11,15 @@
                         :components ((:file "packages")
                                      (:file "state")
                                      (:file "globals")
-                                     (:file "init")
                                      (:file "display")
                                      (:file "event")
                                      (:file "mouse")
-                                     (:file "rect")
                                      (:file "time")
+
+                                     (:file "rect")
                                      (:file "sprite")
                                      (:file "font")
                                      (:file "texture-loader")
+
+                                     (:file "init")
                                      ))))

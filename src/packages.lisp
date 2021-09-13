@@ -39,6 +39,27 @@
            create-renderer
            set-logical-size))
 
+(defpackage #:lgame.event
+  (:use :common-lisp #:annot.std)
+  (:documentation
+    "Provides utils and wrappers around SDL2 events, particularly handling the event loop nicely with 'do-event
+     and being able to reference event data with 'ref."))
+
+(defpackage #:lgame.mouse
+  (:use #:common-lisp)
+  (:documentation
+    ""))
+
+(defpackage #:lgame.time
+  (:use #:common-lisp)
+  (:documentation
+    ""))
+
+(defpackage #:lgame.rect
+  (:use #:common-lisp)
+  (:documentation
+    ""))
+
 (defpackage #:lgame.sprite
   (:use #:common-lisp #:annot.std #:annot.class)
   (:documentation
@@ -46,3 +67,9 @@
      class that sprite objects can inherit from and optionally override their own update
      and draw methods to use the image/rect slots differently. Additionally a Group class
      concept is provided to manage collections of sprites."))
+
+(defpackage #:lgame.font
+  (:use #:common-lisp)
+  (:documentation
+    ""))
+

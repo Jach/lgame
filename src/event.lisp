@@ -1,7 +1,4 @@
-#|
-utils/wrappers around SDL2 events, at least until I decide I like the CL lib's way of doing it.
-|#
-(in-package #:lgame)
+(in-package #:lgame.event)
 
 (annot:enable-annot-syntax)
 
@@ -32,28 +29,28 @@ utils/wrappers around SDL2 events, at least until I decide I like the CL lib's w
   "Helper macro to iterate through SDL's event list until it is empty,
    binding each SDL_Event to event."
   `(with-event (,event)
-     (loop until (zerop (sdl-poll-event ,event))
+     (loop until (zerop (sdl2-ffi.functions:sdl-poll-event ,event))
            do
            ,@loop-body)))
 
 @export
-(defmacro event-ref (event &rest fields)
-  `(plus-c:c-ref ,event sdl-event ,@fields))
+(defmacro ref (event &rest fields)
+  `(plus-c:c-ref ,event sdl2-ffi:sdl-event ,@fields))
 
 @export
 (defun event-type (event)
-  (event-ref event :type))
+  (ref event :type))
 
 @export
 (defun key-scancode (event)
-  (plus-c:c-ref event sdl-event :key :keysym :scancode))
+  (plus-c:c-ref event sdl2-ffi:sdl-event :key :keysym :scancode))
 
 @export
 (defun key-pressed? (&key key any all)
   "If :key is given, checks a single-key for pressed state.
    If :any is given, checks if any in the list are pressed.
    If :all is given, checks that all in the list are pressed."
-  (let* ((state (nth-value 1 (sdl-get-keyboard-state nil)))
+  (let* ((state (nth-value 1 (sdl2-ffi.functions:sdl-get-keyboard-state nil)))
          (test (lambda (key) (= 1 (cffi:mem-aref state :uint8 key)))))
     (if key
         (funcall test key)
