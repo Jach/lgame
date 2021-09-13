@@ -42,13 +42,13 @@
 
 @export-class
 (defclass sprite ()
-  ((image :accessor image-of :type (or null sdl2-ffi:sdl-texture))
-   (rect :accessor rect-of :type (or null sdl2-ffi:sdl-rect))
-   (angle :accessor angle-of :type double-float :initform 0.0d0
+  ((image :accessor .image :type (or null sdl2-ffi:sdl-texture))
+   (rect :accessor .rect :type (or null sdl2-ffi:sdl-rect))
+   (angle :accessor .angle :type double-float :initform 0.0d0
           :documentation "Angle in degrees applied to the rect when rendering, rotating it clockwise")
-   (flip :accessor flip-of :type bit ;sdl2-ffi:sdl-renderer-flip
+   (flip :accessor .flip :type bit ;sdl2-ffi:sdl-renderer-flip
          :initform sdl2-ffi:+sdl-flip-none+)
-   (groups :accessor groups-of :type list :initform (list) :documentation "List of groups containing this sprite"))
+   (groups :accessor .groups :type list :initform (list) :documentation "List of groups containing this sprite"))
   (:documentation
     "A sprite object contains a reference to a texture, stored with the image attribute,
      and a rect attribute corresponding to the sprite's location and size.
@@ -57,7 +57,7 @@
      Additionally, a rotation angle and/or flip attribute can be given." ; should be a subclass?
     ))
 
-(defmethod (setf angle-of) :after
+(defmethod (setf .angle) :after
   (new-value (self sprite))
   "Automatically convert new angle values to double-float if needed"
   (unless (typep new-value 'double-float)
@@ -65,7 +65,7 @@
 
 @export-class
 (defclass group ()
-  ((sprites :accessor sprites-of :initarg :sprites :initform (list) :type list :documentation "List of Sprites that this Group contains")
+  ((sprites :accessor .sprites :initarg :sprites :initform (list) :type list :documentation "List of Sprites that this Group contains")
    )
   (:documentation
     "A container for holding Sprites. The main benefit is as a proxy to call update/draw methods of each sprite in sequence.
@@ -92,10 +92,10 @@
    If the angle is non-zero a rotation will be applied around the sprite's center based on its rect location.
    If flip is +sdl-flip-horizontal+ or +sdl-flip-vertical+ the image will be flipped accordingly."
   (sdl2::check-rc
-    (sdl2-ffi.functions:sdl-render-copy-ex lgame:*renderer* (image-of self) nil (rect-of self) (angle-of self) nil (flip-of self))))
+    (sdl2-ffi.functions:sdl-render-copy-ex lgame:*renderer* (.image self) nil (.rect self) (.angle self) nil (.flip self))))
 
 (defmethod cleanup ((self sprite))
-  (sdl2:free-rect (rect-of self)))
+  (sdl2:free-rect (.rect self)))
 
 (defmethod add-groups ((self sprite) &rest groups)
   (dolist (group groups)
@@ -106,40 +106,40 @@
     (remove-sprites group self)))
 
 (defmethod update ((self group))
-  (dolist (sprite (sprites-of self))
+  (dolist (sprite (.sprites self))
     (update sprite)))
 
 (defmethod draw ((self group))
-  (dolist (sprite (sprites-of self))
+  (dolist (sprite (.sprites self))
     (draw sprite)))
 
 (defmethod cleanup ((self group))
-  (dolist (sprite (sprites-of self))
+  (dolist (sprite (.sprites self))
     (cleanup sprite)))
 
 (defmethod add-sprites ((self group) &rest sprites)
-  (setf (sprites-of self) (union (sprites-of self) sprites))
+  (setf (.sprites self) (union (.sprites self) sprites))
   (dolist (sprite sprites)
-    (setf (groups-of sprite) (union (groups-of sprite) (list self)))))
+    (setf (.groups sprite) (union (.groups sprite) (list self)))))
 
 (defmethod remove-sprites ((self group) &rest sprites)
-  (setf (sprites-of self) (set-difference (sprites-of self) sprites))
+  (setf (.sprites self) (set-difference (.sprites self) sprites))
   (dolist (sprite sprites)
-    (setf (groups-of sprite) (set-difference (groups-of sprite) (list self)))))
+    (setf (.groups sprite) (set-difference (.groups sprite) (list self)))))
 
 (defmethod add-sprites ((self ordered-group) &rest sprites)
   (let ((unique-sprites (remove-if (lambda (v) (gethash v (slot-value self 'seen-map)))
                                    sprites)))
-    (setf (sprites-of self) (append (sprites-of self) unique-sprites))
+    (setf (.sprites self) (append (.sprites self) unique-sprites))
     (dolist (sprite unique-sprites)
       (setf (gethash sprite (slot-value self 'seen-map)) T)
-      (setf (groups-of sprite) (union (groups-of sprite) (list self))))))
+      (setf (.groups sprite) (union (.groups sprite) (list self))))))
 
 (defmethod remove-sprites ((self group) &rest sprites)
   (dolist (sprite sprites)
     (setf (gethash sprite (slot-value self 'seen-map)) nil)
-    (setf (sprites-of self) (remove sprite (sprites-of self) :test #'equal))
-    (setf (groups-of sprite) (set-difference (groups-of sprite) (list self)))))
+    (setf (.sprites self) (remove sprite (.sprites self) :test #'equal))
+    (setf (.groups sprite) (set-difference (.groups sprite) (list self)))))
 
 
 
