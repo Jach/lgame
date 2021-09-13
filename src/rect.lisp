@@ -81,7 +81,7 @@
 (defun rect-dim (rect dim)
   "Query a rect dim with an intuitive keyword name,
    defined by the rect-dim type. If a name gives
-   both an x and a y part, two values will be returned."
+   both an x and a y part, a list of (x y) will be returned."
   (declare (type rect-dim dim))
   (multiple-value-bind (x y w h) (rect-dims rect)
     (ecase dim
@@ -89,7 +89,7 @@
       (:left x)
       (:bottom (+ y h))
       (:right (+ x w))
-      (:topleft (values x y))
+      (:topleft (list x y))
       (:bottomleft nil)
       (:topright nil)
       (:bottomright nil)
