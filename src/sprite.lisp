@@ -1,13 +1,4 @@
-#|
-WIP sprite module, inspired by pygame.sprite
-The idea is to provide a base Sprite class that sprite objects can inherit from
-and optionally override their own update and draw methods.
-Additionally a simple Group class is provided to manage collections of sprites.
-
-Perhaps later other kinds of groups or sprite types will be added.
-|#
-
-(in-package #:lgame)
+(in-package #:lgame.sprite)
 
 (annot:enable-annot-syntax)
 
@@ -100,7 +91,8 @@ Perhaps later other kinds of groups or sprite types will be added.
    onto the location defined by the rect of the sprite.
    If the angle is non-zero a rotation will be applied around the sprite's center based on its rect location.
    If flip is +sdl-flip-horizontal+ or +sdl-flip-vertical+ the image will be flipped accordingly."
-  (sdl-render-copy-ex *renderer* (image-of self) nil (rect-of self) (angle-of self) nil (flip-of self)))
+  (sdl2::check-rc
+    (sdl2-ffi.functions:sdl-render-copy-ex lgame:*renderer* (image-of self) nil (rect-of self) (angle-of self) nil (flip-of self))))
 
 (defmethod cleanup ((self sprite))
   (sdl2:free-rect (rect-of self)))
@@ -168,6 +160,7 @@ Perhaps later other kinds of groups or sprite types will be added.
 ;;                    :padding-x 0
 ;;                    :padding-y 12))
 
+#| Revisit once I add animations again
 (defun load-spritesheet (file frame-data)
   "Given a sprite sheet file and frame-data for the sheet, loads the spritesheet into an array
    of textures with each cell being a frame.
@@ -315,4 +308,4 @@ Perhaps later other kinds of groups or sprite types will be added.
                                                  (plus-c:c-ref surface sdl2-ffi:sdl-surface :format :Amask))))
         (sdl2:blit-surface surface trimmed dst-surface nil)
         dst-surface))))
-
+|#

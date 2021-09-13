@@ -8,7 +8,7 @@
                )
   :components ((:module "src/"
                         :serial t
-                        :components ((:file "package")
+                        :components ((:file "packages")
                                      (:file "globals")
                                      (:file "init")
                                      (:file "display")
