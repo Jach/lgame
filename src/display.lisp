@@ -1,36 +1,31 @@
-(in-package #:lgame)
+(in-package #:lgame.display)
 
-(annot:enable-annot-syntax)
-
-@export
-(defun create-window (title x y w h &optional (flags +sdl-window-opengl+))
+(defun create-window (title x y w h &optional (flags lgame::+sdl-window-opengl+))
   "Wrapper around sdl-create-window, binds to lgame:*screen* and returns it.
    Also sets lgame:*screen-rect* to use the window width and height."
-  (setf *screen* (sdl-create-window title x y w h flags))
-  (if (null-ptr? *screen*)
-      (error 'sdl-error :msg (sdl-get-error)))
-  (setf *screen-rect* (sdl2:make-rect 0 0 w h))
-  *screen*)
+  (setf lgame.state:*screen* (lgame::sdl-create-window title x y w h flags))
+  (if (lgame::null-ptr? lgame:*screen*)
+      (error 'sdl-error :msg (lgame::sdl-get-error)))
+  (setf lgame.state:*screen-rect* (sdl2:make-rect 0 0 w h))
+  lgame.state:*screen*)
 
-@export
-(defun create-renderer (&optional (window *screen*) (index -1) (flags 0))
+(defun create-renderer (&optional (window lgame.state:*screen*) (index -1) (flags 0))
   "Wrapper around sdl-create-renderer, binds to lgame:*renderer* and returns it.
    Default values are lgame:*screen*, default monitor, and no special flags."
-  (setf *renderer* (sdl-create-renderer window -1 0))
-  (if (null-ptr? *renderer*)
-      (error 'sdl-error :msg (sdl-get-error)))
-  *renderer*)
+  (setf lgame.state:*renderer* (lgame::sdl-create-renderer window -1 0))
+  (if (lgame::null-ptr? lgame.state:*renderer*)
+      (error 'sdl-error :msg (lgame::sdl-get-error)))
+  lgame.state:*renderer*)
 
-@export
-(defun set-logical-size (w h &optional (renderer *renderer*) linear-scaling?)
+(defun set-logical-size (w h &optional (renderer lgame.state:*renderer*) linear-scaling?)
   "Mostly a wrapper around sdl-render-set-logical-size.
    By default sets the render scaling quality to 'linear',
    and resets lgame:*screen-rect* to use the new logical width and height, returning it."
   (if linear-scaling?
-      (sdl-set-hint +sdl-hint-render-scale-quality+ "linear"))
+      (lgame::sdl-set-hint lgame::+sdl-hint-render-scale-quality+ "linear"))
   (unless (zerop
-            (sdl-render-set-logical-size renderer w h))
-    (error 'sdl-error :msg (sdl-get-error)))
-  (if *screen-rect*
-      (sdl2:free-rect *screen-rect*))
-  (setf *screen-rect* (sdl2:make-rect 0 0 w h)))
+            (lgame::sdl-render-set-logical-size renderer w h))
+    (error 'sdl-error :msg (lgame::sdl-get-error)))
+  (when lgame.state:*screen-rect*
+      (sdl2:free-rect lgame.state:*screen-rect*))
+  (setf lgame.state:*screen-rect* (sdl2:make-rect 0 0 w h)))

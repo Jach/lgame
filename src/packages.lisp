@@ -1,12 +1,43 @@
 (in-package #:cl-user)
 
+(defpackage #:lgame.state
+  (:use #:common-lisp)
+  (:documentation
+    "This package is to manage state shared among the various lgame modules and a game.
+     Lgame is currently designed to only handle one game at a time, so there is typically
+     just one window/screen, one renderer, one resource manager for each resource type...")
+  (:export *screen*
+           *screen-rect*
+           *renderer*
+           *texture-loader*))
+
 (defpackage #:lgame
   (:shadowing-import-from #:sdl2-ffi.functions #:sdl-thread-id)
-  (:use #:common-lisp #:sdl2-ffi.functions #:sdl2-ffi #:annot.std #:annot.class)
+  (:use #:common-lisp #:sdl2-ffi.functions #:sdl2-ffi #:annot.std #:annot.class
+        #:lgame.state)
   (:documentation
     "Lgame is composed of several packages of the form lgame.foo, where foo generally corresponds
      to a filename. The top-level lgame package itself is for re-exporting lgame.state,
-     and to :use but not export all symbols in sdl2-ffi.functions and sdl2-ffi."))
+     and to :use but not export all symbols in sdl2-ffi.functions and sdl2-ffi.")
+  (:export *screen*
+           *screen-rect*
+           *renderer*
+           *texture-loader*))
+
+(defpackage #:lgame.init
+  (:use #:common-lisp #:lgame.state)
+  (:documentation
+    "Provides functions to initialize everything before starting a game and gracefully quit, unloading everything.")
+  (:export init
+           quit))
+
+(defpackage #:lgame.display
+  (:use #:common-lisp)
+  (:documentation
+    "Provides functions to set up an initial display for the game.")
+  (:export create-window
+           create-renderer
+           set-logical-size))
 
 (defpackage #:lgame.sprite
   (:use #:common-lisp #:annot.std #:annot.class)
