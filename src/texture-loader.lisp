@@ -18,7 +18,7 @@
 
 @export-class
 (defclass texture-loader ()
-  ((textures :accessor textures-of :initform (make-hash-table))
+  ((textures :accessor textures-of :initform (make-hash-table :test #'equal))
    (default-dir :accessor default-dir-of :initarg :default-dir)))
 
 @export
@@ -39,7 +39,11 @@
   (when (null dir)
     (setf dir (default-dir-of self)))
   (alexandria:if-let ((texture (gethash key-or-name (textures-of self))))
-    texture
+    (if (autowrap:valid-p texture)
+        texture
+        (progn ; something invalidated it, force a reload
+          (setf (gethash key-or-name (textures-of self)) nil)
+          (get-texture self key-or-name :dir dir :color-key color-key)))
     (let* ((filename (format nil "~a/~a" dir (if (keywordp key-or-name)
                                                  (uiop:strcat (string-downcase key-or-name) ".png")
                                                  key-or-name)))

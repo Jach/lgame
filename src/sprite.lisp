@@ -24,9 +24,10 @@ Perhaps later other kinds of groups or sprite types will be added.
 @export
 (defgeneric cleanup (sprite-or-group)
   (:documentation
-    "Frees the Sprite's image and rect, or those of each sprite in a Group.
-     Note that even if an image was loaded with the *texture-loader*, neither
-     will double-free when unloading."))
+    "Frees the Sprite's rect, or those of each sprite in a Group.
+     Note it does not free the sprite's image, which is fine if it
+     was loaded with the texture-loader as it will be freed when textures
+     are unloaded, but the user should do that themselves if loaded another way."))
 
 @export
 (defgeneric add-groups (sprite &rest groups)
@@ -102,9 +103,7 @@ Perhaps later other kinds of groups or sprite types will be added.
   (sdl-render-copy-ex *renderer* (image-of self) nil (rect-of self) (angle-of self) nil (flip-of self)))
 
 (defmethod cleanup ((self sprite))
-  (sdl2:free-rect (rect-of self))
-  (if (autowrap:valid-p (image-of self))
-    (sdl2:destroy-texture (image-of self))))
+  (sdl2:free-rect (rect-of self)))
 
 (defmethod add-groups ((self sprite) &rest groups)
   (dolist (group groups)
