@@ -39,7 +39,7 @@ the data should still be within the texture.
   (lgame.display:create-renderer)
 
   ;(lgame::sdl-set-hint lgame::+sdl-hint-render-scale-quality+ "linear")
-  (let ((liquid (lgame:load-texture (merge-pathnames "../moveit/liquid.png" *main-dir*))))
+  (let ((liquid (lgame.loader:load-texture (merge-pathnames "../moveit/liquid.png" *main-dir*))))
     (setf background (sdl2:create-texture lgame:*renderer* lgame::+sdl-pixelformat-rgba8888+ lgame::+sdl-textureaccess-target+ (* (sdl2:texture-width liquid) 4) (* (sdl2:texture-height liquid) 4)))
     (sdl2:set-render-target lgame:*renderer* background)
     (sdl2:render-copy lgame:*renderer* liquid)

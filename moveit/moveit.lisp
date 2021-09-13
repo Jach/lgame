@@ -16,7 +16,7 @@ it on your own streaming/target texture and render that texture every frame.
   (:use :cl))
 (in-package #:moveit)
 
-(defparameter *main-dir* *load-truename*)
+(defparameter *main-name* *load-truename*)
 (defparameter *running?* t)
 
 (push (merge-pathnames "../lgame/" (uiop:getcwd)) asdf:*central-registry*)
@@ -37,7 +37,7 @@ it on your own streaming/target texture and render that texture every frame.
     (lgame.rect:set-rect (.pos self) :x 0)))
 
 (defun load-image (name)
-  (lgame:load-texture (merge-pathnames name (directory-namestring *main-dir*))))
+  (lgame.loader:load-texture (merge-pathnames name (directory-namestring *main-name*))))
 
 (defun main (&aux player background objects)
   (lgame:init)

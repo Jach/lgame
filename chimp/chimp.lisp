@@ -39,7 +39,7 @@ original to accomplish that.
   (:documentation "Moves a clenched fist on the screen, following the mouse"))
 
 (defmethod initialize-instance :after ((self fist) &key)
-  (let ((image (lgame:get-texture lgame:*texture-loader* :fist :color-key '(0 0 0))))
+  (let ((image (lgame.loader:get-texture lgame:*texture-loader* :fist :color-key '(0 0 0))))
     (setf (lgame.sprite:.image self) image)
     (setf (lgame.sprite:.rect self) (lgame.rect:get-texture-rect image))))
 
@@ -69,7 +69,7 @@ original to accomplish that.
   (:documentation "Moves a monkey across the screen, it can spin the monkey when it is punched"))
 
 (defmethod initialize-instance :after ((self chimp) &key)
-  (let ((image (lgame:get-texture lgame:*texture-loader* :chimp :color-key '(255 0 0))))
+  (let ((image (lgame.loader:get-texture lgame:*texture-loader* :chimp :color-key '(255 0 0))))
     (setf (lgame.sprite:.image self) image)
     (setf (lgame.sprite:.rect self) (lgame.rect:get-texture-rect image))
     (lgame.rect:move-rect (lgame.sprite:.rect self) 10 10)))
@@ -103,7 +103,7 @@ original to accomplish that.
 
 (defun main ()
   (lgame:init)
-  (lgame:create-texture-loader *main-dir*)
+  (lgame.loader:create-texture-loader *main-dir*)
   (lgame.display:create-window "Monkey Fever" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+ 468 60)
   (lgame.display:create-renderer)
   (sdl2:hide-cursor)

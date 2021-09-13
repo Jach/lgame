@@ -26,7 +26,7 @@
 
 ; ball = pygame.image.load("intro_ball.gif")
 (defparameter *current-dir* (directory-namestring *load-truename*))
-(defparameter *ball* (lgame:load-texture (merge-pathnames "intro_ball.png" *current-dir*)))
+(defparameter *ball* (lgame.loader:load-texture (merge-pathnames "intro_ball.png" *current-dir*)))
 ; ballrect = ball.get_rect()
 (defparameter *ball-rect* (lgame.rect:get-texture-rect *ball*))
 
