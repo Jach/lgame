@@ -1,10 +1,11 @@
-(in-package #:lgame)
+(in-package #:lgame.mouse)
 
 (annot:enable-annot-syntax)
 
 @export
 (defun get-mouse-pos ()
-  "maybe delete this.."
+  "Simple wrapper around 'sdl2:mouse-state, returns the current mouse's position
+   as an x,y list."
   (multiple-value-bind (x y) (sdl2:mouse-state)
     (list x y)))
 

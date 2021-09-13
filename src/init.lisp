@@ -1,4 +1,4 @@
-(in-package #:lgame.init)
+(in-package #:lgame)
 
 (define-condition sdl-error (error)
   ((msg :initarg :msg :accessor sdl-error-msg)))

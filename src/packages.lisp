@@ -19,17 +19,12 @@
     "Lgame is composed of several packages of the form lgame.foo, where foo generally corresponds
      to a filename. The top-level lgame package itself is for re-exporting lgame.state,
      and to :use but not export all symbols in sdl2-ffi.functions and sdl2-ffi.")
-  (:export *screen*
+  (:export init
+           quit
+           *screen*
            *screen-rect*
            *renderer*
            *texture-loader*))
-
-(defpackage #:lgame.init
-  (:use #:common-lisp #:lgame.state)
-  (:documentation
-    "Provides functions to initialize everything before starting a game and gracefully quit, unloading everything.")
-  (:export init
-           quit))
 
 (defpackage #:lgame.display
   (:use #:common-lisp)
@@ -45,13 +40,10 @@
     "Provides utils and wrappers around SDL2 events, particularly handling the event loop nicely with 'do-event
      and being able to reference event data with 'ref."))
 
-#|
-Undecided if this will be a thing, currently lgame:get-mouse-pos is the only thing here.
 (defpackage #:lgame.mouse
-  (:use #:common-lisp)
+  (:use #:common-lisp #:annot.std)
   (:documentation
-    ""))
-|#
+    "Provides a function to get the current mouse position."))
 
 (defpackage #:lgame.time
   (:use #:common-lisp)
