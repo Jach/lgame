@@ -65,9 +65,9 @@ a bit better, but still clearly not a great idea.
 
 (defun main (&aux background buffer)
   (lgame:init)
-  (lgame:create-window "gradient" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+
+  (lgame.display:create-window "gradient" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+
                        *width* *height* (logior lgame::+sdl-window-opengl+ lgame::+sdl-window-borderless+))
-  (lgame:create-renderer)
+  (lgame.display:create-renderer)
 
   (setf background (sdl2:create-texture lgame:*renderer* lgame::+sdl-pixelformat-rgba8888+ lgame::+sdl-textureaccess-streaming+
                                         *width* *height*))
@@ -77,8 +77,8 @@ a bit better, but still clearly not a great idea.
   (setf *running?* t)
   (loop while *running?* do
         (livesupport:continuable
-          (lgame:do-event (event)
-            (if (find (lgame:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+ ,lgame::+sdl-mousebuttondown+))
+          (lgame.event:do-event (event)
+            (if (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+ ,lgame::+sdl-mousebuttondown+))
                 (setf *running?* nil)))
 
           (display-gradient background buffer :use-buffer t)
@@ -151,7 +151,7 @@ a bit better, but still clearly not a great idea.
       (when use-rects
         (loop for row below *height* do
               (sdl2:set-render-draw-color lgame:*renderer* (truncate (aref cur-color 0)) (truncate (aref cur-color 1)) (truncate (aref cur-color 2)) 255)
-              (lgame:with-rect (rect 0 row *width* 1)
+              (lgame.rect:with-rect (rect 0 row *width* 1)
                 (sdl2:render-fill-rect lgame:*renderer* rect))
               (add-color cur-color step-color))
         (sdl2:render-present lgame:*renderer*))

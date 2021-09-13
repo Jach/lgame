@@ -35,8 +35,8 @@ the data should still be within the texture.
 
 (defun main (&aux background anim)
   (lgame:init)
-  (lgame:create-window "liquid" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+ 640 480)
-  (lgame:create-renderer)
+  (lgame.display:create-window "liquid" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+ 640 480)
+  (lgame.display:create-renderer)
 
   ;(lgame::sdl-set-hint lgame::+sdl-hint-render-scale-quality+ "linear")
   (let ((liquid (lgame:load-texture (merge-pathnames "../moveit/liquid.png" *main-dir*))))
@@ -49,10 +49,10 @@ the data should still be within the texture.
   (setf anim 0.0)
 
   (setf *running?* t)
-  (lgame:clock-start)
+  (lgame.time:clock-start)
   (loop while *running?* do
-    (lgame:do-event (event)
-      (if (find (lgame:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+ ,lgame::+sdl-mousebuttondown+))
+    (lgame.event:do-event (event)
+      (if (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+ ,lgame::+sdl-mousebuttondown+))
           (setf *running?* nil)))
 
     (incf anim 0.2)
@@ -61,12 +61,12 @@ the data should still be within the texture.
             (loop for y from 0 below 480 by 20 do
                   (uiop:nest
                     (let ((ypos #I(y + sin(anim + y*0.01)*15 + 20))))
-                    (lgame:with-rect (source (round xpos) (round ypos) 20 20))
-                    (lgame:with-rect (dest x y 20 20))
+                    (lgame.rect:with-rect (source (round xpos) (round ypos) 20 20))
+                    (lgame.rect:with-rect (dest x y 20 20))
                     (sdl2:render-copy lgame:*renderer* background :source-rect source :dest-rect dest)))))
 
     (sdl2:render-present lgame:*renderer*)
-    (lgame:clock-tick 60))
+    (lgame.time:clock-tick 60))
 
   (sdl2:destroy-texture background)
   (lgame:quit))

@@ -28,21 +28,21 @@ it on your own streaming/target texture and render that texture every frame.
    (pos :reader .pos)))
 
 (defmethod initialize-instance :after ((self game-object) &key (height 0) &allow-other-keys)
-  (setf (slot-value self 'pos) (lgame:get-texture-rect (.image self)))
-  (lgame:move-rect (.pos self) 0 height))
+  (setf (slot-value self 'pos) (lgame.rect:get-texture-rect (.image self)))
+  (lgame.rect:move-rect (.pos self) 0 height))
 
 (defmethod move ((self game-object))
-  (lgame:move-rect (.pos self) (.speed self) 0)
-  (when (> (lgame:rect-right (.pos self)) 600)
-    (lgame:set-rect (.pos self) :x 0)))
+  (lgame.rect:move-rect (.pos self) (.speed self) 0)
+  (when (> (lgame.rect:rect-dim (.pos self) :right) 600)
+    (lgame.rect:set-rect (.pos self) :x 0)))
 
 (defun load-image (name)
   (lgame:load-texture (merge-pathnames name (directory-namestring *main-dir*))))
 
 (defun main (&aux player background objects)
   (lgame:init)
-  (lgame:create-window "moveit" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+ 640 480)
-  (lgame:create-renderer)
+  (lgame.display:create-window "moveit" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+ 640 480)
+  (lgame.display:create-renderer)
 
   (setf player (load-image "player1.png"))
   (setf background (load-image "liquid.png"))
@@ -53,8 +53,8 @@ it on your own streaming/target texture and render that texture every frame.
   (setf *running?* t)
   (loop while *running?* do
     (sleep (/ 1 60.0)) ; even the original is super fast, this is a simple way to slow things down, accurate way in a future example
-    (lgame:do-event (event)
-      (if (find (lgame:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+) :test #'=)
+    (lgame.event:do-event (event)
+      (if (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+) :test #'=)
           (setf *running?* nil)))
 
     (sdl2:render-copy lgame:*renderer* background)
@@ -63,7 +63,7 @@ it on your own streaming/target texture and render that texture every frame.
       (move o)
       (sdl2:render-copy lgame:*renderer* (.image o) :dest-rect (.pos o)))
 
-    (lgame::sdl-render-present lgame:*renderer*))
+    (sdl2:render-present lgame:*renderer*))
   (lgame:quit))
 
 (eval-when (:execute)
