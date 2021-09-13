@@ -20,7 +20,7 @@
    The caller is responsible for freeing the returned SDL_Texture."
   (let ((surface (sdl2-image:load-image (namestring path-or-file))))
     (when color-key
-      (lgame::sdl-set-color-key surface 1 (apply #'sdl-map-rgb (sdl2:surface-format surface) color-key)))
+      (lgame::sdl-set-color-key surface 1 (apply #'lgame::sdl-map-rgb (sdl2:surface-format surface) color-key)))
     (let ((texture (sdl2:create-texture-from-surface lgame:*renderer* surface)))
       (lgame::sdl-free-surface surface)
       texture)))
