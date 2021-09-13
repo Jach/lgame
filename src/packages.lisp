@@ -61,7 +61,10 @@ Undecided if this will be a thing, currently lgame:get-mouse-pos is the only thi
 (defpackage #:lgame.rect
   (:use #:common-lisp)
   (:documentation
-    ""))
+    "Utils around handling SDL_Rects. Several with- macros like 'with-rect are included to efficiently
+     use a stack-allocated object instead of allocating and freeing, though for any longer-lasting rects
+     one should use the usual 'sdl2:make-rect and 'free-rect. Also included are some intuitive lookup/setter functions,
+     and collision detection routines."))
 
 (defpackage #:lgame.sprite
   (:use #:common-lisp #:annot.std #:annot.class)

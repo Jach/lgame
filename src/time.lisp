@@ -26,9 +26,13 @@
    uses sdl-delay to wait the remainder of the frame time
    needed so that the game loop does not exceed the fps-limit.
    e.g. if 'fps-limit is 60, and a frame takes 10ms, this will
-   cause the main loop to sleep for the remaining 6ms."
+   cause the main loop to sleep for the remaining 6ms.
+   Returns the duration amount (i.e. 'clock-time) from BEFORE any
+   time spent delaying, allowing for a measure of frame duration
+   independent of the delay."
   (let* ((frame-duration (clock-time))
          (millis-per-frame-limit (and fps-limit (/ 1000.0 fps-limit))))
     (when (and millis-per-frame-limit (< frame-duration millis-per-frame-limit))
       (lgame::sdl-delay (truncate (- millis-per-frame-limit frame-duration))))
-    (clock-start)))
+    (clock-start)
+    frame-duration))

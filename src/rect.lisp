@@ -1,7 +1,4 @@
-#|
-Utils around SDL Rects
-|#
-(in-package #:lgame)
+(in-package #:lgame.rect)
 
 (annot:enable-annot-syntax)
 
@@ -59,6 +56,8 @@ Utils around SDL Rects
 
 @export
 (defun set-rect (rect &key x y w h)
+  "Update any/all of the possible rect properties.
+   The standard x, y, w (width), and h (height) correspond directly to the underlying SDL_Rect."
   (when x (setf (sdl2:rect-x rect) x))
   (when y (setf (sdl2:rect-y rect) y))
   (when w (setf (sdl2:rect-width rect) w))
@@ -72,6 +71,63 @@ Utils around SDL Rects
     (sdl2:rect-width rect)
     (sdl2:rect-height rect)
     rect))
+
+(deftype rect-dim ()
+  '(member :top :left :bottom :right
+           :topleft :bottomleft :topright :bottomright
+           :midtop :midleft :midbottom :midright
+           :center :centerx :centery))
+@export
+(defun rect-dim (rect dim)
+  "Query a rect dim with an intuitive keyword name,
+   defined by the rect-dim type. If a name gives
+   both an x and a y part, two values will be returned."
+  (declare (type rect-dim dim))
+  (multiple-value-bind (x y w h) (rect-dims rect)
+    (ecase dim
+      (:top y)
+      (:left x)
+      (:bottom (+ y h))
+      (:right (+ x w))
+      (:topleft (values x y))
+      (:bottomleft nil)
+      (:topright nil)
+      (:bottomright nil)
+      (:midtop nil)
+      (:midleft nil)
+      (:midbottom nil)
+      (:midright nil)
+      (:center nil)
+      (:centerx (truncate (+ x (/ w 2))))
+      (:centery (truncate (+ y (/ h 2))))
+      )))
+
+@export
+(defun (setf rect-dim) (value rect dim)
+  "An extended form of set-rect, allows updating the underlying rect
+   with intuitive keyword names defined by the rect-dim type.
+   When both an x and a y can be specified, as in :topleft, a sequence of
+   two integers in x,y order is expected."
+  (declare (type rect-dim dim))
+  (multiple-value-bind (x y w h) (rect-dims rect)
+    (ecase dim
+      (:top (setf (sdl2:rect-y rect) value))
+      (:left (setf (sdl2:rect-x rect) value))
+      (:bottom (setf (sdl2:rect-y rect) (- value h)))
+      (:right (setf (sdl2:rect-x rect) (- value w)))
+      (:topleft (setf (sdl2:rect-x rect) (elt value 0))
+       (setf (sdl2:rect-y rect) (elt value 1)))
+      (:bottomleft nil)
+      (:topright nil)
+      (:bottomright nil)
+      (:midtop nil)
+      (:midleft nil)
+      (:midbottom nil)
+      (:midright nil)
+      (:center nil)
+      (:centerx nil)
+      (:centery nil)
+    )))
 
 @export
 (defun get-texture-rect (texture)
@@ -89,7 +145,7 @@ Utils around SDL Rects
 
 @export
 (defun outside-screen? (rect)
-  (not (collide-rect? *screen-rect* rect)))
+  (not (collide-rect? lgame.state:*screen-rect* rect)))
 
 @export
 (defun contains? (rect1 rect2)
@@ -100,30 +156,4 @@ Utils around SDL Rects
       (and
         (<= x1 x2) (> (+ x1 w1) x2) (>= (+ x1 w1) (+ x2 w2))
         (<= y1 y2) (> (+ y1 h1) y2) (>= (+ y1 h1) (+ y2 h2))))))
-
-@export
-(defun rect-center-x (rect)
-  (+ (sdl2:rect-x rect) (/ (sdl2:rect-width rect) 2)))
-
-@export
-(defun rect-center-y (rect)
-  (+ (sdl2:rect-y rect) (/ (sdl2:rect-height rect) 2)))
-
-@export
-(defun rect-left (rect)
-  (sdl2:rect-x rect))
-
-@export
-(defun rect-right (rect)
-  (+ (sdl2:rect-x rect)
-     (sdl2:rect-width rect)))
-
-@export
-(defun rect-top (rect)
-  (sdl2:rect-y rect))
-
-@export
-(defun rect-bottom (rect)
-  (+ (sdl2:rect-y rect)
-     (sdl2:rect-height rect)))
 
