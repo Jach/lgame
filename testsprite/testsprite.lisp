@@ -6,6 +6,11 @@ Not trying to duplicate original code too closely, just showing the same
 feature -- a bunch of sprites bouncing around. On my machine, python
 gets about 600 FPS at best. Lisp gets over 9000 FPS.
 
+At 10,000 sprites, pygame gets 16 FPS, Lisp gets 240.
+At 100,000 sprites, pygame gets 1.6 FPS, Lisp gets 20 FPS.
+However, it took Lisp about 1 minute and 20 seconds to load up the sprites,
+32 seconds if using an ordered-group, indicating inefficiencies in my group classes.
+
 |#
 
 
@@ -42,7 +47,7 @@ gets about 600 FPS at best. Lisp gets over 9000 FPS.
       (if (zerop i) (setf (sdl2:rect-x rect) nv) (setf (sdl2:rect-y rect) nv)))))
 
 
-(defun main (&aux sprites frames start)
+(defun main (&aux sprites frames)
   (lgame:init)
   (lgame.loader:create-texture-loader *main-dir*)
   (lgame.display:create-window "Testsprite" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+
@@ -54,7 +59,7 @@ gets about 600 FPS at best. Lisp gets over 9000 FPS.
     (lgame.sprite:add-sprites sprites (make-instance 'thingy)))
 
   (setf frames 0)
-  (setf start (lgame.time:clock-start))
+  (lgame.time:clock-start)
   (setf *running?* t)
   (loop while *running?* do
         (lgame.event:do-event (event)
@@ -65,8 +70,7 @@ gets about 600 FPS at best. Lisp gets over 9000 FPS.
         (lgame.sprite:update sprites)
         (lgame.sprite:draw sprites)
         (sdl2:render-present lgame:*renderer*))
-  (let ((end (lgame.time:clock-time)))
-    (format t "FPS: ~a~%" (/ frames (/ (- end start) 1000.0))))
+  (format t "FPS: ~a~%" (/ frames (/ (lgame.time:clock-time) 1000.0)))
   (lgame:quit))
 
 (eval-when (:execute)
