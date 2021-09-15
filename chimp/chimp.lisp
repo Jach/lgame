@@ -130,6 +130,7 @@ original to accomplish that.
 
       ; cleanup
       (lgame.sprite:cleanup allsprites)
+      (lgame.loader:unload-textures lgame:*texture-loader*)
       (sdl2:free-rect banner-txt-rect)
       (sdl2:destroy-texture banner-txt)
       (lgame.font:unload-fonts)
