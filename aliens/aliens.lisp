@@ -264,7 +264,6 @@ Differences:
     ;(sdl2-mixer:free-chunk shoot-sound)
     ;(sdl2-mixer:free-chunk boom-sound)
 
-    (lgame.loader:unload-textures lgame:*texture-loader*)
     (lgame.font:unload-fonts)
     (lgame:quit)))
 
