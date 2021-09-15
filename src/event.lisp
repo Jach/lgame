@@ -49,7 +49,8 @@
 (defun key-pressed? (&key key any all)
   "If :key is given, checks a single-key for pressed state.
    If :any is given, checks if any in the list are pressed.
-   If :all is given, checks that all in the list are pressed."
+   If :all is given, checks that all in the list are pressed.
+   Note that this just calls SDL_GetKeyboardState and has the same limitations."
   (let* ((state (nth-value 1 (sdl2-ffi.functions:sdl-get-keyboard-state nil)))
          (test (lambda (key) (= 1 (cffi:mem-aref state :uint8 key)))))
     (if key

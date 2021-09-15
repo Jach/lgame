@@ -6,10 +6,10 @@
     "This package is to manage state shared among the various lgame modules and a game.
      Lgame is currently designed to only handle one game at a time, so there is typically
      just one window/screen, one renderer, one resource manager for each resource type...")
-  (:export *screen*
-           *screen-rect*
-           *renderer*
-           *texture-loader*))
+  (:export #:*screen*
+           #:*screen-rect*
+           #:*renderer*
+           #:*texture-loader*))
 
 (defpackage #:lgame
   (:shadowing-import-from #:sdl2-ffi.functions #:sdl-thread-id)
@@ -19,23 +19,23 @@
     "Lgame is composed of several packages of the form lgame.foo, where foo generally corresponds
      to a filename. The top-level lgame package itself is for re-exporting lgame.state,
      and to :use but not export all symbols in sdl2-ffi.functions and sdl2-ffi.")
-  (:export init
-           quit
-           *screen*
-           *screen-rect*
-           *renderer*
-           *texture-loader*))
+  (:export #:init
+           #:quit
+           #:*screen*
+           #:*screen-rect*
+           #:*renderer*
+           #:*texture-loader*))
 
 (defpackage #:lgame.display
   (:use #:common-lisp)
   (:documentation
     "Provides functions to set up an initial display for the game.")
-  (:export create-window
-           create-renderer
-           set-logical-size))
+  (:export #:create-window
+           #:create-renderer
+           #:set-logical-size))
 
 (defpackage #:lgame.event
-  (:use :common-lisp #:annot.std)
+  (:use #:common-lisp #:annot.std)
   (:documentation
     "Provides utils and wrappers around SDL2 events, particularly handling the event loop nicely with 'do-event
      and being able to reference event data with 'ref."))

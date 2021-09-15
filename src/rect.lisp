@@ -30,6 +30,16 @@
      ,@body))
 
 @export
+(defmacro with-moved-rect ((rect source-rect x y) &body body)
+  "Helper to get a temporary rect whose x,y position is equal
+   to the source-rect's x,y position, moved by x and y. This
+   rect's w and h will also be equal to the source's w and h."
+  `(with-rect-from-rect (,rect ,source-rect)
+     (incf (sdl2:rect-x ,rect) ,x)
+     (incf (sdl2:rect-y ,rect) ,y)
+     ,@body))
+
+@export
 (defmacro with-point ((point x y) &body body)
   "Helper macro for a stack point"
   (let ((sz (autowrap:foreign-type-size (autowrap:find-type 'sdl2-ffi:sdl-point))))
@@ -72,11 +82,19 @@
     (sdl2:rect-height rect)
     rect))
 
+@export
+(defun midway (a b)
+  "Truncated midway distance from a to (+ a b),
+   useful for finding middle point of a rect given
+   x and width or y and height."
+  (truncate (+ a (/ b 2))))
+
 (deftype rect-dim ()
   '(member :top :left :bottom :right
            :topleft :bottomleft :topright :bottomright
            :midtop :midleft :midbottom :midright
            :center :centerx :centery))
+
 @export
 (defun rect-dim (rect dim)
   "Query a rect dim with an intuitive keyword name,
@@ -89,17 +107,17 @@
       (:left x)
       (:bottom (+ y h))
       (:right (+ x w))
+      (:centerx (midway x w))
+      (:centery (midway y h))
       (:topleft (list x y))
-      (:bottomleft nil)
-      (:topright nil)
-      (:bottomright nil)
-      (:midtop nil)
-      (:midleft nil)
-      (:midbottom nil)
-      (:midright nil)
-      (:center nil)
-      (:centerx (truncate (+ x (/ w 2))))
-      (:centery (truncate (+ y (/ h 2))))
+      (:bottomleft (list x (+ y h)))
+      (:topright (list (+ x w) y))
+      (:bottomright (list (+ x w) (+ y h)))
+      (:midtop (list (midway x w) y))
+      (:midleft (list x (midway y h)))
+      (:midbottom (list (midway x w) (+ y h)))
+      (:midright (list (+ x w) (midway y h)))
+      (:center (list (midway x w) (midway y h)))
       )))
 
 @export
@@ -115,23 +133,64 @@
       (:left (setf (sdl2:rect-x rect) value))
       (:bottom (setf (sdl2:rect-y rect) (- value h)))
       (:right (setf (sdl2:rect-x rect) (- value w)))
-      (:topleft (setf (sdl2:rect-x rect) (elt value 0))
-       (setf (sdl2:rect-y rect) (elt value 1)))
-      (:bottomleft nil)
-      (:topright nil)
-      (:bottomright nil)
-      (:midtop nil)
-      (:midleft nil)
-      (:midbottom nil)
-      (:midright nil)
-      (:center nil)
-      (:centerx nil)
-      (:centery nil)
+      (:centerx (setf (sdl2:rect-x rect) (- value (midway x w))))
+      (:centery (setf (sdl2:rect-y rect) (- value (midway y h))))
+      (:topleft
+        (setf (rect-dim rect :left) (elt value 0)
+              (rect-dim rect :top) (elt value 1)))
+      (:bottomleft
+        (setf (rect-dim rect :left) (elt value 0)
+              (rect-dim rect :bottom) (elt value 1)))
+      (:topright
+        (setf (rect-dim rect :right) (elt value 0)
+              (rect-dim rect :top) (elt value 1)))
+      (:bottomright
+        (setf (rect-dim rect :right) (elt value 0)
+              (rect-dim rect :bottom) (elt value 1)))
+      (:midtop
+        (setf (rect-dim rect :centerx) (elt value 0)
+              (rect-dim rect :top) (elt value 1)))
+      (:midleft
+        (setf (rect-dim rect :left) (elt value 0)
+              (rect-dim rect :centery) (elt value 1)))
+      (:midbottom
+        (setf (rect-dim rect :centerx) (elt value 0)
+              (rect-dim rect :bottom) (elt value 1)))
+      (:midright
+        (setf (rect-dim rect :right) (elt value 0)
+              (rect-dim rect :centery) (elt value 1)))
+      (:center
+        (setf (rect-dim rect :centerx) (elt value 0)
+              (rect-dim rect :centery) (elt value 1)))
     )))
 
 @export
 (defun get-texture-rect (texture)
   (sdl2:make-rect 0 0 (sdl2:texture-width texture) (sdl2:texture-height texture)))
+
+@export
+(defun clamp (r1 r2)
+  "Clamps the x,y position of r1 so that it is within the dimensions of r2.
+   If r1 is bigger than r2, then it is adjusted to share the same center as r2."
+  (multiple-value-bind (x1 y1 w1 h1) (rect-dims r1)
+    (multiple-value-bind (x2 y2 w2 h2) (rect-dims r2)
+      ; handle x first
+      (cond
+        ((>= w1 w2) ; r1 too wide to fit inside, so center x around r2's center
+         (setf (rect-dim r1 :centerx) (rect-dim r2 :centerx)))
+        ((< x1 x2) ; r1's left edge is outside r2's left edge
+         (setf (rect-dim r1 :left) (rect-dim r2 :left)))
+        ((> (rect-dim r1 :right) (rect-dim r2 :right)) ; right edge is outside
+         (setf (rect-dim r1 :right) (rect-dim r2 :right))))
+      ; same thing for y
+      (cond
+        ((>= h1 h2)
+         (setf (rect-dim r1 :centery) (rect-dim r2 :centery)))
+        ((< y1 y2)
+         (setf (rect-dim r1 :top) (rect-dim r2 :top)))
+        ((> (rect-dim r1 :bottom) (rect-dim r2 :bottom))
+         (setf (rect-dim r1 :bottom) (rect-dim r2 :bottom))))
+      r1)))
 
 @export
 (defun collide-rect? (rect1 rect2)

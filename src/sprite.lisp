@@ -13,6 +13,17 @@
     "Render the Sprite image, or each sprite in a Group"))
 
 @export
+(defgeneric kill (sprite)
+  (:documentation
+    "Removes the Sprite from all groups it belongs to.
+     Note it does not free any resources like the sprite rect,
+     if you plan to manage sprites entirely with groups
+     and expect a kill to cleanup, you might want to create
+     an :after method for kill on your sprite to handle that,
+     or also inherit the 'cleaned-on-kill-mixin which defines
+     such a method for you."))
+
+@export
 (defgeneric cleanup (sprite-or-group)
   (:documentation
     "Frees the Sprite's rect, or those of each sprite in a Group.
@@ -40,6 +51,25 @@
   (:documentation
      "Given a group, remove any number of sprites that exist in the group."))
 
+@export
+(defgeneric empty? (group)
+  (:documentation
+    "True if a group contains sprites, nil otherwise."))
+
+@export
+(defgeneric sprite-collide (sprite group)
+  (:documentation
+    "Checks to see if the .rect of the sprite collides with any of the rects of the sprites within group.
+     Returns a list of such colliding sprites."))
+
+@export
+(defgeneric group-collide (group1 group2)
+  (:documentation
+    "Checks to see if any sprites within group1 collide with any sprites in group2 based on each sprite's .rect rect-colliding.
+     Returns a list of collisions in the form ((sprite-from-group1 . (collided-sprite-from-group2 ...))
+                                               (other-sprite-from-group1 . (collided-sprite-from-group2 ...))
+                                               ...)"))
+
 @export-class
 (defclass sprite ()
   ((image :accessor .image :type (or null sdl2-ffi:sdl-texture))
@@ -48,7 +78,8 @@
           :documentation "Angle in degrees applied to the rect when rendering, rotating it clockwise")
    (flip :accessor .flip :type bit ;sdl2-ffi:sdl-renderer-flip
          :initform sdl2-ffi:+sdl-flip-none+)
-   (groups :accessor .groups :type list :initform (list) :documentation "List of groups containing this sprite"))
+   (groups :accessor .groups :type list :initform (list) :documentation "List of groups containing this sprite")
+   (alive? :accessor .alive? :type boolean :initform T :documentation "Has this sprite been killed yet?"))
   (:documentation
     "A sprite object contains a reference to a texture, stored with the image attribute,
      and a rect attribute corresponding to the sprite's location and size.
@@ -57,11 +88,35 @@
      Additionally, a rotation angle and/or flip attribute can be given." ; should be a subclass?
     ))
 
+(defmethod print-object ((o sprite) stream)
+  (print-unreadable-object (o stream :type t :identity t)
+    (format stream "rect ~a groups-length ~a alive? ~a"
+            (.rect o) (length (.groups o)) (.alive? o))))
+
 (defmethod (setf .angle) :after
   (new-value (self sprite))
   "Automatically convert new angle values to double-float if needed"
   (unless (typep new-value 'double-float)
     (setf (slot-value self 'angle) (coerce new-value 'double-float))))
+
+@export-class
+(defclass cleaned-on-kill-mixin ()
+  ()
+  (:documentation
+    "A sprite class mixin that provides a default :after method on 'kill
+     which will automatically call the sprite's 'cleanup method, unless
+     that sprite is no longer '.alive?"))
+
+@export-class
+(defclass add-groups-mixin ()
+  ()
+  (:documentation
+    "A sprite class mixin that provides an extra :after constructor that
+     accepts a :groups argument and will apply 'add-groups to it,
+     adding the constructed sprite to the list of passed groups."))
+
+(defmethod initialize-instance :after ((self add-groups-mixin) &key groups)
+  (apply #'add-groups self groups))
 
 @export-class
 (defclass group ()
@@ -75,12 +130,32 @@
     Note also that none of the add/removes are implemented efficiently."
     ))
 
+(defmethod print-object ((o group) stream)
+  (print-unreadable-object (o stream :type t :identity t)
+    (format stream "sprites ~a" (.sprites o))))
+
 @export-class
 (defclass ordered-group (group)
   ((seen-map :initform (make-hash-table :test #'equal) :documentation "Collection of seen sprites to avoid duplicate entries"))
   (:documentation
     "A group container that retains the order of existing sprites as you add/remove them, so you can count on
      draws to happen in order that you added sprites."))
+
+@export-class
+(defclass group-single (group)
+  ((sprite :accessor .sprite :initarg :sprite :initform nil :type (or null sprite)))
+  (:documentation
+    "A group that can only contain a single sprite, or nothing.
+     When a new sprite is added, the old one is removed.
+     The single sprite is setf-able."))
+
+(defmethod (setf .sprite) :after (new-value (self group-single))
+  (add-sprites self new-value))
+
+(defmethod print-object ((o group-single) stream)
+  (print-unreadable-object (o stream :type t :identity t)
+    (format stream "sprite ~a" (.sprite o))))
+
 
 (defmethod update ((self sprite))
   "Default update for a sprite is a no-op"
@@ -94,8 +169,17 @@
   (sdl2::check-rc
     (sdl2-ffi.functions:sdl-render-copy-ex lgame:*renderer* (.image self) nil (.rect self) (.angle self) nil (.flip self))))
 
+(defmethod kill ((self sprite))
+  (setf (.alive? self) nil)
+  (apply #'remove-groups self (.groups self)))
+
+(defmethod kill :after ((self cleaned-on-kill-mixin))
+  (when (.alive? self)
+    (cleanup self)))
+
 (defmethod cleanup ((self sprite))
   (sdl2:free-rect (.rect self)))
+
 
 (defmethod add-groups ((self sprite) &rest groups)
   (dolist (group groups)
@@ -135,18 +219,42 @@
       (setf (gethash sprite (slot-value self 'seen-map)) T)
       (setf (.groups sprite) (union (.groups sprite) (list self))))))
 
-(defmethod remove-sprites ((self group) &rest sprites)
+(defmethod remove-sprites ((self ordered-group) &rest sprites)
   (dolist (sprite sprites)
     (setf (gethash sprite (slot-value self 'seen-map)) nil)
     (setf (.sprites self) (remove sprite (.sprites self) :test #'equal))
     (setf (.groups sprite) (set-difference (.groups sprite) (list self)))))
 
+(defmethod add-sprites ((self group-single) &rest sprites)
+  (let ((sprite (car (last sprites))))
+    (setf (slot-value self 'sprite) sprite)
+    (push self (.groups sprite))))
 
+(defmethod remove-sprites ((self group-single) &rest sprites)
+  (dolist (sprite sprites)
+    (when (equal sprite (.sprite self))
+      (setf (.groups sprite) (remove self (.groups sprite) :test #'equal))
+      (setf (slot-value self 'sprite) nil))))
 
+(defmethod empty? ((self group))
+  (zerop (length (.sprites self))))
 
+(defmethod empty? ((self group-single))
+  (null (.sprite self)))
 
+(defmethod sprite-collide ((sprite sprite) (group group))
+  (loop for group-sprite in (.sprites group)
+        when (lgame.rect:collide-rect? (.rect sprite) (.rect group-sprite))
+        collect group-sprite))
 
-
+(defmethod group-collide ((group1 group) (group2 group))
+  (let ((result (list)))
+    (loop for sprite1 in (.sprites group1) do
+          (alexandria:if-let ((collisions (loop for sprite2 in (.sprites group2)
+                                                when (lgame.rect:collide-rect? (.rect sprite1) (.rect sprite2))
+                                                collect sprite2)))
+            (push (cons sprite1 collisions) result)))
+    result))
 
 ;; example using https://opengameart.org/content/various-gem-stone-animations
 ;;(load-spritesheet (format nil "~a/sapphirespinning.png" +sprites-dir+)
