@@ -84,8 +84,8 @@ Differences:
   ; forbid moving outside the screen:
   (lgame.rect:clamp (.rect self) lgame:*screen-rect*)
   ; bouncing effect:
-  (setf (rect-dim (.rect self) :top) (- (.origtop self) (mod (truncate (/ (rect-dim (.rect self) :left)
-                                                                          (/bounce self)))
+  (setf (rect-dim (.rect self) :top) (- (.origtop self) (mod (truncate (rect-dim (.rect self) :left)
+                                                                       (/bounce self))
                                                              2))))
 
 (defmethod gunpos ((self player))
@@ -127,7 +127,7 @@ Differences:
             (rect-dim rect :top) (1+ (rect-dim rect :bottom)))
       (lgame.rect:clamp rect lgame:*screen-rect*))
     (incf frame) ; change frame image every animcycle frames
-    (setf image (elt (/image-frames self) (mod (truncate (/ frame (/animcycle self))) (length (/image-frames self)))))))
+    (setf image (elt (/image-frames self) (mod (truncate frame (/animcycle self)) (length (/image-frames self)))))))
 
 
 (defclass explosion (sprite cleaned-on-kill-mixin add-groups-mixin)
@@ -148,7 +148,7 @@ Differences:
 
 (defmethod update ((self explosion))
   (decf (.life self))
-  (if (zerop (mod (truncate (/ (.life self) (/animcycle self))) 2))
+  (if (zerop (mod (truncate (.life self) (/animcycle self)) 2))
       (setf (.flip self) lgame::+sdl-flip-none+)
       (setf (.flip self) lgame::+sdl-flip-horizontal+))
   (unless (plusp (.life self))
