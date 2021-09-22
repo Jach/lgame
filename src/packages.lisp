@@ -32,7 +32,8 @@
     "Provides functions to set up an initial display for the game.")
   (:export #:create-window
            #:create-renderer
-           #:set-logical-size))
+           #:set-logical-size
+           #:screenshot-png))
 
 (defpackage #:lgame.event
   (:use #:common-lisp #:annot.std)

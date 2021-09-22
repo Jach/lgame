@@ -6,12 +6,12 @@
 (defmacro with-rect ((rect x y w h) &body body)
   "Helper macro if one needs a stack rect"
   (let ((sz (autowrap:foreign-type-size (autowrap:find-type 'sdl2-ffi:sdl-rect))))
-  `(cffi:with-foreign-pointer (,rect ,sz)
-     (setf (sdl2:rect-x ,rect) ,x
-           (sdl2:rect-y ,rect) ,y
-           (sdl2:rect-width ,rect) ,w
-           (sdl2:rect-height ,rect) ,h)
-     ,@body)))
+    `(cffi:with-foreign-pointer (,rect ,sz)
+       (setf (sdl2:rect-x ,rect) ,x
+             (sdl2:rect-y ,rect) ,y
+             (sdl2:rect-width ,rect) ,w
+             (sdl2:rect-height ,rect) ,h)
+       ,@body)))
 
 @export
 (defmacro with-rect-from-rect ((rect from-rect) &body body)
@@ -19,7 +19,7 @@
   (let ((%from-rect (gensym)))
     `(let ((,%from-rect ,from-rect))
        (with-rect (,rect (sdl2:rect-x ,%from-rect) (sdl2:rect-y ,%from-rect) (sdl2:rect-width ,%from-rect) (sdl2:rect-height ,%from-rect))
-       ,@body))))
+         ,@body))))
 
 @export
 (defmacro with-inflated-rect ((inflated-rect from-rect width-change height-change) &body body)
