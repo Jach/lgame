@@ -79,3 +79,8 @@
     "Provides loader wrappers for various assets (currently just *texture-loader*) that may be easier
      than calling the underlying functions directly."))
 
+(defpackage #:lgame.pathfinding
+  (:use #:common-lisp #:annot.std #:annot.class)
+  (:documentation
+    "Provides a fairly generic A* algorithm protocol for grids with several customization knobs."))
+

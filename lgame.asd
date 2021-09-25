@@ -5,6 +5,7 @@
   :depends-on (#:cffi #:cl-autowrap #:sdl2 #:sdl2-image #:sdl2-mixer #:sdl2-ttf
                #:alexandria #:livesupport
                #:cl-annot
+               #:pileup
                )
   :components ((:module "src/"
                         :serial t
@@ -20,6 +21,8 @@
                                      (:file "sprite")
                                      (:file "font")
                                      (:file "texture-loader")
+
+                                     (:file "pathfinding")
 
                                      (:file "init")
                                      ))))
