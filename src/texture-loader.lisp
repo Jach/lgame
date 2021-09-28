@@ -35,11 +35,13 @@
   "Factory for a default lgame:*texture-loader*."
   (setf lgame.state:*texture-loader* (make-instance 'texture-loader :default-dir default-dir)))
 
-; note to self, should refactor functions and methods that expect one of the lgame.state dynamic vars
-; to instead not take them explicitly and just use the default lgame ones... overriding is possible
-; via dynamic binding anyway.
 @export
-(defmethod get-texture ((self texture-loader) key-or-name &key dir color-key)
+(defun get-texture (key-or-name &key dir color-key)
+  "Get a texture using the default *texture-loader*
+   Assumes the texture-loader has been previously created"
+  (get-texture-internal lgame.state:*texture-loader* key-or-name :dir dir :color-key color-key))
+
+(defmethod get-texture-internal ((self texture-loader) key-or-name &key dir color-key)
   "Load asset specified by, if given a keyword, converting it to a lowercase png file name inside dir,
    Otherwise expects a namestring of a file relative to the dir.
    If dir is not given, uses the default-dir of the texture loader.
