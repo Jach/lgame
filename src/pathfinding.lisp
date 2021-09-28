@@ -7,7 +7,7 @@
   ((size :accessor .size :initarg :size :type sequence :documentation "The size of the search grid, given as a (rows columns) pair")
    (start-pos :accessor .start-pos :initarg :start-pos :type sequence :documentation "A starting point, given as a (row column) pair")
    (end-pos :accessor .end-pos :initarg :end-pos :type sequence :documentation "The end or goal point, given as a (row column) pair")
-   (neighbor-fn :accessor .neighbor-fn :initarg :neighbor-fn :type function :documentation "A function taking (row column) pair and returning a list of neighbors with the associated numerical costs to move to the neighbor.")
+   (neighbor-fn :accessor .neighbor-fn :initarg :neighbor-fn :type function :documentation "A function taking (row column) pair and returning a list of neighbors with the associated numerical costs to move to the neighbor, i.e. (((neighbor1-row neighbor2-col) cost) ...).")
    (heuristic :accessor .heuristic :initarg :heuristic :initform :euclidean :type (member :euclidean) :documentation "Specify which supported distance heuristic to use")
    (heuristic-weight :accessor .heuristic-weight :initarg :heuristic-weight :initform 1.0 :type single-float :documentation "Specify a weight to apply to heuristic calculations. 1 is standard A*, 0 turns A* into djikstra, higher values turn it into a greedy search.")
 
@@ -81,7 +81,7 @@
     (sqrt (+ (* dist1 dist1) (* dist2 dist2)))))
 
 (defun calc-cost-and-push (self r c real-cost best-r best-c)
-  (let ((heuristic-cost (euclidean (first (.end-pos self)) (second (.end-pos self)) r c)))
+  (let ((heuristic-cost (euclidean (elt (.end-pos self) 0) (elt (.end-pos self) 1) r c)))
     (setf heuristic-cost (* heuristic-cost (.heuristic-weight self)))
     (let ((node (make-path-node :r r :c c :real-cost real-cost :total-cost (+ heuristic-cost real-cost) :parent-r best-r :parent-c best-c)))
       (pileup:heap-insert node (.open-list self))
@@ -102,27 +102,27 @@
     (loop until (pileup:heap-empty-p (.open-list self)) do
           (pileup:heap-pop (.open-list self)))
     ; make sure visited-list is set to nil, parent-list structures are clear
-    (loop for row below (first (.size self)) do
-          (loop for col below (second (.size self)) do
+    (loop for row below (elt (.size self) 0) do
+          (loop for col below (elt (.size self) 1) do
                 (setf (aref (.visited-list self) row col) nil)
                 (setf (aref (.parent-list self) row col) (make-parent-track :real-cost most-positive-single-float))
                 ))
     ; put the starting node location on top of the open-list
-    (calc-cost-and-push self (first (.start-pos self)) (second (.start-pos self)) 0.0 (first (.start-pos self)) (second (.start-pos self))))
+    (calc-cost-and-push self (elt (.start-pos self) 0) (elt (.start-pos self) 1) 0.0 (elt (.start-pos self) 0) (elt (.start-pos self) 1)))
 
   (loop until (pileup:heap-empty-p (.open-list self)) do
         (let ((best-node (pileup:heap-pop (.open-list self))))
 
-          (when (and (= (path-node-r best-node) (first (.end-pos self)))
-                     (= (path-node-c best-node) (second (.end-pos self)))) ; goal!
+          (when (and (= (path-node-r best-node) (elt (.end-pos self) 0))
+                     (= (path-node-c best-node) (elt (.end-pos self) 1))) ; goal!
             ; construct the waypoint list
             (setf (.waypoint-list self) (list))
             (push (.end-pos self) (.waypoint-list self))
             ; walk the parent list backwards until we hit the start/cur pos
             ; original also has parent2, sets parent2 to the next one, breaks loop if parent and parent2 are equal. Needed?
-            (let ((parent (aref (.parent-list self) (first (.end-pos self)) (second (.end-pos self)))))
-              (loop until (and (= (first (.start-pos self)) (parent-track-r parent))
-                               (= (second (.start-pos self)) (parent-track-c parent))) do
+            (let ((parent (aref (.parent-list self) (elt (.end-pos self) 0) (elt (.end-pos self) 1))))
+              (loop until (and (= (elt (.start-pos self) 0) (parent-track-r parent))
+                               (= (elt (.start-pos self) 1) (parent-track-c parent))) do
                     (push (list (parent-track-r parent) (parent-track-c parent)) (.waypoint-list self))
                     (setf parent (aref (.parent-list self) (parent-track-r parent) (parent-track-c parent)))))
             ; push current loc on again for the final (needed?)
@@ -147,19 +147,21 @@
           ; original has ISWALL which queries terrain for is-a-wall, but yeah, really just want get-neighbors on terrrain
           ; original also uses fancy bitwise algo to do it, not gonna do that here
 
-          (let ((neighbors (funcall (.neighbor-fn self) (list (path-node-r best-node) (path-node-c best-node))))
-                ;; all neighbors have a base cost of 1, neighbor fn should return cost with neighbor
+          (let ((neighbors-with-cost (funcall (.neighbor-fn self) (list (path-node-r best-node) (path-node-c best-node))))
                 ; if analysis, can also query terrain for 'influence' value of the best node, times 20 for some reason, which can be added to the cost
-                (cost-adj (+ (path-node-real-cost best-node) 1))) ; + influence, and if diag, use sqrt2 instead of 1
-            (dolist (neighbor neighbors)
-              (when (and (not (aref (.visited-list self) (first neighbor) (second neighbor)))
-                         (< cost-adj (parent-track-real-cost (aref (.parent-list self) (first neighbor) (second neighbor)))))
-                (calc-cost-and-push self (first neighbor) (second neighbor) cost-adj (path-node-r best-node) (path-node-c best-node))))))
+                (initial-cost (path-node-real-cost best-node)))
+            (dolist (neighbor-cost neighbors-with-cost)
+              (let* ((neighbor (elt neighbor-cost 0))
+                     (cost (elt neighbor-cost 1))
+                     (cost-adj (+ initial-cost cost)) ; + influence if analysis..
+                     (neighbor-row (elt neighbor 0))
+                     (neighbor-col (elt neighbor 1)))
+                (when (and (not (aref (.visited-list self) neighbor-row neighbor-col))
+                           (< cost-adj (parent-track-real-cost (aref (.parent-list self) neighbor-row neighbor-col))))
+                  (calc-cost-and-push self neighbor-row neighbor-col cost-adj (path-node-r best-node) (path-node-c best-node)))))))
 
         (unless single-step? ; we'll be called again later
           (return-from compute-path nil)))
   ; we reached the end of the loop without finding a path or returning early,
   ; flag the search as failed
   (values nil nil))
-
-

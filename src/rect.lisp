@@ -4,13 +4,13 @@
 
 @export
 (defmacro with-rect ((rect x y w h) &body body)
-  "Helper macro if one needs a stack rect"
+  "Helper macro if one needs a stack rect, with auto-truncated values"
   (let ((sz (autowrap:foreign-type-size (autowrap:find-type 'sdl2-ffi:sdl-rect))))
     `(cffi:with-foreign-pointer (,rect ,sz)
-       (setf (sdl2:rect-x ,rect) ,x
-             (sdl2:rect-y ,rect) ,y
-             (sdl2:rect-width ,rect) ,w
-             (sdl2:rect-height ,rect) ,h)
+       (setf (sdl2:rect-x ,rect) (truncate ,x)
+             (sdl2:rect-y ,rect) (truncate ,y)
+             (sdl2:rect-width ,rect) (truncate ,w)
+             (sdl2:rect-height ,rect) (truncate ,h))
        ,@body)))
 
 @export
