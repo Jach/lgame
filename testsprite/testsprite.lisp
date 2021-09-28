@@ -33,7 +33,7 @@ However, it took Lisp about 1 minute and 20 seconds to load up the sprites,
   ((vel :accessor .vel :initform (list (rand[] -1 1) (rand[] -1 1)))))
 
 (defmethod initialize-instance :after ((self thingy) &key)
-  (setf (lgame.sprite:.image self) (lgame.loader:get-texture lgame:*texture-loader* "asprite.bmp" :color-key '(255 255 255))
+  (setf (lgame.sprite:.image self) (lgame.loader:get-texture "asprite.bmp" :color-key '(255 255 255))
         (lgame.sprite:.rect self) (lgame.rect:get-texture-rect (lgame.sprite:.image self)))
   (lgame.rect:move-rect (lgame.sprite:.rect self) (rand[] 0 (first +screen-size+)) (rand[] 0 (second +screen-size+))))
 

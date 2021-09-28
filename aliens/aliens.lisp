@@ -65,7 +65,7 @@ Differences:
    (origtop :accessor .origtop)))
 
 (defmethod initialize-instance :after ((self player) &key)
-  (setf (.image self) (lgame.loader:get-texture lgame:*texture-loader* "player1.png")
+  (setf (.image self) (lgame.loader:get-texture "player1.png")
         (.rect self) (lgame.rect:get-texture-rect (.image self))
         (rect-dim (.rect self) :midbottom) (rect-dim lgame:*screen-rect* :midbottom)
 
@@ -109,9 +109,9 @@ Differences:
 
 (defmethod initialize-instance :after ((self alien) &key)
   (unless (/image-frames self)
-    (setf (/image-frames self) (list (lgame.loader:get-texture lgame:*texture-loader* "alien1.png")
-                                     (lgame.loader:get-texture lgame:*texture-loader* "alien2.png")
-                                     (lgame.loader:get-texture lgame:*texture-loader* "alien3.png"))))
+    (setf (/image-frames self) (list (lgame.loader:get-texture "alien1.png")
+                                     (lgame.loader:get-texture "alien2.png")
+                                     (lgame.loader:get-texture "alien3.png"))))
   (setf (.image self) (first (/image-frames self))
         (.rect self) (lgame.rect:get-texture-rect (.image self))
         (.facing self) (* (/speed self) (random-choice '(-1 1)))
@@ -140,7 +140,7 @@ Differences:
                    a flipped image/not every 3 frames."))
 
 (defmethod initialize-instance :after ((self explosion) &key actor)
-  (setf (.image self) (lgame.loader:get-texture lgame:*texture-loader* "explosion1.png")
+  (setf (.image self) (lgame.loader:get-texture "explosion1.png")
         (.rect self) (lgame.rect:get-texture-rect (.image self))
         (.life self) (/lifetime self))
   (if actor
@@ -159,7 +159,7 @@ Differences:
   ((speed :accessor /speed :allocation :class :initform -11)))
 
 (defmethod initialize-instance :after ((self shot) &key pos)
-  (setf (.image self) (lgame.loader:get-texture lgame:*texture-loader* "shot.png")
+  (setf (.image self) (lgame.loader:get-texture "shot.png")
         (.rect self) (lgame.rect:get-texture-rect (.image self))
         (rect-dim (.rect self) :midbottom) pos))
 
@@ -173,7 +173,7 @@ Differences:
   ((speed :accessor /speed :allocation :class :initform 9)))
 
 (defmethod initialize-instance :after ((self bomb) &key alien)
-  (setf (.image self) (lgame.loader:get-texture lgame:*texture-loader* "bomb.png")
+  (setf (.image self) (lgame.loader:get-texture "bomb.png")
         (.rect self) (lgame.rect:get-texture-rect (.image self)))
   (lgame.rect:with-moved-rect (moved (.rect alien) 0 5)
     (setf (rect-dim (.rect self) :midbottom) (rect-dim moved :midbottom))))
@@ -218,7 +218,7 @@ Differences:
   (sdl2:pump-events)
   (lgame::sdl-raise-window lgame:*screen*)
 
-  (let ((bg-tile (lgame.loader:get-texture lgame:*texture-loader* "background.png")))
+  (let ((bg-tile (lgame.loader:get-texture "background.png")))
     (setf background (sdl2:create-texture lgame:*renderer* lgame::+sdl-pixelformat-rgba8888+ lgame::+sdl-textureaccess-target+
                                           (first +screen-size+) (second +screen-size+)))
     (sdl2:set-render-target lgame:*renderer* background)
