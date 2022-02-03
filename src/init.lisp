@@ -20,7 +20,7 @@
 
     (unless (zerop
               (lgame::sdl-init lgame::+sdl-init-everything+))
-      (error "Could not initialize SDL"))
+      (error (format nil "Could not initialize SDL: ~a" (sdl2-ffi.functions:sdl-get-error))))
 
     (sdl2-image:init '(:png :jpg))
     (sdl2-mixer:init :mp3); :wave)

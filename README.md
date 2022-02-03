@@ -23,6 +23,9 @@ you haven't done so already:
 * SDL2-mixer
 * SDL2-ttf
 
+The libraries should be "fully loaded", i.e. if you're on gentoo, you'll need to
+make sure libsdl2 includes things like haptic support.
+
 # Library Philosophy
 
 The goal of lgame is not to duplicate pygame's API entirely, or even to wrap
