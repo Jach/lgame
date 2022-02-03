@@ -39,6 +39,15 @@
 
 @export
 (defun render-text (font text r g b &optional (a 255))
+  ; todo, add support for an optional cached? parameter.
+  ; when t, and *texture-loader* has been created,
+  ; the (font+text) key is used to cache the created texture.
+  ; This way, a game can naively call render-text every frame
+  ; and live-change it without having to worry about unloading
+  ; the former texture/storing it outside the draw call.
+  ; Can also consider a draw-text that also takes a top-left
+  ; coordinate and directly calls the render-copy function.
+  ; Maybe just do that and have implicit caching there.
   (sdl2-ttf:render-text-solid font text r g b a)
   (let* ((surface (no-finalized-render-text-solid font text r g b a))
          (texture (sdl2:create-texture-from-surface lgame:*renderer* surface)))
@@ -48,3 +57,4 @@
 @export
 (defun get-default-font ()
   (asdf:system-relative-pathname :lgame "assets/open-sans/OpenSans-Regular.ttf"))
+

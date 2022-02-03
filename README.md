@@ -4,6 +4,25 @@ lgame is a [pygame](https://www.pygame.org/news)-inspired library for making
 simple games in Common Lisp using
 [cl-sdl2](https://github.com/lispgames/cl-sdl2).
 
+This is very pre-alpha quality and as such I don't really recommend it to others
+yet except perhaps along with
+[lgame-examples](https://github.com/Jach/lgame-examples) as a reference. This is
+why I haven't even asked for it to be included into quicklisp yet, but that may
+change in the future.
+
+# Usage
+
+Because this isn't in quicklisp, you should first clone it to
+~/quicklisp/local-projects/ or put a symlink there so that your local quicklisp
+and ASDF can find it. Try to quickload it and verify all its dependencies are
+loaded. In particular, you'll need to first install some libraries to your OS if
+you haven't done so already:
+
+* SDL2
+* SDL2-image
+* SDL2-mixer
+* SDL2-ttf
+
 # Library Philosophy
 
 The goal of lgame is not to duplicate pygame's API entirely, or even to wrap
