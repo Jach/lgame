@@ -27,7 +27,6 @@ original to accomplish that.
 (defparameter *main-dir* (directory-namestring *load-truename*))
 (defparameter *running?* t)
 
-(push (merge-pathnames "../lgame/" (uiop:getcwd)) asdf:*central-registry*)
 (ql:quickload :lgame)
 (ql:quickload :livesupport)
 
@@ -132,7 +131,6 @@ original to accomplish that.
       (lgame.sprite:cleanup allsprites)
       (sdl2:free-rect banner-txt-rect)
       (sdl2:destroy-texture banner-txt)
-      (lgame.font:unload-fonts)
       (sdl2-mixer:free-chunk whiff-sound)
       (sdl2-mixer:free-chunk punch-sound)
       (lgame:quit))))

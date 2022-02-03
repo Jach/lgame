@@ -10,7 +10,6 @@ After loading this up, you can try following along with http://3bb.cc/tutorials/
 Code to draw a colorful triangle is commented out before the window swap.
 |#
 
-(push (merge-pathnames "../lgame/" (uiop:getcwd)) asdf:*central-registry*)
 (ql:quickload :lgame)
 (ql:quickload :livesupport)
 (ql:quickload :cl-opengl)

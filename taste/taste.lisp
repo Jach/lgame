@@ -7,7 +7,6 @@
 (in-package #:taste)
 
 ; import pygame
-(push (merge-pathnames "../lgame/" (uiop:getcwd)) asdf:*central-registry*)
 (ql:quickload :lgame)
 
 ; pygame.init()

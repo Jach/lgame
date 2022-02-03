@@ -19,7 +19,6 @@ it on your own streaming/target texture and render that texture every frame.
 (defparameter *main-name* *load-truename*)
 (defparameter *running?* t)
 
-(push (merge-pathnames "../lgame/" (uiop:getcwd)) asdf:*central-registry*)
 (ql:quickload :lgame)
 
 (defclass game-object ()

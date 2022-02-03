@@ -14,7 +14,6 @@ However, it took Lisp about 1 minute and 20 seconds to load up the sprites,
 |#
 
 
-(push (merge-pathnames "../lgame/" (uiop:getcwd)) asdf:*central-registry*)
 (ql:quickload :lgame)
 
 (defpackage #:testsprite

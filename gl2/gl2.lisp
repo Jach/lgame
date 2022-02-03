@@ -6,7 +6,6 @@ You probably will want to check out https://github.com/3b/cl-opengl/blob/master/
 for a saner way of dealing with the vertex and index arrays.
 |#
 
-(push (merge-pathnames "../lgame/" (uiop:getcwd)) asdf:*central-registry*)
 (ql:quickload :lgame)
 (ql:quickload :livesupport)
 (ql:quickload :cl-opengl)

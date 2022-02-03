@@ -23,7 +23,6 @@ Differences:
 
 |#
 
-(push (merge-pathnames "../lgame/" (uiop:getcwd)) asdf:*central-registry*)
 (ql:quickload :lgame)
 
 (defpackage #:aliens
@@ -355,6 +354,7 @@ Differences:
     (make-instance 'explosion :groups (getf group-lists :for-explosion) :actor bomb)
     (kill bomb)
     (kill player)
+    (format t "You died~%")
     (setf *running?* nil)))
 
 (eval-when (:execute)

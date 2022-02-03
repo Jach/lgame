@@ -21,7 +21,6 @@ done by default in restart-game.
 
 |#
 
-(push (merge-pathnames "../lgame/" (uiop:getcwd)) asdf:*central-registry*)
 (ql:quickload :lgame)
 (ql:quickload :livesupport)
 (ql:quickload :alexandria)

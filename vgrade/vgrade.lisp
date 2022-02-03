@@ -55,7 +55,6 @@ a bit better, but still clearly not a great idea.
 (defparameter *main-dir* (directory-namestring *load-truename*))
 (defparameter *running?* t)
 
-(push (merge-pathnames "../lgame/" (uiop:getcwd)) asdf:*central-registry*)
 (ql:quickload :lgame)
 (ql:quickload :livesupport)
 

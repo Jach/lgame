@@ -28,7 +28,6 @@ the data should still be within the texture.
 (defparameter *main-dir* (directory-namestring *load-truename*))
 (defparameter *running?* t)
 
-(push (merge-pathnames "../lgame/" (uiop:getcwd)) asdf:*central-registry*)
 (ql:quickload :lgame)
 (ql:quickload :cmu-infix)
 (named-readtables:in-readtable cmu-infix:syntax)
