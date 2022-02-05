@@ -4,24 +4,24 @@
 
 @export
 (defmacro with-event ((event) &body body)
-  "Helper macro to force sdl event allocation on the stack.
-   Verify with macroexpand this
+  "Helper macro to enable sdl event allocation on the stack.
+   Verify with macroexpand this:
 
 (with-event (event)
   (print event))
 
-  against
+  against:
 
 (sdl2:with-sdl-event (event)
-  (print even))
+  (print event))
 
-  or even
+  or even:
 
-(plus-c:c-let ((event sdl-event :free t))
+(plus-c:c-let ((event sdl2-ffi:sdl-event :free t))
   (print event))
 "
-  (let ((sz (autowrap:foreign-type-size (autowrap:find-type 'sdl2-ffi:sdl-event))))
-    `(cffi:with-foreign-pointer (,event  ,sz)
+  (let ((size (autowrap:foreign-type-size (autowrap:find-type 'sdl2-ffi:sdl-event))))
+    `(cffi:with-foreign-pointer (,event  ,size)
        ,@body)))
 
 @export
@@ -43,7 +43,8 @@
 
 @export
 (defun key-scancode (event)
-  (plus-c:c-ref event sdl2-ffi:sdl-event :key :keysym :scancode))
+  ;(plus-c:c-ref event sdl2-ffi:sdl-event :key :keysym :scancode))
+  (ref event :key :keysym :scancode))
 
 @export
 (defun key-pressed? (&key key any all)
