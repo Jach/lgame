@@ -57,7 +57,7 @@
         texture
         (progn ; something invalidated it, force a reload
           (setf (gethash key-or-name (.textures self)) nil)
-          (get-texture self key-or-name :dir dir :color-key color-key)))
+          (get-texture-internal self key-or-name :dir dir :color-key color-key)))
 
     (let* ((filename (format nil "~a/~a" dir (if (keywordp key-or-name)
                                                  (uiop:strcat (string-downcase key-or-name) ".png")

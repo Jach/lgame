@@ -12,7 +12,7 @@
 (defun create-renderer (&optional (window lgame.state:*screen*) (index -1) (flags 0))
   "Wrapper around sdl-create-renderer, binds to lgame:*renderer* and returns it.
    Default values are lgame:*screen*, default monitor, and no special flags."
-  (setf lgame.state:*renderer* (lgame::sdl-create-renderer window -1 0))
+  (setf lgame.state:*renderer* (lgame::sdl-create-renderer window index flags))
   (if (lgame::null-ptr? lgame.state:*renderer*)
       (error 'sdl-error :msg (lgame::sdl-get-error)))
   lgame.state:*renderer*)
