@@ -273,7 +273,7 @@ Differences:
           (and (= (lgame.event:event-type event) lgame::+sdl-keydown+)
                (= (lgame.event:key-scancode event) lgame::+sdl-scancode-escape+)))
         (setf *running?* nil))
-    (if (and (= (lgame.event:event-type event) lgame::+sdl-keydown+)
+    (if (and (= (lgame.event:event-type event) lgame::+sdl-keyup+)
              (= (lgame.event:key-scancode event) lgame::+sdl-scancode-f+))
         (if *full-screen*
             (progn (lgame::sdl-set-window-fullscreen lgame:*screen* 0) (setf *full-screen* nil))

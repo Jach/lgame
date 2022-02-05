@@ -1,8 +1,8 @@
 #|
 Simple example of using SDL2 with OpenGL.
 The key differences are:
-1) In init, after creating a window (lgame:*screen*) and renderer (lgame:*renderer*),
-  initialize a GL context.
+1) In init, after creating a window lgame:*screen* and renderer lgame:*renderer*,
+initialize a GL context.
   1a) Bind sdl-gl-get-proc-address to cl-opengl-bindings:*gl-get-proc-address* so that cl-opengl can find opengl extensions
 2) In game-tick, use gl: functions to clear the screen etc. and gl-swap-window instead of render-present.
 
@@ -43,14 +43,15 @@ Code to draw a colorful triangle is commented out before the window swap.
   (lgame.event:do-event (event)
     (if (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+))
         (setf *running?* nil)))
-  ; instead of:
+  ; for old fashioned gl, instead of:
   ;(sdl2:set-render-draw-color lgame:*renderer* 255 0 255 255)
   ;(sdl2:render-clear lgame:*renderer*)
   ;(sdl2:render-present lgame:*renderer*)
+  ; do:
   (gl:clear-color 1.0 0 1 1)
   (gl:clear :color-buffer-bit)
 
-  #|
+  ; and a triangle..
   (gl:with-primitive :triangles
     (gl:color 1 0 0)
     (gl:vertex -1 -1 0)
@@ -59,7 +60,6 @@ Code to draw a colorful triangle is commented out before the window swap.
     (gl:color 0 0 1)
     (gl:vertex 1 -1 0))
   (gl:flush)
-  |#
   (sdl2:gl-swap-window lgame:*screen*)
 
   (livesupport:update-repl-link)
