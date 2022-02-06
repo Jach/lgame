@@ -49,7 +49,7 @@ Differences:
 (defparameter +alien-odds+ 32) ; odds new alien appears
 (defparameter +bomb-odds+ 60) ; odds new bomb will drop from alien
 (defparameter +alien-reload+ 12) ; min frames between new aliens
-(defparameter *current-alien-reload* 12)
+(defparameter *current-alien-reload* 12) ; how many frames left until there's a chance of the next alien
 
 (defparameter +screen-size+ '(640 480))
 (defparameter *full-screen* nil)
@@ -83,9 +83,10 @@ Differences:
   ; forbid moving outside the screen:
   (lgame.rect:clamp (.rect self) lgame:*screen-rect*)
   ; bouncing effect:
-  (setf (rect-dim (.rect self) :top) (- (.origtop self) (mod (truncate (rect-dim (.rect self) :left)
-                                                                       (/bounce self))
-                                                             2))))
+  (setf (rect-dim (.rect self) :top) (- (.origtop self)
+                                        (mod (truncate (rect-dim (.rect self) :left)
+                                                       (/bounce self))
+                                             2))))
 
 (defmethod gunpos ((self player))
   (list (+ (if (eql (.flip self) lgame::+sdl-flip-none+)
