@@ -84,3 +84,7 @@
   (:documentation
     "Provides a fairly generic A* algorithm protocol for grids with several customization knobs."))
 
+(defpackage #:lgame.util
+  (:use #:common-lisp #:annot.std)
+  (:documentation
+    "Utility functions that don't fit in other packages, like printing out license information."))
