@@ -4,7 +4,7 @@
   (:use #:common-lisp)
   (:documentation
     "This package is to manage state shared among the various lgame modules and a game.
-     Lgame is currently designed to only handle one game at a time, so there is typically
+     lgame is currently designed to only handle one game at a time, so there is typically
      just one window/screen, one renderer, one resource manager for each resource type...")
   (:export #:*screen*
            #:*screen-rect*
@@ -16,7 +16,7 @@
   (:use #:common-lisp #:sdl2-ffi.functions #:sdl2-ffi #:annot.std #:annot.class
         #:lgame.state)
   (:documentation
-    "Lgame is composed of several packages of the form lgame.foo, where foo generally corresponds
+    "lgame is composed of several packages of the form lgame.foo, where foo generally corresponds
      to a filename. The top-level lgame package itself is for re-exporting lgame.state,
      and to :use but not export all symbols in sdl2-ffi.functions and sdl2-ffi.")
   (:export #:init

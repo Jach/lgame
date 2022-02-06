@@ -24,6 +24,7 @@
 @export
 (defmacro with-inflated-rect ((inflated-rect from-rect width-change height-change) &body body)
   "Helper to inflate/deflate a from-rect"
+  ; TODO: fix this to shrink around the center instead of just adjusting w/h
   `(with-rect-from-rect (,inflated-rect ,from-rect)
      (incf (sdl2:rect-width ,inflated-rect) ,width-change)
      (incf (sdl2:rect-height ,inflated-rect) ,height-change)

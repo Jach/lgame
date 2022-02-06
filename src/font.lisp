@@ -48,7 +48,8 @@
   ; Can also consider a draw-text that also takes a top-left
   ; coordinate and directly calls the render-copy function.
   ; Maybe just do that and have implicit caching there.
-  (sdl2-ttf:render-text-solid font text r g b a)
+
+  ;(sdl2-ttf:render-text-solid font text r g b a)
   (let* ((surface (no-finalized-render-text-solid font text r g b a))
          (texture (sdl2:create-texture-from-surface lgame:*renderer* surface)))
     (sdl2:free-surface surface)
