@@ -466,8 +466,7 @@ useful things like checking for collisions or scaling. There's also a handy
 `rect-dim` function to query or set things about the rect without having to
 touch the underlying x,y,w,h fields for everything. e.g.:
 
-TODO rename this function from rect-dim to rect-coord,
-and rename rect-dims to rect-fields.
+TODO rename this function from rect-dim to rect-coord
 
 ```lisp
 (lgame.rect:with-rect (r 0 0 5 5)

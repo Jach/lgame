@@ -75,7 +75,7 @@
   (when h (setf (sdl2:rect-height rect) h)))
 
 @export
-(defun rect-dims (rect)
+(defun rect-fields (rect)
   (values
     (sdl2:rect-x rect)
     (sdl2:rect-y rect)
@@ -102,7 +102,7 @@
    defined by the rect-dim type. If a name gives
    both an x and a y part, a list of (x y) will be returned."
   (declare (type rect-dim dim))
-  (multiple-value-bind (x y w h) (rect-dims rect)
+  (multiple-value-bind (x y w h) (rect-fields rect)
     (ecase dim
       (:top y)
       (:left x)
@@ -128,7 +128,7 @@
    When both an x and a y can be specified, as in :topleft, a sequence of
    two integers in x,y order is expected."
   (declare (type rect-dim dim))
-  (multiple-value-bind (x y w h) (rect-dims rect)
+  (multiple-value-bind (x y w h) (rect-fields rect)
     (ecase dim
       (:top (setf (sdl2:rect-y rect) value))
       (:left (setf (sdl2:rect-x rect) value))
@@ -173,8 +173,8 @@
 (defun clamp (r1 r2)
   "Clamps the x,y position of r1 so that it is within the dimensions of r2.
    If r1 is bigger than r2, then it is adjusted to share the same center as r2."
-  (multiple-value-bind (x1 y1 w1 h1) (rect-dims r1)
-    (multiple-value-bind (x2 y2 w2 h2) (rect-dims r2)
+  (multiple-value-bind (x1 y1 w1 h1) (rect-fields r1)
+    (multiple-value-bind (x2 y2 w2 h2) (rect-fields r2)
       ; handle x first
       (cond
         ((>= w1 w2) ; r1 too wide to fit inside, so center x around r2's center
@@ -195,8 +195,8 @@
 
 @export
 (defun collide-rect? (rect1 rect2)
-  (multiple-value-bind (x1 y1 w1 h1) (rect-dims rect1)
-    (multiple-value-bind (x2 y2 w2 h2) (rect-dims rect2)
+  (multiple-value-bind (x1 y1 w1 h1) (rect-fields rect1)
+    (multiple-value-bind (x2 y2 w2 h2) (rect-fields rect2)
       (and
         (or (and (>= x1 x2) (< x1 (+ x2 w2)))
             (and (>= x2 x1) (< x2 (+ x1 w1)))) ; r1 left edge inside r2, or r2 left edge inside r1
@@ -211,8 +211,8 @@
 (defun contains? (rect1 rect2)
   "Does rect1 completely contain rect2?
    If the rects share edges, that counts as containing."
-  (multiple-value-bind (x1 y1 w1 h1) (rect-dims rect1)
-    (multiple-value-bind (x2 y2 w2 h2) (rect-dims rect2)
+  (multiple-value-bind (x1 y1 w1 h1) (rect-fields rect1)
+    (multiple-value-bind (x2 y2 w2 h2) (rect-fields rect2)
       (and
         (<= x1 x2) (> (+ x1 w1) x2) (>= (+ x1 w1) (+ x2 w2))
         (<= y1 y2) (> (+ y1 h1) y2) (>= (+ y1 h1) (+ y2 h2))))))
