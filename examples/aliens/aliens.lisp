@@ -39,7 +39,7 @@ Differences:
                 #:draw
                 #:kill)
   (:import-from #:lgame.rect
-                #:rect-dim))
+                #:rect-coord))
 (in-package #:aliens)
 
 (defparameter *main-dir* (directory-namestring *load-truename*))
@@ -66,9 +66,9 @@ Differences:
 (defmethod initialize-instance :after ((self player) &key)
   (setf (.image self) (lgame.loader:get-texture "player1.png")
         (.rect self) (lgame.rect:get-texture-rect (.image self))
-        (rect-dim (.rect self) :midbottom) (rect-dim lgame:*screen-rect* :midbottom)
+        (rect-coord (.rect self) :midbottom) (rect-coord lgame:*screen-rect* :midbottom)
 
-        (.origtop self) (rect-dim (.rect self) :top)))
+        (.origtop self) (rect-coord (.rect self) :top)))
 
 (defmethod move ((self player) direction)
   (declare (type (member :left :right) direction))
@@ -83,8 +83,8 @@ Differences:
   ; forbid moving outside the screen:
   (lgame.rect:clamp (.rect self) lgame:*screen-rect*)
   ; bouncing effect:
-  (setf (rect-dim (.rect self) :top) (- (.origtop self)
-                                        (mod (truncate (rect-dim (.rect self) :left)
+  (setf (rect-coord (.rect self) :top) (- (.origtop self)
+                                        (mod (truncate (rect-coord (.rect self) :left)
                                                        (/bounce self))
                                              2))))
 
@@ -92,8 +92,8 @@ Differences:
   (list (+ (if (eql (.flip self) lgame::+sdl-flip-none+)
                (- (/gun-offset self))
                (/gun-offset self))
-           (rect-dim (.rect self) :centerx))
-        (rect-dim (.rect self) :top)))
+           (rect-coord (.rect self) :centerx))
+        (rect-coord (.rect self) :top)))
 
 
 (defclass alien (sprite add-groups-mixin)
@@ -117,14 +117,14 @@ Differences:
         (.facing self) (* (/speed self) (random-choice '(-1 1)))
         (.frame self) 0)
   (when (minusp (.facing self))
-    (setf (rect-dim (.rect self) :right) (rect-dim lgame:*screen-rect* :right))))
+    (setf (rect-coord (.rect self) :right) (rect-coord lgame:*screen-rect* :right))))
 
 (defmethod update ((self alien))
   (with-accessors ((rect .rect) (facing .facing) (frame .frame) (image .image)) self
     (lgame.rect:move-rect rect (.facing self) 0)
     (unless (lgame.rect:contains? lgame:*screen-rect* rect) ; alien reached the edge of screen
       (setf facing (- facing)
-            (rect-dim rect :top) (1+ (rect-dim rect :bottom)))
+            (rect-coord rect :top) (1+ (rect-coord rect :bottom)))
       (lgame.rect:clamp rect lgame:*screen-rect*))
     (incf frame) ; change frame image every animcycle frames
     (setf image (elt (/image-frames self) (mod (truncate frame (/animcycle self)) (length (/image-frames self)))))))
@@ -144,7 +144,7 @@ Differences:
         (.rect self) (lgame.rect:get-texture-rect (.image self))
         (.life self) (/lifetime self))
   (if actor
-  (setf (rect-dim (.rect self) :center) (rect-dim (.rect actor) :center))))
+  (setf (rect-coord (.rect self) :center) (rect-coord (.rect actor) :center))))
 
 (defmethod update ((self explosion))
   (decf (.life self))
@@ -161,11 +161,11 @@ Differences:
 (defmethod initialize-instance :after ((self shot) &key pos)
   (setf (.image self) (lgame.loader:get-texture "shot.png")
         (.rect self) (lgame.rect:get-texture-rect (.image self))
-        (rect-dim (.rect self) :midbottom) pos))
+        (rect-coord (.rect self) :midbottom) pos))
 
 (defmethod update ((self shot))
   (lgame.rect:move-rect (.rect self) 0 (/speed self))
-  (unless (plusp (rect-dim (.rect self) :top))
+  (unless (plusp (rect-coord (.rect self) :top))
     (kill self)))
 
 
@@ -176,11 +176,11 @@ Differences:
   (setf (.image self) (lgame.loader:get-texture "bomb.png")
         (.rect self) (lgame.rect:get-texture-rect (.image self)))
   (lgame.rect:with-moved-rect (moved (.rect alien) 0 5)
-    (setf (rect-dim (.rect self) :midbottom) (rect-dim moved :midbottom))))
+    (setf (rect-coord (.rect self) :midbottom) (rect-coord moved :midbottom))))
 
 (defmethod update ((self bomb))
   (lgame.rect:move-rect (.rect self) 0 (/speed self))
-  (when (>= (rect-dim (.rect self) :bottom) (- (rect-dim lgame:*screen-rect* :bottom) 10))
+  (when (>= (rect-coord (.rect self) :bottom) (- (rect-coord lgame:*screen-rect* :bottom) 10))
     (make-instance 'explosion :actor self :groups (lgame.sprite:.groups self))
     (kill self)))
 
@@ -193,7 +193,7 @@ Differences:
   (setf (.image self) nil)
   (update self)
   (setf (.rect self) (lgame.rect:get-texture-rect (.image self)))
-  (lgame.rect:move-rect (.rect self) 10 (- (rect-dim lgame:*screen-rect* :bottom) 30)))
+  (lgame.rect:move-rect (.rect self) 10 (- (rect-coord lgame:*screen-rect* :bottom) 30)))
 
 (defmethod update ((self score))
   (when (/= (.score self) (.last-score self))

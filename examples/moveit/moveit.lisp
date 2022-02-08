@@ -32,7 +32,7 @@ it on your own streaming/target texture and render that texture every frame.
 
 (defmethod move ((self game-object))
   (lgame.rect:move-rect (.pos self) (.speed self) 0)
-  (when (> (lgame.rect:rect-dim (.pos self) :right) 600)
+  (when (> (lgame.rect:rect-coord (.pos self) :right) 600)
     (lgame.rect:set-rect (.pos self) :x 0)))
 
 (defun load-image (name)

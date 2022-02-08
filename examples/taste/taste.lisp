@@ -39,13 +39,13 @@
   ; ballrect = ballrect.move(speed)
   (lgame.rect:move-rect *ball-rect* (first *speed*) (second *speed*))
   ; if ballrect.left < 0 or ballrect.right > width:
-  (if (or (< (lgame.rect:rect-dim *ball-rect* :left) 0)
-          (> (lgame.rect:rect-dim *ball-rect* :right) *width*))
+  (if (or (< (lgame.rect:rect-coord *ball-rect* :left) 0)
+          (> (lgame.rect:rect-coord *ball-rect* :right) *width*))
       ; speed[0] = -speed[0]
       (setf (first *speed*) (- (first *speed*))))
   ; if ballrect.top < 0 or ballrect.bottom > height:
-  (if (or (< (lgame.rect:rect-dim *ball-rect* :top) 0)
-          (> (lgame.rect:rect-dim *ball-rect* :bottom) *height*))
+  (if (or (< (lgame.rect:rect-coord *ball-rect* :top) 0)
+          (> (lgame.rect:rect-coord *ball-rect* :bottom) *height*))
       ; speed[1] = -speed[1]
       (setf (second *speed*) (- (second *speed*))))
 

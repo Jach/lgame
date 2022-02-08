@@ -90,18 +90,18 @@
    x and width or y and height."
   (truncate (+ a (/ b 2))))
 
-(deftype rect-dim ()
+(deftype rect-coord ()
   '(member :top :left :bottom :right
            :topleft :bottomleft :topright :bottomright
            :midtop :midleft :midbottom :midright
            :center :centerx :centery))
 
 @export
-(defun rect-dim (rect dim)
+(defun rect-coord (rect dim)
   "Query a rect dim with an intuitive keyword name,
-   defined by the rect-dim type. If a name gives
+   defined by the rect-coord type. If a name gives
    both an x and a y part, a list of (x y) will be returned."
-  (declare (type rect-dim dim))
+  (declare (type rect-coord dim))
   (multiple-value-bind (x y w h) (rect-fields rect)
     (ecase dim
       (:top y)
@@ -122,12 +122,12 @@
       )))
 
 @export
-(defun (setf rect-dim) (value rect dim)
+(defun (setf rect-coord) (value rect dim)
   "An extended form of set-rect, allows updating the underlying rect
-   with intuitive keyword names defined by the rect-dim type.
+   with intuitive keyword names defined by the rect-coord type.
    When both an x and a y can be specified, as in :topleft, a sequence of
    two integers in x,y order is expected."
-  (declare (type rect-dim dim))
+  (declare (type rect-coord dim))
   (multiple-value-bind (x y w h) (rect-fields rect)
     (ecase dim
       (:top (setf (sdl2:rect-y rect) value))
@@ -137,32 +137,32 @@
       (:centerx (setf (sdl2:rect-x rect) (- value (midway x w))))
       (:centery (setf (sdl2:rect-y rect) (- value (midway y h))))
       (:topleft
-        (setf (rect-dim rect :left) (elt value 0)
-              (rect-dim rect :top) (elt value 1)))
+        (setf (rect-coord rect :left) (elt value 0)
+              (rect-coord rect :top) (elt value 1)))
       (:bottomleft
-        (setf (rect-dim rect :left) (elt value 0)
-              (rect-dim rect :bottom) (elt value 1)))
+        (setf (rect-coord rect :left) (elt value 0)
+              (rect-coord rect :bottom) (elt value 1)))
       (:topright
-        (setf (rect-dim rect :right) (elt value 0)
-              (rect-dim rect :top) (elt value 1)))
+        (setf (rect-coord rect :right) (elt value 0)
+              (rect-coord rect :top) (elt value 1)))
       (:bottomright
-        (setf (rect-dim rect :right) (elt value 0)
-              (rect-dim rect :bottom) (elt value 1)))
+        (setf (rect-coord rect :right) (elt value 0)
+              (rect-coord rect :bottom) (elt value 1)))
       (:midtop
-        (setf (rect-dim rect :centerx) (elt value 0)
-              (rect-dim rect :top) (elt value 1)))
+        (setf (rect-coord rect :centerx) (elt value 0)
+              (rect-coord rect :top) (elt value 1)))
       (:midleft
-        (setf (rect-dim rect :left) (elt value 0)
-              (rect-dim rect :centery) (elt value 1)))
+        (setf (rect-coord rect :left) (elt value 0)
+              (rect-coord rect :centery) (elt value 1)))
       (:midbottom
-        (setf (rect-dim rect :centerx) (elt value 0)
-              (rect-dim rect :bottom) (elt value 1)))
+        (setf (rect-coord rect :centerx) (elt value 0)
+              (rect-coord rect :bottom) (elt value 1)))
       (:midright
-        (setf (rect-dim rect :right) (elt value 0)
-              (rect-dim rect :centery) (elt value 1)))
+        (setf (rect-coord rect :right) (elt value 0)
+              (rect-coord rect :centery) (elt value 1)))
       (:center
-        (setf (rect-dim rect :centerx) (elt value 0)
-              (rect-dim rect :centery) (elt value 1)))
+        (setf (rect-coord rect :centerx) (elt value 0)
+              (rect-coord rect :centery) (elt value 1)))
     )))
 
 @export
@@ -178,19 +178,19 @@
       ; handle x first
       (cond
         ((>= w1 w2) ; r1 too wide to fit inside, so center x around r2's center
-         (setf (rect-dim r1 :centerx) (rect-dim r2 :centerx)))
+         (setf (rect-coord r1 :centerx) (rect-coord r2 :centerx)))
         ((< x1 x2) ; r1's left edge is outside r2's left edge
-         (setf (rect-dim r1 :left) (rect-dim r2 :left)))
-        ((> (rect-dim r1 :right) (rect-dim r2 :right)) ; right edge is outside
-         (setf (rect-dim r1 :right) (rect-dim r2 :right))))
+         (setf (rect-coord r1 :left) (rect-coord r2 :left)))
+        ((> (rect-coord r1 :right) (rect-coord r2 :right)) ; right edge is outside
+         (setf (rect-coord r1 :right) (rect-coord r2 :right))))
       ; same thing for y
       (cond
         ((>= h1 h2)
-         (setf (rect-dim r1 :centery) (rect-dim r2 :centery)))
+         (setf (rect-coord r1 :centery) (rect-coord r2 :centery)))
         ((< y1 y2)
-         (setf (rect-dim r1 :top) (rect-dim r2 :top)))
-        ((> (rect-dim r1 :bottom) (rect-dim r2 :bottom))
-         (setf (rect-dim r1 :bottom) (rect-dim r2 :bottom))))
+         (setf (rect-coord r1 :top) (rect-coord r2 :top)))
+        ((> (rect-coord r1 :bottom) (rect-coord r2 :bottom))
+         (setf (rect-coord r1 :bottom) (rect-coord r2 :bottom))))
       r1)))
 
 @export

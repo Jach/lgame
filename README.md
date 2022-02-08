@@ -463,18 +463,16 @@ consistent frame times (e.g. a garbage collection might have kicked off).
 
 Package for working with SDL\_Rects. You can create them, update them, and do
 useful things like checking for collisions or scaling. There's also a handy
-`rect-dim` function to query or set things about the rect without having to
+`rect-coord` function to query or set things about the rect without having to
 touch the underlying x,y,w,h fields for everything. e.g.:
-
-TODO rename this function from rect-dim to rect-coord
 
 ```lisp
 (lgame.rect:with-rect (r 0 0 5 5)
   ; 5x5 rect at x,y coordinate 0,0
-  (lgame.rect:rect-dim r :center) ; query its center position, i.e. (2,2)
-  (lgame.rect:rect-dim r :topright) ; query its top-right position, i.e. (5,0)
-  (setf (lgame.rect:rect-dim r :topright) '(20 40)) ; moves top-right position to coord (20,40)
-  (lgame.rect:rect-dim r :center) ; now rect center is at (17,42). Its left axis is at 15, its right at 20, i.e. it's still a 5x5 rect.
+  (lgame.rect:rect-coord r :center) ; query its center position, i.e. (2,2)
+  (lgame.rect:rect-coord r :topright) ; query its top-right position, i.e. (5,0)
+  (setf (lgame.rect:rect-coord r :topright) '(20 40)) ; moves top-right position to coord (20,40)
+  (lgame.rect:rect-coord r :center) ; now rect center is at (17,42). Its left axis is at 15, its right at 20, i.e. it's still a 5x5 rect.
   (lgame.rect:outside-screen? r) ; sees if this rect lgame.rect:collide-rect? with lgame.state:*screen-rect*
   )
 ```

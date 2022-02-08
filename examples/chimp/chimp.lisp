@@ -82,7 +82,7 @@ original to accomplish that.
   "Moves monkey back and forth across the screen"
   (with-accessors ((rect lgame.sprite:.rect) (speed .move) (flip lgame.sprite:.flip)) self
     (lgame.rect:move-rect rect speed 0)
-    (when (or (<= (lgame.rect:rect-dim rect :left) 0) (>= (lgame.rect:rect-dim rect :right) (lgame.rect:rect-dim lgame:*screen-rect* :right)))
+    (when (or (<= (lgame.rect:rect-coord rect :left) 0) (>= (lgame.rect:rect-coord rect :right) (lgame.rect:rect-coord lgame:*screen-rect* :right)))
       (setf speed (- speed))
       (lgame.rect:move-rect rect speed 0)
       (if (= flip lgame::+sdl-flip-none+)
