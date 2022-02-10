@@ -1,7 +1,7 @@
 #|
 The actual maze structure, independent of the GUI
 |#
-(in-package #:maze)
+(in-package #:lgame.example.maze)
 
 (defclass maze ()
   ((dimensions :accessor .dims :initarg :dimensions :documentation "Two-element list of the maze's dimensions, format (rows columns)")

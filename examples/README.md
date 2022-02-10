@@ -23,17 +23,19 @@ example/example.lisp`. They share the feature that their first line quickloads
 lgame (so be sure to setup lgame first so that quicklisp can find it). Included
 is a `run-all.sh` if you just want to run them and see what's here.
 
-Every example except for `taste/taste.lisp` should safely be `LOAD`able into
-your running Lisp session, after which you can execute
-`(lgame.example.EXAMPLE-NAME:main)` to run the example. You can load `taste` as
-well, but it will immediately start executing. When you execute a particular
-example's `main`, some will take over your REPL thread until you close them, but
-others make use of [livesupport](https://github.com/cbaggers/livesupport) to
-leave your REPL functional and allow you to interactively modify the examples as
-they're running.
+Every example *should* be compile-file-and-load-able into your running Lisp
+session, after which you can have your editor eval the example's main or
+explicitly execute `(lgame.example.EXAMPLE-NAME:main)` to run the example. Note
+for `taste/taste.lisp` it will immediately start executing after loading, as if
+you had called `(load "taste/taste.lisp")` from a fresh REPL directly. When you
+execute a particular example's `main`, some will take over your REPL thread
+until you close them, but others make use of
+[livesupport](https://github.com/cbaggers/livesupport) to leave your REPL
+functional and allow you to interactively modify the examples as they're
+running.
 
-`lgame-examples.asd` exists to load all (but `taste`) in one system, but this is
-mainly used to facilitate checking for breaking changes with `sblint`.
+`lgame-examples.asd` exists to load all (but `taste`) into one system, but this
+is mainly used to facilitate checking for breaking changes with `sblint`.
 
 # Examples
 
@@ -47,33 +49,86 @@ become familiar with SDL2's API to be fully effective.
 
 ## pygame-inspired
 
+* Taste -- almost the simplest possible example, not a great pattern to build
+  on, but shows the general flow of init -> setup screen -> load a ball image ->
+  enter game loop -> detect the quit event -> bounce the ball around.
+* Moveit -- builds on Taste by wrapping stuff in a main function and having more
+  sprites, but is missing needed memory management.
+* Liquid -- introduces a 60 FPS limiting clock, shows a cool liquidy effect
+  achieved by rendering chunks of a texture at offsets from each other.
+* Testsprite -- simple little benchmark drawing 100 (or more if you want)
+  sprites bouncing around and showing FPS on quit. Introduces the lgame.loader and
+  lgame.sprite packages, with each sprite being in its own object all inside a
+  single sprite group.
+* Chimp -- Bigger example with sprites, sound effects, and mouse interaction.
+  Shows off more of the lower level direct SDL2 calls instead of the nicer
+  wrapping lgame ones.
+* Vgrade -- On the surface a simpler example, just shows mixing window flags (in
+  this case borderless mode) and paints a new color gradient every frame. It
+  prints out how long it took to render each gradient, and thus your max
+  framerate if that's all you were doing. Inside the file are three ways of
+  creating such a gradient that you can play with interactively by changing
+  which version to use in the render loop. They show using a buffer approach
+  (default, putting pixel-by-pixel data into a Lisp array and copying to a
+  foreign texture), a filled-rects approach (successive render-fill-rect calls
+  for each row), and a points approach (successive render-draw-point calls for
+  each pixel).
+  The performance differences between the methods are significant. The
+  conclusion to draw is that if you have a lot of graphics data, it will pay to
+  be able to manipulate it through foreign memory rather than pay a cost each
+  frame to translate it from Lisp memory.
+* Aliens - almost an actual game! Sprites, music, sfx, animations, creating a
+  background from a (in this case screen height) tile.. shows some more
+  experimental features of lgame like some sprite mixins to handle group
+  membership or resource cleanup of many sprites being created and killed over
+  time. This could be made immediately cleaner by moving each sprite to its own
+  file, but whatever.
+
 ## Others
+
+* gamekit-hello-comparison -- short example showing how trivial-gamekit's 4-line
+  hello-world can be done in quite a few more lines with lgame. If you don't
+  need the fine-grained lower-level control that lgame demands, trivial-gamekit
+  should be your first stop...
+* gl -- a short example showing how to use this with OpenGL and the classic (and obsolete)
+  immediate mode API.
+* gl2 -- another short OpenGL example but this time using a more modern OpenGL
+  3.1 core and demonstrating how to compile and use a shader (which could be put
+  out into its own file and read from, here I just embedded it as a string).
+* Maze -- a port of an old maze generation program I made in pygame.
 
 ## External
 
 # Motivation
 
-The original goal of these examples was, beyond my own WIP games, to help whip
-lgame into something resembling working order. The ongoing goal is to continue
-making more examples, especially if I can make narrow targeted examples based on
-extracts from my games. The more things I make the more I realize what should
-change or not or what really needs to be added. Hopefully after enough examples
-(and pain of refactoring them if I want to make breaking changes) lgame will
-eventually turn into something that someone else will want to try using.
+The original goal of these examples was to help whip lgame into something
+resembling working order and to be a bit more broadly usable than just what my
+WIP games need at the moment. The ongoing goal is to continue making more
+examples, especially if I can make narrow targeted examples based on extracts
+from my games. The more things I make the more I realize what should change or
+not or what really needs to be added.
 
-Besides that, having more examples to learn from (even bad examples!) is what
-helps build a community. PyGame has an excellent documentation site, as well as
-some simple tutorials, but it's easy to learn so much more just by reading the
-source of various projects. And since I'm not trying to do anything too fancy
-here, even if someone doesn't want to use lgame, an example may at least provide
-inspiration for how to do something with cl-sdl2. Maybe in the far future I can
-work on documentation, but I'd first need to have something worthwhile to
-document. You can perceive lack of doc as a reflection of my own opinion on that.
+As a secondary goal, having more examples to learn from (even bad examples!) is
+what helps build a community. Pygame has an excellent documentation site, as
+well as some simple tutorials, but it's the community and wide availability of
+bigger games and libraries with open source code that has made it what it is.
+With the source to a bigger game it's possible to learn so much more than what
+the docs suggest, even very good docs. So more code instead of docs is my
+priority, though of course in the future it'd be nice to have more and better
+docs, but first there should be something worth documenting, which so far lgame
+isn't.
+
+Even if someone doesn't want to use lgame, just having examples show up in
+searches may at least provide inspiration for how to do something with cl-sdl2,
+or just generically in Lisp. The twice-a-year [lisp game
+jams](https://itch.io/jam/autumn-lisp-game-jam-2021) certainly have been
+expanding just fine without any of my contribution, I think it'd be cool if I
+can help not just myself but even one other person contribute something.
 
 # License
 
-All project code and lgame itself are licensed under the Unlicense, that is, are in
-the public domain.
+Like lgame itself these examples are all licensed under the Unlicense, that is,
+are in the public domain.
 
 Certain assets may have their own licenses, I've tried to call them out in the
 project/asset folders if so under a LICENSE file for that folder.
@@ -81,22 +136,3 @@ project/asset folders if so under a LICENSE file for that folder.
 Pygame's own examples (https://github.com/pygame/pygame/tree/main/examples) that
 many of these are based on are noted to be in the public domain.
 
-A casual reminder that any binary build distributions should include somewhere
-the license information of all dependencies.
-
-# Projects
-
-Files are designed to be runnable with `sbcl --script`, some may be load-able as
-well in your REPL to run as you please.
-
-Each project has its own folder, here is a suggested order to look at:
-
-* Taste
-* Moveit
-* Liquid
-* Testsprite
-* Chimp
-* Vgrade
-* Aliens
-* Maze
-* gl, gl2

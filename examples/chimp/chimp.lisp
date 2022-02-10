@@ -20,18 +20,21 @@ original to accomplish that.
 |#
 
 
-(defpackage #:chimp
-  (:use :cl))
-(in-package #:chimp)
+(defpackage #:lgame.example.chimp
+  (:use #:cl)
+  (:export #:main))
+(in-package #:lgame.example.chimp)
 
-(defparameter *main-dir* (directory-namestring *load-truename*))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *source-dir* (directory-namestring
+                         (or *compile-file-pathname* *load-truename*))))
 (defparameter *running?* t)
 
 (ql:quickload :lgame)
 (ql:quickload :livesupport)
 
 (defun load-sound (name)
-  (sdl2-mixer:load-wav (merge-pathnames name *main-dir*)))
+  (sdl2-mixer:load-wav (merge-pathnames name *source-dir*)))
 
 (defclass fist (lgame.sprite:sprite)
   ((punching? :accessor .punching? :initform nil))
@@ -45,6 +48,7 @@ original to accomplish that.
 (defmethod lgame.sprite:update ((self fist))
   "Move the fist based on mouse position"
   (with-accessors ((rect lgame.sprite:.rect) (punching? .punching?)) self
+    ; could also use (lgame.mouse:get-mouse-pos)
     (multiple-value-bind (x y) (sdl2:mouse-state)
       (lgame.rect:set-rect rect :x x :y y)
       (lgame.rect:move-rect rect (/ (sdl2:rect-width rect) -2) 0))
@@ -102,7 +106,7 @@ original to accomplish that.
 
 (defun main ()
   (lgame:init)
-  (lgame.loader:create-texture-loader *main-dir*)
+  (lgame.loader:create-texture-loader *source-dir*)
   (lgame.display:create-centered-window "Monkey Fever" 468 60)
   (lgame.display:create-renderer)
   (sdl2:hide-cursor)

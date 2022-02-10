@@ -25,12 +25,15 @@ done by default in restart-game.
 (ql:quickload :livesupport)
 (ql:quickload :alexandria)
 
-(defpackage #:maze
-  (:use :cl))
-(in-package #:maze)
+(defpackage #:lgame.example.maze
+  (:use #:cl)
+  (:export #:main))
+(in-package #:lgame.example.maze)
 
-(defparameter *main-dir* (directory-namestring *load-truename*))
-(load (merge-pathnames "maze-class.lisp" *main-dir*))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *source-dir* (directory-namestring
+                         (or *compile-file-pathname* *load-truename*))))
+(load (merge-pathnames "maze-class.lisp" *source-dir*))
 
 (defparameter *running?* t)
 
@@ -43,7 +46,7 @@ done by default in restart-game.
 (defvar *maze-texture* nil)
 
 (defun init ()
-  (lgame.loader:create-texture-loader *main-dir*)
+  (lgame.loader:create-texture-loader *source-dir*)
   (lgame.display:create-centered-window "Maze" (first *size*) (second *size*))
   (lgame.display:create-renderer))
 

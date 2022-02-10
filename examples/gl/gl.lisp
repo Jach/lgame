@@ -14,9 +14,10 @@ Code to draw a colorful triangle is commented out before the window swap.
 (ql:quickload :livesupport)
 (ql:quickload :cl-opengl)
 
-(defpackage #:gl-ex
-  (:use :cl))
-(in-package #:gl-ex)
+(defpackage #:lgame.example.gl
+  (:use #:cl)
+  (:export #:main))
+(in-package #:lgame.example.gl)
 
 (defvar *running?* t)
 
@@ -46,11 +47,12 @@ Code to draw a colorful triangle is commented out before the window swap.
   ;(sdl2:set-render-draw-color lgame:*renderer* 255 0 255 255)
   ;(sdl2:render-clear lgame:*renderer*)
   ;(sdl2:render-present lgame:*renderer*)
-  ; do:
+
+  ; Call functions in gl: and work with the *screen* instead.
   (gl:clear-color 1.0 0 1 1)
   (gl:clear :color-buffer-bit)
 
-  ; and a triangle..
+  ; add a triangle..
   (gl:with-primitive :triangles
     (gl:color 1 0 0)
     (gl:vertex -1 -1 0)

@@ -48,11 +48,11 @@ immediately with sdl2:render-draw-point. This ended up being 30ms, which is quit
 a bit better, but still clearly not a great idea.
 
 |#
-(defpackage #:vgrade
-  (:use :cl))
-(in-package #:vgrade)
+(defpackage #:lgame.example.vgrade
+  (:use #:cl)
+  (:export #:main))
+(in-package #:lgame.example.vgrade)
 
-(defparameter *main-dir* (directory-namestring *load-truename*))
 (defparameter *running?* t)
 
 (ql:quickload :lgame)
@@ -80,14 +80,18 @@ a bit better, but still clearly not a great idea.
             (if (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+ ,lgame::+sdl-mousebuttondown+))
                 (setf *running?* nil)))
 
-          (display-gradient background buffer :use-buffer t)
-          ;(display-gradient background buffer :use-rects t)
-          ;(display-gradient background buffer :use-render-point t)
+          (render-gradient background buffer)
           (livesupport:update-repl-link)))
 
   (sdl2:destroy-texture background)
 
   (lgame:quit))
+
+(defun render-gradient (background buffer)
+  (display-gradient background buffer :use-buffer t)
+  ;(display-gradient background buffer :use-rects t)
+  ;(display-gradient background buffer :use-render-point t)
+  )
 
 (defmacro with-stopwatch (&body body)
   (let ((start (gensym)))

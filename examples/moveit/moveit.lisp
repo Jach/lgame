@@ -10,16 +10,21 @@ Also the classic "dirty rects" optimization doesn't really work the same
 anymore and isn't even really needed, so we just draw the whole background each
 frame. It can be done, but not on the final rendered screen, you'd need to do
 it on your own streaming/target texture and render that texture every frame.
+
+This example should free up its foreign memory (textures and rects) but doesn't.
 |#
 
-(defpackage #:moveit
-  (:use :cl))
-(in-package #:moveit)
-
-(defparameter *main-name* *load-truename*)
-(defparameter *running?* t)
-
 (ql:quickload :lgame)
+
+(defpackage #:lgame.example.moveit
+  (:use #:cl)
+  (:export #:main))
+(in-package #:lgame.example.moveit)
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *source-dir* (directory-namestring
+                         (or *compile-file-pathname* *load-truename*))))
+(defparameter *running?* t)
 
 (defclass game-object ()
   ((image :initarg :image :reader .image)
@@ -36,7 +41,7 @@ it on your own streaming/target texture and render that texture every frame.
     (lgame.rect:set-rect (.pos self) :x 0)))
 
 (defun load-image (name)
-  (lgame.loader:load-texture (merge-pathnames name (directory-namestring *main-name*))))
+  (lgame.loader:load-texture (merge-pathnames name *source-dir*)))
 
 (defun main (&aux player background objects)
   (lgame:init)

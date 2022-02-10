@@ -10,9 +10,10 @@ for a saner way of dealing with the vertex and index arrays.
 (ql:quickload :livesupport)
 (ql:quickload :cl-opengl)
 
-(defpackage #:gl2-ex
-  (:use :cl))
-(in-package #:gl2-ex)
+(defpackage #:lgame.example.gl2
+  (:use #:cl)
+  (:export #:main))
+(in-package #:lgame.example.gl2)
 
 (defvar *running?* t)
 

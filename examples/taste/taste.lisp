@@ -109,6 +109,9 @@ wrapper was done to support the further possibility of compile-and-load from an
 editor or REPL that has placed the .fasl file into some other location than next
 to the .lisp file.
 
+Note that even this is not sufficient if your goal is to build a binary and
+distribute it to other computers. See [future example here] for that.
+
 6: Infinite game loop. I opted to give it a name to break out of from the inner
 event loop that follows, rather than call quit.
 

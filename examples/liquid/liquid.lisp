@@ -21,11 +21,14 @@ from outside the texture. For the effect to work, the maximum perturbation of
 the data should still be within the texture.
 
 |#
-(defpackage #:liquid
-  (:use :cl))
-(in-package #:liquid)
+(defpackage #:lgame.example.liquid
+  (:use #:cl)
+  (:export #:main))
+(in-package #:lgame.example.liquid)
 
-(defparameter *main-dir* (directory-namestring *load-truename*))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *source-dir* (directory-namestring
+                         (or *compile-file-pathname* *load-truename*))))
 (defparameter *running?* t)
 
 (ql:quickload :lgame)
@@ -38,7 +41,7 @@ the data should still be within the texture.
   (lgame.display:create-renderer)
 
   ;(lgame::sdl-set-hint lgame::+sdl-hint-render-scale-quality+ "linear")
-  (let ((liquid (lgame.loader:load-texture (merge-pathnames "../moveit/liquid.png" *main-dir*))))
+  (let ((liquid (lgame.loader:load-texture (merge-pathnames "../moveit/liquid.png" *source-dir*))))
     (setf background (sdl2:create-texture lgame:*renderer* lgame::+sdl-pixelformat-rgba8888+ lgame::+sdl-textureaccess-target+ (* (sdl2:texture-width liquid) 4) (* (sdl2:texture-height liquid) 4)))
     (sdl2:set-render-target lgame:*renderer* background)
     (sdl2:render-copy lgame:*renderer* liquid)

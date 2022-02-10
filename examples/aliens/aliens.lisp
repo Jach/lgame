@@ -25,8 +25,9 @@ Differences:
 
 (ql:quickload :lgame)
 
-(defpackage #:aliens
-  (:use :cl)
+(defpackage #:lgame.example.aliens
+  (:use #:cl)
+  (:export #:main)
   (:import-from #:lgame.sprite
                 #:sprite
                 #:cleaned-on-kill-mixin
@@ -39,10 +40,20 @@ Differences:
                 #:draw
                 #:kill)
   (:import-from #:lgame.rect
-                #:rect-coord))
-(in-package #:aliens)
+                #:rect-coord
+                #:move-rect
+                #:get-texture-rect)
 
-(defparameter *main-dir* (directory-namestring *load-truename*))
+  (:import-from #:lgame.event
+                #:event-type
+                #:key-scancode
+                #:do-event))
+
+(in-package #:lgame.example.aliens)
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *source-dir* (directory-namestring
+                         (or *compile-file-pathname* *load-truename*))))
 (defparameter *running?* t)
 
 (defparameter +max-shots+ 2) ; player shots onscreen
@@ -65,7 +76,7 @@ Differences:
 
 (defmethod initialize-instance :after ((self player) &key)
   (setf (.image self) (lgame.loader:get-texture "player1.png")
-        (.rect self) (lgame.rect:get-texture-rect (.image self))
+        (.rect self) (get-texture-rect (.image self))
         (rect-coord (.rect self) :midbottom) (rect-coord lgame:*screen-rect* :midbottom)
 
         (.origtop self) (rect-coord (.rect self) :top)))
@@ -75,10 +86,10 @@ Differences:
   (case direction
     (:left
       (setf (.flip self) lgame::+sdl-flip-none+)
-      (lgame.rect:move-rect (.rect self) (- (/speed self)) 0))
+      (move-rect (.rect self) (- (/speed self)) 0))
     (:right
       (setf (.flip self) lgame::+sdl-flip-horizontal+)
-      (lgame.rect:move-rect (.rect self) (/speed self) 0)))
+      (move-rect (.rect self) (/speed self) 0)))
 
   ; forbid moving outside the screen:
   (lgame.rect:clamp (.rect self) lgame:*screen-rect*)
@@ -99,6 +110,12 @@ Differences:
 (defclass alien (sprite add-groups-mixin)
   ((speed :accessor /speed :allocation :class :initform 13)
    (animcycle :accessor /animcycle :allocation :class :initform 12)
+
+   ; NOTE: this is a BAD idea to have this class-allocated if you care about
+   ; being able to load the game in Lisp, launch, finish the game, and
+   ; re-launch. That's because you need to reset this reference on shutdown
+   ; and you can only do that with an existing alien sprite. I do it,
+   ; but you should consider a better way.
    (image-frames :accessor /image-frames :allocation :class :initform (list))
 
    (facing :accessor .facing)
@@ -113,7 +130,7 @@ Differences:
                                      (lgame.loader:get-texture "alien2.png")
                                      (lgame.loader:get-texture "alien3.png"))))
   (setf (.image self) (first (/image-frames self))
-        (.rect self) (lgame.rect:get-texture-rect (.image self))
+        (.rect self) (get-texture-rect (.image self))
         (.facing self) (* (/speed self) (random-choice '(-1 1)))
         (.frame self) 0)
   (when (minusp (.facing self))
@@ -121,7 +138,7 @@ Differences:
 
 (defmethod update ((self alien))
   (with-accessors ((rect .rect) (facing .facing) (frame .frame) (image .image)) self
-    (lgame.rect:move-rect rect (.facing self) 0)
+    (move-rect rect (.facing self) 0)
     (unless (lgame.rect:contains? lgame:*screen-rect* rect) ; alien reached the edge of screen
       (setf facing (- facing)
             (rect-coord rect :top) (1+ (rect-coord rect :bottom)))
@@ -141,7 +158,7 @@ Differences:
 
 (defmethod initialize-instance :after ((self explosion) &key actor)
   (setf (.image self) (lgame.loader:get-texture "explosion1.png")
-        (.rect self) (lgame.rect:get-texture-rect (.image self))
+        (.rect self) (get-texture-rect (.image self))
         (.life self) (/lifetime self))
   (if actor
   (setf (rect-coord (.rect self) :center) (rect-coord (.rect actor) :center))))
@@ -160,11 +177,11 @@ Differences:
 
 (defmethod initialize-instance :after ((self shot) &key pos)
   (setf (.image self) (lgame.loader:get-texture "shot.png")
-        (.rect self) (lgame.rect:get-texture-rect (.image self))
+        (.rect self) (get-texture-rect (.image self))
         (rect-coord (.rect self) :midbottom) pos))
 
 (defmethod update ((self shot))
-  (lgame.rect:move-rect (.rect self) 0 (/speed self))
+  (move-rect (.rect self) 0 (/speed self))
   (unless (plusp (rect-coord (.rect self) :top))
     (kill self)))
 
@@ -174,12 +191,12 @@ Differences:
 
 (defmethod initialize-instance :after ((self bomb) &key alien)
   (setf (.image self) (lgame.loader:get-texture "bomb.png")
-        (.rect self) (lgame.rect:get-texture-rect (.image self)))
+        (.rect self) (get-texture-rect (.image self)))
   (lgame.rect:with-moved-rect (moved (.rect alien) 0 5)
     (setf (rect-coord (.rect self) :midbottom) (rect-coord moved :midbottom))))
 
 (defmethod update ((self bomb))
-  (lgame.rect:move-rect (.rect self) 0 (/speed self))
+  (move-rect (.rect self) 0 (/speed self))
   (when (>= (rect-coord (.rect self) :bottom) (- (rect-coord lgame:*screen-rect* :bottom) 10))
     (make-instance 'explosion :actor self :groups (lgame.sprite:.groups self))
     (kill self)))
@@ -192,8 +209,8 @@ Differences:
 (defmethod initialize-instance :after ((self score) &key)
   (setf (.image self) nil)
   (update self)
-  (setf (.rect self) (lgame.rect:get-texture-rect (.image self)))
-  (lgame.rect:move-rect (.rect self) 10 (- (rect-coord lgame:*screen-rect* :bottom) 30)))
+  (setf (.rect self) (get-texture-rect (.image self)))
+  (move-rect (.rect self) 10 (- (rect-coord lgame:*screen-rect* :bottom) 30)))
 
 (defmethod update ((self score))
   (when (/= (.score self) (.last-score self))
@@ -208,7 +225,7 @@ Differences:
 
 (defun main (&aux background boom-sound shoot-sound music groups group-lists player score)
   (lgame:init)
-  (lgame.loader:create-texture-loader *main-dir*)
+  (lgame.loader:create-texture-loader *source-dir*)
   (lgame.display:create-centered-window "Aliens?!"(first +screen-size+) (second +screen-size+))
   (lgame.display:create-renderer)
   (lgame.display:set-logical-size (first +screen-size+) (second +screen-size+))
@@ -226,9 +243,9 @@ Differences:
             (sdl2:render-copy lgame:*renderer* bg-tile :dest-rect r)))
     (sdl2:set-render-target lgame:*renderer* nil))
 
-  (setf boom-sound (sdl2-mixer:load-wav (merge-pathnames "boom.wav" *main-dir*)))
-  (setf shoot-sound (sdl2-mixer:load-wav (merge-pathnames "car_door.wav" *main-dir*)))
-  (setf music (sdl2-mixer:load-music (merge-pathnames "house_lo.wav" *main-dir*)))
+  (setf boom-sound (sdl2-mixer:load-wav (merge-pathnames "boom.wav" *source-dir*)))
+  (setf shoot-sound (sdl2-mixer:load-wav (merge-pathnames "car_door.wav" *source-dir*)))
+  (setf music (sdl2-mixer:load-music (merge-pathnames "house_lo.wav" *source-dir*)))
   (sdl2-mixer:play-music music -1)
 
   (setf groups (list :aliens (make-instance 'lgame.sprite:group)
@@ -257,24 +274,29 @@ Differences:
 
     (sdl2-mixer:halt-music)
     (sdl2:destroy-texture background)
+    ; to support running again in a repl, need to also clear alien's
+    ; class-allocated image frames
+    (let ((final-alien (make-instance 'alien)))
+      (setf (/image-frames final-alien) nil)
+      (lgame.sprite:cleanup final-alien))
     (lgame.sprite:cleanup (getf groups :all))
+
     ; may not need to be called because of sdl2-mixer's usage of autocollect...
     ;(sdl2-mixer:free-music music)
     ;(sdl2-mixer:free-chunk shoot-sound)
     ;(sdl2-mixer:free-chunk boom-sound)
 
-    (lgame.font:unload-fonts)
     (lgame:quit)))
 
 (defun game-tick (background boom-sound shoot-sound groups group-lists player score)
-  (lgame.event:do-event (event)
+  (do-event (event)
     (if (or
-          (= (lgame.event:event-type event) lgame::+sdl-quit+)
-          (and (= (lgame.event:event-type event) lgame::+sdl-keydown+)
-               (= (lgame.event:key-scancode event) lgame::+sdl-scancode-escape+)))
+          (= (event-type event) lgame::+sdl-quit+)
+          (and (= (event-type event) lgame::+sdl-keydown+)
+               (= (key-scancode event) lgame::+sdl-scancode-escape+)))
         (setf *running?* nil))
-    (if (and (= (lgame.event:event-type event) lgame::+sdl-keyup+)
-             (= (lgame.event:key-scancode event) lgame::+sdl-scancode-f+))
+    (if (and (= (event-type event) lgame::+sdl-keyup+)
+             (= (key-scancode event) lgame::+sdl-scancode-f+))
         (if *full-screen*
             (progn (lgame::sdl-set-window-fullscreen lgame:*screen* 0) (setf *full-screen* nil))
             (progn (lgame::sdl-set-window-fullscreen lgame:*screen* lgame::+sdl-window-fullscreen-desktop+) (setf *full-screen* t)))))
@@ -292,10 +314,10 @@ Differences:
   (handle-alien-shot-collisions groups group-lists score boom-sound)
   (handle-bombs-player-collisions player groups group-lists boom-sound)
 
-  (sdl2:render-clear lgame:*renderer*)
-  (sdl2:render-copy lgame:*renderer* background)
+  (lgame.render:clear)
+  (lgame.render:blit background nil)
   (draw (getf groups :all))
-  (sdl2:render-present lgame:*renderer*)
+  (lgame.render:present)
 
   (lgame.time:clock-tick 40)
   )
@@ -354,7 +376,7 @@ Differences:
     (make-instance 'explosion :groups (getf group-lists :for-explosion) :actor bomb)
     (kill bomb)
     (kill player)
-    (format t "You died~%")
+    ; dead
     (setf *running?* nil)))
 
 (eval-when (:execute)

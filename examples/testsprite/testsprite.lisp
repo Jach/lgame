@@ -16,13 +16,18 @@ However, it took Lisp about 1 minute and 20 seconds to load up the sprites,
 
 (ql:quickload :lgame)
 
-(defpackage #:testsprite
-  (:use :cl))
-(in-package #:testsprite)
+(defpackage #:lgame.example.testsprite
+  (:use #:cl)
+  (:export #:main))
+(in-package #:lgame.example.testsprite)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *source-dir* (directory-namestring
+                         (or *compile-file-pathname* *load-truename*))))
 (defparameter +screen-size+ '(640 480))
-(defparameter *main-dir* (directory-namestring *load-truename*))
 (defparameter *running?* t)
+
+(defparameter *total-sprites* 100)
 
 (defun rand[] (a b)
   "Random int between a and b, inclusive"
@@ -48,12 +53,12 @@ However, it took Lisp about 1 minute and 20 seconds to load up the sprites,
 
 (defun main (&aux sprites frames)
   (lgame:init)
-  (lgame.loader:create-texture-loader *main-dir*)
+  (lgame.loader:create-texture-loader *source-dir*)
   (lgame.display:create-centered-window "Testsprite" (first +screen-size+) (second +screen-size+))
   (lgame.display:create-renderer)
 
   (setf sprites (make-instance 'lgame.sprite:group))
-  (dotimes (i 100)
+  (dotimes (i *total-sprites*)
     (lgame.sprite:add-sprites sprites (make-instance 'thingy)))
 
   (setf frames 0)
