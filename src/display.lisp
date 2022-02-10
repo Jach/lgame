@@ -1,6 +1,6 @@
 (in-package #:lgame.display)
 
-(defun create-window (title x y w h &optional (flags lgame::+sdl-window-opengl+))
+(defun create-window (title w h &optional (x lgame::+sdl-windowpos-undefined+) (y lgame::+sdl-windowpos-undefined+) (flags lgame::+sdl-window-shown+))
   "Wrapper around sdl-create-window, binds to lgame:*screen* and returns it.
    Also sets lgame:*screen-rect* to use the window width and height."
   (setf lgame.state:*screen* (lgame::sdl-create-window title x y w h flags))
@@ -8,6 +8,9 @@
       (error 'sdl-error :msg (lgame::sdl-get-error)))
   (setf lgame.state:*screen-rect* (sdl2:make-rect 0 0 w h))
   lgame.state:*screen*)
+
+(defun create-centered-window (title w h &optional (flags lgame::+sdl-window-shown+))
+  (create-window title w h lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+ flags))
 
 (defun create-renderer (&optional (window lgame.state:*screen*) (index -1) (flags 0))
   "Wrapper around sdl-create-renderer, binds to lgame:*renderer* and returns it.

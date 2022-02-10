@@ -31,6 +31,7 @@
   (:documentation
     "Provides functions to set up an initial display for the game.")
   (:export #:create-window
+           #:create-centered-window
            #:create-renderer
            #:set-logical-size
            #:screenshot-png))

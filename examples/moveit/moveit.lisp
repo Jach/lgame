@@ -40,7 +40,7 @@ it on your own streaming/target texture and render that texture every frame.
 
 (defun main (&aux player background objects)
   (lgame:init)
-  (lgame.display:create-window "moveit" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+ 640 480)
+  (lgame.display:create-centered-window "moveit" 640 480)
   (lgame.display:create-renderer)
 
   (setf player (load-image "player1.png"))

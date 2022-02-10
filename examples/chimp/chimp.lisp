@@ -103,7 +103,7 @@ original to accomplish that.
 (defun main ()
   (lgame:init)
   (lgame.loader:create-texture-loader *main-dir*)
-  (lgame.display:create-window "Monkey Fever" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+ 468 60)
+  (lgame.display:create-centered-window "Monkey Fever" 468 60)
   (lgame.display:create-renderer)
   (sdl2:hide-cursor)
 

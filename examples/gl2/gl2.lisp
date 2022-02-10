@@ -34,8 +34,7 @@ for a saner way of dealing with the vertex and index arrays.
                      :context-minor-version 1
                      :context-profile-mask lgame::+sdl-gl-context-profile-core+)
 
-  (lgame.display:create-window "GL2" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+
-                               800 600)
+  (lgame.display:create-centered-window "GL2" 800 600 lgame::+sdl-window-opengl+)
   (lgame.display:create-renderer)
 
   (setf cl-opengl-bindings:*gl-get-proc-address* #'sdl2-ffi.functions:sdl-gl-get-proc-address)

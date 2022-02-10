@@ -49,8 +49,7 @@ However, it took Lisp about 1 minute and 20 seconds to load up the sprites,
 (defun main (&aux sprites frames)
   (lgame:init)
   (lgame.loader:create-texture-loader *main-dir*)
-  (lgame.display:create-window "Testsprite" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+
-                               (first +screen-size+) (second +screen-size+))
+  (lgame.display:create-centered-window "Testsprite" (first +screen-size+) (second +screen-size+))
   (lgame.display:create-renderer)
 
   (setf sprites (make-instance 'lgame.sprite:group))

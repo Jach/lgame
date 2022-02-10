@@ -44,8 +44,7 @@ done by default in restart-game.
 
 (defun init ()
   (lgame.loader:create-texture-loader *main-dir*)
-  (lgame.display:create-window "Maze" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+
-                               (first *size*) (second *size*))
+  (lgame.display:create-centered-window "Maze" (first *size*) (second *size*))
   (lgame.display:create-renderer))
 
 (defun start ()

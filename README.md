@@ -298,6 +298,8 @@ Exports functions for setting up your game window.
 
 * `lgame.display:create-window` -- creates an SDL\_Window and binds it to `lgame:*screen*`,
   also returns it if you need a local copy.
+* `lgame.display:create-centered-window` -- convenience version for having the window
+  centered on the desktop.
 * `lgame.display:create-renderer` -- creates an SDL\_Renderer and binds it to
   `lgame:*renderer*`, also returns it if you need a local copy.
 * `lgame.display:set-logical-size` -- can make use of SDL2's logical screen size
@@ -315,7 +317,7 @@ Exports functions for setting up your game window.
 An example usage:
 ```lisp
 (lgame:init)
-(lgame.display:create-window "Hello" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+ 1920 1080)
+(lgame.display:create-centered-window "Hello" 1920 1080)
 (lgame.display:create-renderer)
 ; game loop here, you're setup with a 1920x1080 screen ready to render stuff on
 (lgame:quit)

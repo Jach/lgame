@@ -209,13 +209,12 @@ Differences:
 (defun main (&aux background boom-sound shoot-sound music groups group-lists player score)
   (lgame:init)
   (lgame.loader:create-texture-loader *main-dir*)
-  (lgame.display:create-window "Aliens?!" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+
-                               (first +screen-size+) (second +screen-size+))
+  (lgame.display:create-centered-window "Aliens?!"(first +screen-size+) (second +screen-size+))
   (lgame.display:create-renderer)
   (lgame.display:set-logical-size (first +screen-size+) (second +screen-size+))
   (sdl2:hide-cursor)
 
-  (sdl2:pump-events)
+  (sdl2:pump-events) ;; needed for raise-window to work
   (lgame::sdl-raise-window lgame:*screen*)
 
   (let ((bg-tile (lgame.loader:get-texture "background.png")))

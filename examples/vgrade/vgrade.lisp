@@ -64,8 +64,8 @@ a bit better, but still clearly not a great idea.
 
 (defun main (&aux background buffer)
   (lgame:init)
-  (lgame.display:create-window "gradient" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+
-                       *width* *height* (logior lgame::+sdl-window-opengl+ lgame::+sdl-window-borderless+))
+  (lgame.display:create-centered-window "gradient" *width* *height*
+                                        (logior lgame::+sdl-window-opengl+ lgame::+sdl-window-borderless+))
   (lgame.display:create-renderer)
 
   (setf background (sdl2:create-texture lgame:*renderer* lgame::+sdl-pixelformat-rgba8888+ lgame::+sdl-textureaccess-streaming+

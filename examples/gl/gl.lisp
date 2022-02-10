@@ -24,8 +24,7 @@ Code to draw a colorful triangle is commented out before the window swap.
 
 (defun init ()
   (lgame:init)
-  (lgame.display:create-window "GL" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+
-                               800 600)
+  (lgame.display:create-centered-window "GL" 800 600 lgame::+sdl-window-opengl+)
   (lgame.display:create-renderer)
 
   (setf cl-opengl-bindings:*gl-get-proc-address* #'sdl2-ffi.functions:sdl-gl-get-proc-address)

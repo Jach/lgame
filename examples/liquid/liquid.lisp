@@ -34,7 +34,7 @@ the data should still be within the texture.
 
 (defun main (&aux background anim)
   (lgame:init)
-  (lgame.display:create-window "liquid" lgame::+sdl-windowpos-centered+ lgame::+sdl-windowpos-centered+ 640 480)
+  (lgame.display:create-centered-window "liquid" 640 480)
   (lgame.display:create-renderer)
 
   ;(lgame::sdl-set-hint lgame::+sdl-hint-render-scale-quality+ "linear")
