@@ -20,6 +20,8 @@
                                      (:file "rect")
                                      (:file "sprite")
                                      (:file "font")
+                                     (:file "render")
+
                                      (:file "texture-loader")
 
                                      (:file "pathfinding")

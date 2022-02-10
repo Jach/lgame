@@ -73,13 +73,10 @@ while 1:                                                                      #6
           (> (rect-coord *ball-rect* :bottom) *height*))
       (setf (aref *speed* 1) (- (aref *speed* 1))))
 
-  ;(lgame.display:fill *black*)
-  (lgame::sdl-set-render-draw-color lgame:*renderer* 0 0 0 255)               ;9
-  (lgame::sdl-render-clear lgame:*renderer*)
-
-  (lgame::sdl-render-copy lgame:*renderer* *ball* nil *ball-rect*)
-  (lgame::sdl-render-present lgame:*renderer*))
-
+  (lgame.render:set-draw-color *black*)                                       ;9
+  (lgame.render:clear)
+  (lgame.render:blit *ball* *ball-rect*)
+  (lgame.render:present))
 
 #|
 Section Commentary:
@@ -97,7 +94,9 @@ literals should be used immutably, which *speed* here isn't, but *black* is.
 
 4: Need two function calls instead of 1 due to SDL2 giving both a window and a
 renderer. I may one day create a unifying create-screen command that does both,
-but for now being explicit about certain SDL2 features is better.
+but for now being somewhat explicit about certain SDL2 features is better.
+Nevertheless I have hid the underlying *renderer* reality from this starting
+example.
 
 5: Uses lgame.loader:load-texture. Could be written just the same as pygame,
 
@@ -119,6 +118,9 @@ instead of hard quitting, and making sure to free the rect and quit lgame.
 8: Movement is done in-place so a reassignment doesn't need to happen.
 Checking for collision is uglier.
 
-9: todo
+9: After some consideration I introduced an lgame.render package containing some
+wrappers around sdl-render-... functions. Here we need one more function call
+because I have not made fill() but otherwise it looks similar even if the
+underlying graphics pipeline is drastically different from sdl1.
 
 |#

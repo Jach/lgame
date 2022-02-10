@@ -517,10 +517,23 @@ it. See `chimp.lisp` for a static example which basically goes like this:
       (lgame:quit)))
 
   ; inside game loop:
-  (sdl2:render-copy lgame:*renderer* banner-txt :dest-rect banner-txt-rect)
-  ; could also do (lgame::sdl-render-copy lgame:*renderer* banner-txt nil banner-txt-rect)
+  (lgame.render:blit banner-txt banner-txt-rect)
+  ; could also do:
+  ;(sdl2:render-copy lgame:*renderer* banner-txt :dest-rect banner-txt-rect)
+  ; or:
+  ;(lgame::sdl-render-copy lgame:*renderer* banner-txt nil banner-txt-rect)
 ```
-TODO: might be a good idea to provide some sort of (lgame.display:render texture rect) function.
+
+### lgame.render
+
+Some wrappers like the just shown `blit` that let you avoid having to specify
+the `*renderer*` all the time.
+
+* `lgame.render:blit` - wraps sdl-render-copy for a texture and only dest-rect
+* `lgame.render:clear` - wraps sdl-render-clear
+* `lgame.render:present` - wraps sdl-render-present
+* `lgame.render:set-draw-color` - wraps sdl-set-render-draw-color, allows passing
+in a 3 or 4 length rgb/rgba list, or providing the rgba arguments explicitly.
 
 ### lgame.loader
 
