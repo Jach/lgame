@@ -46,7 +46,6 @@ done by default in restart-game.
 (defvar *maze-texture* nil)
 
 (defun init ()
-  (lgame.loader:create-texture-loader *source-dir*)
   (lgame.display:create-centered-window "Maze" (first *size*) (second *size*))
   (lgame.display:create-renderer))
 

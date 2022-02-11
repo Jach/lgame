@@ -95,7 +95,8 @@ become familiar with SDL2's API to be fully effective.
 * gl2 -- another short OpenGL example but this time using a more modern OpenGL
   3.1 core and demonstrating how to compile and use a shader (which could be put
   out into its own file and read from, here I just embedded it as a string).
-* Maze -- a port of an old maze generation program I made in pygame.
+* Maze -- a port of an old maze generation program I made in pygame. Inside is
+  also an example of using the A\* pathfinding hook in lgame to solve the maze.
 
 ## External
 
