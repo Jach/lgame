@@ -116,6 +116,8 @@ Differences:
    ; re-launch. That's because you need to reset this reference on shutdown
    ; and you can only do that with an existing alien sprite. I do it,
    ; but you should consider a better way.
+   ; (See also https://dirtypipe.cm4all.com/ for another reason re-use
+   ; without re-initializing can lead to a security issue, too.)
    (image-frames :accessor /image-frames :allocation :class :initform (list))
 
    (facing :accessor .facing)

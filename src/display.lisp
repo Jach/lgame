@@ -20,7 +20,7 @@
       (error 'sdl-error :msg (lgame::sdl-get-error)))
   lgame.state:*renderer*)
 
-(defun set-logical-size (w h &optional (renderer lgame.state:*renderer*) linear-scaling?)
+(defun set-logical-size (w h &optional (renderer lgame.state:*renderer*) (linear-scaling? T))
   "Mostly a wrapper around sdl-render-set-logical-size.
    By default sets the render scaling quality to 'linear',
    and resets lgame:*screen-rect* to use the new logical width and height, returning it."

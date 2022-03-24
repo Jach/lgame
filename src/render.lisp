@@ -32,3 +32,12 @@
                                                                      color-or-r
                                                                      (append color-or-r '(255))))
       (lgame::sdl-set-render-draw-color lgame:*renderer* color-or-r g b a)))
+
+@export
+(defmacro with-draw-color ((&optional (color-or-r 0) (g 0) (b 0) (a 255)) &body body)
+  (let ((current (gensym)))
+    `(let ((,current (multiple-value-list (sdl2:get-render-draw-color lgame.state:*renderer*))))
+       (set-draw-color ,color-or-r ,g ,b ,a)
+       ,@body
+       (set-draw-color ,current))))
+

@@ -32,6 +32,7 @@
 
       (format t "~&~VA    ~A" max-length "System Name" "License") ; table header
       (format t "~&~V{~A~:*~}    ~V{~A~:*~}" max-length '("-") (length "License") '("-")) ; dash/hyphen printing after table header
+      ; should just make-string max-length :initial-element #\*
       (dolist (name names)
         (format t "~&~VA    ~A~%" max-length name (asdf:system-licence (gethash name systems))))))
 
