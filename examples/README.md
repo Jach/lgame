@@ -52,6 +52,8 @@ become familiar with SDL2's API to be fully effective.
 * Taste -- almost the simplest possible example, not a great pattern to build
   on, but shows the general flow of init -> setup screen -> load a ball image ->
   enter game loop -> detect the quit event -> bounce the ball around.
+* Snake -- another simple example with not great style, but uses SDL draw
+  primitives instead of sprites.
 * Moveit -- builds on Taste by wrapping stuff in a main function and having more
   sprites, but is missing needed memory management.
 * Liquid -- introduces a 60 FPS limiting clock, shows a cool liquidy effect
