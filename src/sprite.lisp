@@ -52,6 +52,12 @@
      "Given a group, remove any number of sprites that exist in the group."))
 
 @export
+(defgeneric remove-all-sprites (group &optional cleanup?)
+  (:documentation
+    "Given a group, remove all its sprites.
+     If optional cleanup? is T, calls cleanup first."))
+
+@export
 (defgeneric empty? (group)
   (:documentation
     "True if a group contains sprites, nil otherwise."))
@@ -69,6 +75,13 @@
      Returns a list of collisions in the form ((sprite-from-group1 . (collided-sprite-from-group2 ...))
                                                (other-sprite-from-group1 . (collided-sprite-from-group2 ...))
                                                ...)"))
+
+@export
+(defgeneric group-query-class (group class)
+  (:documentation
+    "Returns all sprites inside group that are of the type class."))
+
+;;;; Sprite class
 
 @export-class
 (defclass sprite ()
@@ -99,6 +112,8 @@
   (unless (typep new-value 'double-float)
     (setf (slot-value self 'angle) (coerce new-value 'double-float))))
 
+;;;; Sprite mixins
+
 @export-class
 (defclass cleaned-on-kill-mixin ()
   ()
@@ -117,6 +132,9 @@
 
 (defmethod initialize-instance :after ((self add-groups-mixin) &key groups)
   (apply #'add-groups self groups))
+
+
+;;;; Group classes
 
 @export-class
 (defclass group ()
@@ -236,6 +254,11 @@
       (setf (.groups sprite) (remove self (.groups sprite) :test #'equal))
       (setf (slot-value self 'sprite) nil))))
 
+(defmethod remove-all-sprites ((group group) &optional cleanup?)
+  (when cleanup?
+    (cleanup group))
+  (setf (.sprites group) (list)))
+
 (defmethod empty? ((self group))
   (zerop (length (.sprites self))))
 
@@ -255,6 +278,11 @@
                                                 collect sprite2)))
             (push (cons sprite1 collisions) result)))
     result))
+
+(defmethod group-query-class ((group group) class)
+  (loop for sprite in (.sprites group)
+        if (typep sprite class)
+        collect sprite))
 
 ;; example using https://opengameart.org/content/various-gem-stone-animations
 ;;(load-spritesheet (format nil "~a/sapphirespinning.png" +sprites-dir+)
