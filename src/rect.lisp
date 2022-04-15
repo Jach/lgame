@@ -31,6 +31,15 @@
      ,@body))
 
 @export
+(defmacro with-clipped-rect ((clipped-rect rect1 rect2) &body body)
+  "Use a temporary clipped rect which has the dimensions of
+   rect1 cropped so that it is inside rect2. If the rects do not
+   overlap, clipped-rect will have 0 width and height."
+  `(with-rect (,clipped-rect 0 0 0 0)
+     (lgame::sdl-intersect-rect ,rect1 ,rect2 ,clipped-rect)
+     ,@body))
+
+@export
 (defmacro with-moved-rect ((rect source-rect x y) &body body)
   "Helper to get a temporary rect whose x,y position is equal
    to the source-rect's x,y position, moved by x and y. This

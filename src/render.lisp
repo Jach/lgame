@@ -41,3 +41,9 @@
        ,@body
        (set-draw-color ,current))))
 
+@export
+(defmacro with-render-target (target-texture &body body)
+  `(progn
+     (sdl2:set-render-target lgame:*renderer* ,target-texture)
+     ,@body
+     (sdl2:set-render-target lgame:*renderer* nil)))
