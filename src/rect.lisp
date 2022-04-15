@@ -97,13 +97,13 @@
            :center :centerx :centery))
 
 @export
-(defun rect-coord (rect dim)
-  "Query a rect dim with an intuitive keyword name,
+(defun rect-coord (rect coord)
+  "Query a rect coordinate with an intuitive keyword name,
    defined by the rect-coord type. If a name gives
    both an x and a y part, a list of (x y) will be returned."
-  (declare (type rect-coord dim))
+  (declare (type rect-coord coord))
   (multiple-value-bind (x y w h) (rect-fields rect)
-    (ecase dim
+    (ecase coord
       (:top y)
       (:left x)
       (:bottom (+ y h))
@@ -122,20 +122,21 @@
       )))
 
 @export
-(defun (setf rect-coord) (value rect dim)
+(defun (setf rect-coord) (value rect coord)
   "An extended form of set-rect, allows updating the underlying rect
    with intuitive keyword names defined by the rect-coord type.
    When both an x and a y can be specified, as in :topleft, a sequence of
    two integers in x,y order is expected."
-  (declare (type rect-coord dim))
+  (declare (type rect-coord coord))
   (multiple-value-bind (x y w h) (rect-fields rect)
-    (ecase dim
+    (declare (ignore x) (ignore y))
+    (ecase coord
       (:top (setf (sdl2:rect-y rect) value))
       (:left (setf (sdl2:rect-x rect) value))
       (:bottom (setf (sdl2:rect-y rect) (- value h)))
       (:right (setf (sdl2:rect-x rect) (- value w)))
-      (:centerx (setf (sdl2:rect-x rect) (- value (midway x w))))
-      (:centery (setf (sdl2:rect-y rect) (- value (midway y h))))
+      (:centerx (setf (sdl2:rect-x rect) (- value (truncate (/ w 2)))))
+      (:centery (setf (sdl2:rect-y rect) (- value (truncate (/ h 2)))))
       (:topleft
         (setf (rect-coord rect :left) (elt value 0)
               (rect-coord rect :top) (elt value 1)))
@@ -202,6 +203,15 @@
             (and (>= x2 x1) (< x2 (+ x1 w1)))) ; r1 left edge inside r2, or r2 left edge inside r1
         (or (and (>= y1 y2) (< y1 (+ y2 h2)))
             (and (>= y2 y1) (< y2 (+ y1 h1)))))))) ; r1 bottom edge inside r2, or r2 bottom edge inside r1
+
+@export
+(defun collide-point? (rect xy-point)
+  "Tests if a given (x, y) point sequence is inside
+   the rect. A point on the right or bottom edge is not
+   considered inside."
+  (multiple-value-bind (x y w h) (rect-fields rect)
+    (and (<= x (elt xy-point 0) (1- (+ x w)))
+         (<= y (elt xy-point 1) (1- (+ y h))))))
 
 @export
 (defun outside-screen? (rect)

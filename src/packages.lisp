@@ -54,6 +54,11 @@
 
 (defpackage #:lgame.rect
   (:use #:common-lisp #:annot.std)
+  (:import-from #:sdl2
+                #:rect-width
+                #:rect-height)
+  (:export #:rect-width
+           #:rect-height)
   (:documentation
     "Utils around handling SDL_Rects. Several with- macros like 'with-rect are included to efficiently
      use a stack-allocated object instead of allocating and freeing, though for any longer-lasting rects
