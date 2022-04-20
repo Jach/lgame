@@ -29,7 +29,6 @@ the data should still be within the texture.
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *source-dir* (directory-namestring
                          (or *compile-file-pathname* *load-truename*))))
-(defparameter *running?* t)
 
 (ql:quickload :lgame)
 (ql:quickload :cmu-infix)
@@ -50,12 +49,11 @@ the data should still be within the texture.
 
   (setf anim 0.0)
 
-  (setf *running?* t)
   (lgame.time:clock-start)
-  (loop while *running?* do
+  (loop while (lgame.time:clock-running?) do
     (lgame.event:do-event (event)
       (if (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+ ,lgame::+sdl-mousebuttondown+))
-          (setf *running?* nil)))
+          (lgame.time:clock-stop)))
 
     (incf anim 0.2)
     (loop for x from 0 below 640 by 20 do

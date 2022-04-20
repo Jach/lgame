@@ -7,12 +7,27 @@
   "Clock state, represents the number of milliseconds since the SDL library initialized.
    Updated by the clock functions.")
 
+(defvar %running? nil
+  "T if the lgame clock has been started/restarted and not stopped.")
+
 @export
 (defun clock-start ()
   "Starts/restarts the clock, users should call this before
    entering their main loop and call 'clock-tick at the end
    of each loop."
+  (setf %running? T)
   (setf *tick-ms* (lgame::sdl-get-ticks)))
+
+@export
+(defun clock-stop ()
+  "Flags that the clock should be considered stopped."
+  (setf %running? nil))
+
+@export
+(defun clock-running? ()
+  "Useful as a main game loop while condition,
+   T if the clock has been started/restarted and not stopped."
+  %running?)
 
 @export
 (defun clock-time ()
@@ -34,5 +49,5 @@
          (millis-per-frame-limit (and fps-limit (/ 1000.0 fps-limit))))
     (when (and millis-per-frame-limit (< frame-duration millis-per-frame-limit))
       (lgame::sdl-delay (truncate (- millis-per-frame-limit frame-duration))))
-    (clock-start)
+    (setf *tick-ms* (lgame::sdl-get-ticks))
     frame-duration))

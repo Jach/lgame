@@ -438,8 +438,10 @@ Example usage:
 ```lisp
 (lgame.time:clock-start)
 ;; now start the game loop
-(loop while *running?* do
-  (lgame.event:do-event (event) ...)
+(loop while (lgame.time:clock-running?) do
+  (lgame.event:do-event (event)
+    (when should-quit? (lgame.time:clock-stop))
+    ...)
   ; render...
   (lgame.time:clock-tick 60))
 ```
