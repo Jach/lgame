@@ -28,19 +28,15 @@ version.
 (defparameter *food* (list (/ *screen-width* 2)
                            (/ *screen-height* 2)))
 
-(defvar *running?* nil)
-
 (defun main ()
   (lgame:init)
   (lgame.display:create-centered-window "Snake" 800 600)
   (lgame.display:create-renderer)
   (lgame.display:set-logical-size *screen-width* *screen-height*)
 
-  (setf *running?* t)
   (lgame.time:clock-start)
-
   (unwind-protect
-    (loop while *running?* do
+    (loop while (lgame.time:clock-running?) do
           (livesupport:continuable
             (game-tick)))
     (lgame:quit)))
@@ -48,7 +44,7 @@ version.
 (defun game-tick ()
   (lgame.event:do-event (event)
     (when (= (lgame.event:event-type event) lgame::+sdl-quit+)
-      (setf *running?* nil))
+      (lgame.time:clock-stop))
     (when (= (lgame.event:event-type event) lgame::+sdl-keydown+)
       ;(and (= (lgame.event:event-type event) lgame::+sdl-keydown+)
       ;     (member (lgame.event:key-scancode event)
@@ -79,7 +75,7 @@ version.
     ;(when (or (member (first head) (list 0 *screen-width*))
     ;          (member (second head) (list 0 *screen-height*))
     ;          (member head (rest (pettomato-deque:deque->list *snake*)) :test #'equal))
-    ;  (setf *running?* nil))
+    ;  (lgame.time:clock-stop))
     (when (< (first head) 0)
       (setf (first head) (1- *screen-width*)))
     (when (>= (first head) *screen-width*)

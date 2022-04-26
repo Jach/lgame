@@ -16,8 +16,6 @@
 
 (defvar food (list (/ sw 2) (/ sh 2)))
 
-(defvar running? nil)
-
 ;3 mins 30s left, should be able to do better
 
 (defun main ()
@@ -26,11 +24,10 @@
   (lgame.display:create-renderer)
   (lgame.display:set-logical-size sw sh)
 
-  (setf running? t)
   (lgame.time:clock-start)
 
   (unwind-protect
-    (loop while running? do
+    (loop while (lgame.time:clock-running?) do
           (game-tick))
     (lgame:quit)))
 
@@ -39,7 +36,7 @@
 (defun game-tick ()
   (lgame.event:do-event (event)
     (when (= (lgame.event:event-type event) lgame::+sdl-quit+)
-      (setf running? nil))
+      (lgame.time:clock-stop))
     (when (= (lgame.event:event-type event) lgame::+sdl-keydown+)
       (setf dir (lgame.event:key-scancode event))))
 
