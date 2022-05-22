@@ -2,6 +2,8 @@
 
 (annot:enable-annot-syntax)
 
+;;;; Protocol for sprites and groups
+
 @export
 (defgeneric update (sprite-or-group)
   (:documentation
@@ -52,10 +54,27 @@
      "Given a group, remove any number of sprites that exist in the group."))
 
 @export
+(defgeneric map-sprite (function group)
+  (:documentation
+    "Given a group, iterate over all sprites in its collection and call
+     the given function with the sprite as its argument."))
+
+@export
+(defmacro do-sprite ((sprite-var group) &body body)
+  "Iterate over each sprite in the group, binding to
+   sprite-var. Ultimately just a wrapper around map-sprite."
+  `(map-sprite (lambda (,sprite-var) ,@body) ,group))
+
+@export
 (defgeneric remove-all-sprites (group &optional cleanup?)
   (:documentation
     "Given a group, remove all its sprites.
      If optional cleanup? is T, calls cleanup first."))
+
+@export
+(defgeneric sprite-count (group)
+  (:documentation
+    "Returns how many sprites are part of this group"))
 
 @export
 (defgeneric empty? (group)
@@ -91,14 +110,15 @@
           :documentation "Angle in degrees applied to the rect when rendering, rotating it clockwise")
    (flip :accessor .flip :type bit ;sdl2-ffi:sdl-renderer-flip
          :initform sdl2-ffi:+sdl-flip-none+)
-   (groups :accessor .groups :type list :initform (list) :documentation "List of groups containing this sprite")
-   (alive? :accessor .alive? :type boolean :initform T :documentation "Has this sprite been killed yet?"))
+
+   (alive? :accessor .alive? :type boolean :initform T :documentation "Has this sprite been killed yet?")
+   (groups :accessor .groups :type list :initform (list) :documentation "List of groups containing this sprite"))
   (:documentation
     "A sprite object contains a reference to a texture, stored with the image attribute,
      and a rect attribute corresponding to the sprite's location and size.
      These are used by the default implementation of draw to copy the texture
      to the global renderer at the position and size of the rect.
-     Additionally, a rotation angle and/or flip attribute can be given." ; should be a subclass?
+     Additionally, a rotation angle and/or flip attribute can be given." ; should be a subclass, along with alive?/groups?
     ))
 
 (defmethod print-object ((o sprite) stream)
@@ -138,14 +158,15 @@
 
 @export-class
 (defclass group ()
-  ((sprites :accessor .sprites :initarg :sprites :initform (list) :type list :documentation "List of Sprites that this Group contains")
+  ((sprites :accessor .sprites :initarg :sprites :initform (list) :type list :documentation "Collection of Sprites that this Group contains")
    )
   (:documentation
     "A container for holding Sprites. The main benefit is as a proxy to call update/draw methods of each sprite in sequence.
     Additional methods to handle group membership are provided.
     Note that the order of the sprites is not guaranteed when adding/removing, which affects render order. Consider one of the
     Group subclasses if you need different behavior.
-    Note also that none of the add/removes are implemented efficiently."
+    If it is desired to iterate over the sprites yourself, it is recommended to use the provided map-sprite function
+    or do-sprite macro rather than accessing the sprites slot directly."
     ))
 
 (defmethod print-object ((o group) stream)
@@ -175,6 +196,8 @@
     (format stream "sprite ~a" (.sprite o))))
 
 
+;;;; Methods for Sprites
+
 (defmethod update ((self sprite))
   "Default update for a sprite is a no-op"
   )
@@ -198,7 +221,6 @@
 (defmethod cleanup ((self sprite))
   (sdl2:free-rect (.rect self)))
 
-
 (defmethod add-groups ((self sprite) &rest groups)
   (dolist (group groups)
     (add-sprites group self)))
@@ -207,18 +229,24 @@
   (dolist (group groups)
     (remove-sprites group self)))
 
-(defmethod update ((self group))
+
+;;;; Methods for default group
+
+(defmethod map-sprite (function (self group))
   (dolist (sprite (.sprites self))
-    (update sprite)))
+    (funcall function sprite))
+  (values))
+
+(defmethod update ((self group))
+  (map-sprite #'update self))
 
 (defmethod draw ((self group))
-  (dolist (sprite (.sprites self))
-    (draw sprite)))
+  (map-sprite #'draw self))
 
 (defmethod cleanup ((self group))
-  (dolist (sprite (.sprites self))
-    (cleanup sprite)))
+  (map-sprite #'cleanup self))
 
+;; todo, don't use lists as sets...
 (defmethod add-sprites ((self group) &rest sprites)
   (setf (.sprites self) (union (.sprites self) sprites))
   (dolist (sprite sprites)
@@ -228,6 +256,45 @@
   (setf (.sprites self) (set-difference (.sprites self) sprites))
   (dolist (sprite sprites)
     (setf (.groups sprite) (set-difference (.groups sprite) (list self)))))
+
+(defmethod remove-all-sprites ((group group) &optional cleanup?)
+  (when cleanup?
+    (cleanup group))
+  (setf (.sprites group) nil))
+
+(defmethod sprite-count ((self group))
+  (length (.sprites self)))
+
+(defmethod empty? ((self group))
+  (null (.sprites self)))
+
+(defmethod sprite-collide ((sprite sprite) (group group))
+  (let ((collisions (list)))
+    (do-sprite (group-sprite group)
+      (when (lgame.rect:collide-rect? (.rect sprite) (.rect group-sprite))
+        (push group-sprite collisions)))
+    collisions))
+
+(defmethod group-collide ((group1 group) (group2 group))
+  (let ((all-collisions (list)))
+    (do-sprite (sprite1 group1)
+      (let ((sprite1-collisions (list)))
+        (do-sprite (sprite2 group2)
+          (when (lgame.rect:collide-rect? (.rect sprite1) (.rect sprite2))
+            (push sprite2 sprite1-collisions)))
+        (when sprite1-collisions
+          (push (cons sprite1 sprite1-collisions) all-collisions))))
+    all-collisions))
+
+(defmethod group-query-class ((group group) class)
+  (let ((sprites (list)))
+    (do-sprite (sprite group)
+      (when (typep sprite class)
+        (push sprite sprites)))
+    sprites))
+
+
+;;;; Methods for ordered-group
 
 (defmethod add-sprites ((self ordered-group) &rest sprites)
   (let ((unique-sprites (remove-if (lambda (v) (gethash v (slot-value self 'seen-map)))
@@ -243,10 +310,13 @@
     (setf (.sprites self) (remove sprite (.sprites self) :test #'equal))
     (setf (.groups sprite) (set-difference (.groups sprite) (list self)))))
 
+
+;;;; Methods for group-single
+
 (defmethod add-sprites ((self group-single) &rest sprites)
-  (let ((sprite (car (last sprites))))
+  (let ((sprite (car (last sprites)))) ; only expect single sprite, but if passed multiple only use last one
     (setf (slot-value self 'sprite) sprite)
-    (push self (.groups sprite))))
+    (setf (.groups sprite) (union (.groups sprite) (list self)))))
 
 (defmethod remove-sprites ((self group-single) &rest sprites)
   (dolist (sprite sprites)
@@ -254,35 +324,7 @@
       (setf (.groups sprite) (remove self (.groups sprite) :test #'equal))
       (setf (slot-value self 'sprite) nil))))
 
-(defmethod remove-all-sprites ((group group) &optional cleanup?)
-  (when cleanup?
-    (cleanup group))
-  (setf (.sprites group) (list)))
 
-(defmethod empty? ((self group))
-  (zerop (length (.sprites self))))
-
-(defmethod empty? ((self group-single))
-  (null (.sprite self)))
-
-(defmethod sprite-collide ((sprite sprite) (group group))
-  (loop for group-sprite in (.sprites group)
-        when (lgame.rect:collide-rect? (.rect sprite) (.rect group-sprite))
-        collect group-sprite))
-
-(defmethod group-collide ((group1 group) (group2 group))
-  (let ((result (list)))
-    (loop for sprite1 in (.sprites group1) do
-          (alexandria:if-let ((collisions (loop for sprite2 in (.sprites group2)
-                                                when (lgame.rect:collide-rect? (.rect sprite1) (.rect sprite2))
-                                                collect sprite2)))
-            (push (cons sprite1 collisions) result)))
-    result))
-
-(defmethod group-query-class ((group group) class)
-  (loop for sprite in (.sprites group)
-        if (typep sprite class)
-        collect sprite))
 
 ;; example using https://opengameart.org/content/various-gem-stone-animations
 ;;(load-spritesheet (format nil "~a/sapphirespinning.png" +sprites-dir+)

@@ -332,7 +332,7 @@ Differences:
   (let ((firing (lgame.event:key-pressed? :key lgame::+sdl-scancode-space+)))
     (when (and (not (.reloading? player))
                firing
-               (< (length (lgame.sprite:.sprites (getf groups :shots))) +max-shots+))
+               (< (lgame.sprite:sprite-count (getf groups :shots)) +max-shots+))
       (make-instance 'shot :groups (getf group-lists :for-shot) :pos (gunpos player))
       (sdl2-mixer:play-channel -1 shoot-sound 0))
     (setf (.reloading? player) firing))) ; prevents holding down space key to fire (why not just use keydown/keyup events?)
