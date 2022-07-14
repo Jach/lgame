@@ -78,10 +78,10 @@
 (defun set-rect (rect &key x y w h)
   "Update any/all of the possible rect properties.
    The standard x, y, w (width), and h (height) correspond directly to the underlying SDL_Rect."
-  (when x (setf (sdl2:rect-x rect) x))
-  (when y (setf (sdl2:rect-y rect) y))
-  (when w (setf (sdl2:rect-width rect) w))
-  (when h (setf (sdl2:rect-height rect) h)))
+  (when x (setf (sdl2:rect-x rect) (truncate x)))
+  (when y (setf (sdl2:rect-y rect) (truncate y)))
+  (when w (setf (sdl2:rect-width rect) (truncate w)))
+  (when h (setf (sdl2:rect-height rect) (truncate h))))
 
 @export
 (defun rect-fields (rect)
