@@ -4,11 +4,13 @@ lgame is a [pygame](https://www.pygame.org/news)-inspired library for making
 simple games in Common Lisp using
 [cl-sdl2](https://github.com/lispgames/cl-sdl2).
 
-This is very very pre-alpha quality and as such I don't really recommend it to
-others yet except perhaps along with
+**This is very very pre-alpha quality** and as such I don't really recommend it to
+others yet. Still, perhaps it will be useful alongside
 [lgame-examples](https://github.com/Jach/lgame/tree/examples) as a reference or
-study. This is why I haven't even asked for it to be included into quicklisp
-yet, but that may change in the future especially if someone asks me to.
+study.
+
+If you do end up using lgame anyway, it'd be nice to know so I can try and avoid
+breaking your code with future changes, or at least provide a fix-up patch!
 
 # Usage
 
@@ -64,17 +66,16 @@ information.
 # Contributing
 
 If you do end up using this or wanting to use this despite the warnings and
-limitations, and find some issues or want to contribute back some fixes, feel
-free to open up an issue or pull request and I'll try to look into it but no
-promises. For a pull request in particular, it'll help if you include somewhere
-a statement acknowledging that you're putting such a contribution into the
-public domain, see [unlicense.org](https://unlicense.org/) if you want something
-to copy. If you disagree with putting stuff into the public domain, I'm open to
-accepting a contribution in the form of an additional dependency to `lgame.asd`
-pointing to your extension.
-
-I don't expect this to become a big community project like pygame, and am not
-even sure I'd like that.
+limitations, and find some issues or want to contribute back some fixes or
+features, feel free to open up an issue and/or pull request and I'll try to look
+into it but no promises. For a pull request in particular, I'm happy, like many
+projects, to assume implicit agreement with the 'license' choice if nothing
+special is said, but it'll help if you explicitly include somewhere a statement
+acknowledging that you're putting such a contribution into the public domain,
+see [unlicense.org](https://unlicense.org/) if you want something to copy. If
+you disagree with putting stuff into the public domain, I'm open to accepting a
+contribution in the form of an additional dependency to `lgame.asd` pointing to
+your extension. Also happy if you want to put yourself in a new authors.md file.
 
 # Library Philosophy
 
@@ -85,7 +86,7 @@ as easily in Common Lisp. To further that end, lgame is not against eventually
 becoming a sort of "kitchen sink" of features that can be useful for a lot of
 games. For instance, some A\* pathfinding code is included. Basically as I make
 my own games or game concepts, if I find myself needing something in more than
-one of them, it's likely to end up in lgame.
+one of them, it's likely to end up in lgame, or at least an example.
 
 A lot of code so far is very optimistic and doesn't bother with all the error
 checks recommended by SDL or in many cases done for you by cl-sdl's `sdl2:`
@@ -99,6 +100,16 @@ I also don't plan on ever explicitly testing and supporting Mac for either
 development or game binaries, so only Windows will realistically receive my
 attention for faults. If you want to contribute Mac fixes though, I'll accept
 them.
+
+lgame is currently "single-threaded preferred". That is, like most pygame games,
+the style of development should be that one thread is responsible for
+initializing everything, loading assets (and unloading them later), and running
+the game loop. This keeps things on a relatively 'happy' path with respect to
+threading issues, especially around foreign memory and GL stuff, but it's
+obviously not modern. I'd like to experiment sometime with a more multi-threading
+aware architecture, including one that automatically and safely manages foreign
+memory, but this will likely end up changing a lot of interfaces and may be
+better to do without SDL under the hood in the first place.
 
 ## Why not just use plain cl-sdl2 for a game?
 

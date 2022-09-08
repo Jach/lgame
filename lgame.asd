@@ -5,7 +5,8 @@
   :depends-on ("cffi" "cl-autowrap" "sdl2" "sdl2-image" "sdl2-mixer" "sdl2-ttf"
                "alexandria" "livesupport"
                "cl-annot"
-               "pileup"
+
+               "pileup" ; for A*
                )
   :components ((:module "src/"
                         :serial t
