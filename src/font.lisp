@@ -30,7 +30,7 @@
    be freed by the GC, I'd like to just free it immediately."
   (let ((surf (sdl2-ffi::make-sdl-surface
                 :ptr
-                (sdl2-ttf::%sdl-render-text-solid (sdl2-ttf::ptr font)
+                (sdl2-ttf::%sdl-render-utf8-solid (sdl2-ttf::ptr font)
                                                   text
                                                   (sdl2-ttf::create-sdl-color-list r g b a)))))
     (if (lgame:null-ptr? surf)
