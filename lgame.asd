@@ -2,14 +2,23 @@
   :description "Pygame-inspired library to help make Lisp games with SDL2"
   :author "Kevin Secretan <jach@thejach.com>"
   :license "Public Domain / Unlicense"
-  :depends-on ("cffi" "cl-autowrap" "sdl2" "sdl2-image" "sdl2-mixer" ; "sdl2-ttf" - temporarily loaded in packges.lisp until issue resolved
+  :depends-on ("cffi" "cl-autowrap/libffi" "sdl2" "sdl2-image" "sdl2-mixer"
                "alexandria" "livesupport"
                "cl-annot"
 
                "pileup" ; for A*
                )
-  :components ((:module "src/"
+  :components ((:module "sdl2-ttf/"
                         :serial t
+                        :components ((:file "wrap")
+                                     (:static-file "SDL_ttf.h")))
+
+               (:module "sdl2-ttf-spec"
+                        :pathname "sdl2-ttf/spec")
+
+               (:module "src/"
+                        :serial t
+                        :depends-on ("sdl2-ttf/")
                         :components ((:file "packages")
                                      (:file "state")
                                      (:file "globals")

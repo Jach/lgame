@@ -8,7 +8,7 @@
 (defun load-font (font-path pt-size)
   (multiple-value-bind (font present?) (gethash (namestring font-path) *loaded-fonts*)
     (unless present?
-      (setf font (sdl2-ttf::ttf-open-font (namestring font-path) pt-size))
+      (setf font (lgame-sdl2-ttf.ffi:ttf-open-font (namestring font-path) pt-size))
       (if (lgame:null-ptr? font)
           (error 'sdl-error :msg (lgame::sdl-get-error))) ; add restart to use default font
       (setf (gethash (namestring font-path) *loaded-fonts*) font))
@@ -18,24 +18,15 @@
 (defun unload-fonts ()
   (maphash (lambda (k v)
              (declare (ignore k))
-             (lgame::ttf-close-font v))
+             (lgame-sdl2-ttf.ffi:ttf-close-font v))
            *loaded-fonts*)
   (clrhash *loaded-fonts*))
 
-(defun no-finalized-render-text-solid (font text r g b a)
-  "Can't just call the underlying ttf-render-text-solid
-   because call-by-value was not added by sdl2-ttf.
-   However I don't yet want to call sdl2-ttf:render-text-solid
-   because it puts the surface in a finalizer which may eventually
-   be freed by the GC, I'd like to just free it immediately."
-  (let ((surf (sdl2-ffi::make-sdl-surface
-                :ptr
-                (sdl2-ttf::%sdl-render-utf8-solid (sdl2-ttf::ptr font)
-                                                  text
-                                                  (sdl2-ttf::create-sdl-color-list r g b a)))))
-    (if (lgame:null-ptr? surf)
-        (error 'sdl-error :msg (lgame::sdl-get-error))
-        surf)))
+(cffi:defcstruct sdl-color
+  (r :uint8)
+  (g :uint8)
+  (b :uint8)
+  (a :uint8))
 
 @export
 (defun render-text (font text r g b &optional (a 255))
@@ -49,11 +40,16 @@
   ; coordinate and directly calls the render-copy function.
   ; Maybe just do that and have implicit caching there.
 
-  ;(sdl2-ttf:render-text-solid font text r g b a)
-  (let* ((surface (no-finalized-render-text-solid font text r g b a))
-         (texture (sdl2:create-texture-from-surface lgame:*renderer* surface)))
-    (sdl2:free-surface surface)
-    texture))
+  (cffi:with-foreign-object (c '(:struct sdl-color))
+    (setf
+      (cffi:foreign-slot-value c '(:struct sdl-color) 'r) r
+      (cffi:foreign-slot-value c '(:struct sdl-color) 'g) g
+      (cffi:foreign-slot-value c '(:struct sdl-color) 'b) b
+      (cffi:foreign-slot-value c '(:struct sdl-color) 'a) a)
+    (let* ((surf (lgame-sdl2-ttf.ffi:ttf-render-utf8-solid font text c))
+           (tex (lgame::sdl-create-texture-from-surface lgame:*renderer* surf)))
+      (lgame::sdl-free-surface surf)
+      tex)))
 
 @export
 (defun get-default-font ()

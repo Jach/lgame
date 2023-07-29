@@ -26,11 +26,12 @@
     (sdl2-mixer:init :mp3); :wave)
     (sdl2-mixer:open-audio 44100 :s16sys 2 4096)
 
-    (sdl2-ttf:init)))
+    (lgame-sdl2-ttf.ffi:ttf-init)
+    ))
 
 (defun quit ()
   (lgame.font:unload-fonts)
-  (sdl2-ttf:quit)
+  (lgame-sdl2-ttf.ffi:ttf-quit)
   (sdl2-mixer:close-audio)
   (sdl2-mixer:quit)
   (sdl2-image:quit)

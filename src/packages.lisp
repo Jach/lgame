@@ -73,14 +73,6 @@
      and draw methods to use the image/rect slots differently. Additionally a Group class
      concept is provided to manage collections of sprites."))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (handler-bind ((cffi:load-foreign-library-error
-                   (lambda (c)
-                     (declare (ignore c))
-                     (invoke-restart 'use-value
-                                     "libffi.so"))))
-    (asdf:load-system :sdl2-ttf)))
-
 (defpackage #:lgame.font
   (:use #:common-lisp #:annot.std)
   (:documentation
