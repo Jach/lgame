@@ -636,6 +636,11 @@ in a 3 or 4 length rgb/rgba list, or providing the rgba arguments explicitly.
 * `lgame.render:with-render-target*` - macro to temporarily set and then restore
   a render target to something besides the whole screen texture
 
+### lgame.draw
+
+Additional functions building off of sdl2's draw/render primitives. Currently
+`render-fill-circle` and `render-rounded-filled-rect`.
+
 ### lgame.loader
 
 Lets you use a singleton to load and cache textures, with them automatically

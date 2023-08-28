@@ -33,6 +33,7 @@
                                      (:file "sprite")
                                      (:file "font")
                                      (:file "render")
+                                     (:file "draw")
 
                                      (:file "texture-loader")
 

@@ -24,11 +24,21 @@
 @export
 (defmacro with-inflated-rect ((inflated-rect from-rect width-change height-change) &body body)
   "Helper to inflate/deflate a from-rect"
-  ; TODO: fix this to shrink around the center instead of just adjusting w/h
   `(with-rect-from-rect (,inflated-rect ,from-rect)
-     (incf (sdl2:rect-width ,inflated-rect) ,width-change)
-     (incf (sdl2:rect-height ,inflated-rect) ,height-change)
+     (incf (sdl2:rect-x ,inflated-rect) (- (truncate (/ ,width-change 2))))
+     (incf (sdl2:rect-y ,inflated-rect) (- (truncate (/ ,height-change 2))))
+     (incf (sdl2:rect-width ,inflated-rect) (* 2 (truncate (/ ,width-change 2))))
+     (incf (sdl2:rect-height ,inflated-rect) (* 2 (truncate (/ ,height-change 2))))
      ,@body))
+; for future test harness:
+;(lgame.rect:with-rect (f -2 -2 4 4)
+;  (lgame.rect:with-inflated-rect (r f -2 -2)
+;    (lgame.rect:rect-string r)
+;    (rect-coord r :center)))
+;(lgame.rect:with-rect (f -1 -1 2 2)
+;  (lgame.rect:with-inflated-rect (r f 2 2)
+;    (lgame.rect:rect-string r)
+;   (rect-coord r :center)))
 
 @export
 (defmacro with-clipped-rect ((clipped-rect rect1 rect2) &body body)

@@ -85,6 +85,13 @@
   (:documentation
     "Provides some wrappers around common sdl-render* calls."))
 
+(defpackage #:lgame.draw
+  (:use #:common-lisp #:annot.std)
+  (:import-from #:lgame.rect
+                #:with-rect)
+  (:documentation
+    "Provides additional drawing routines, like circles or rounded corner rects."))
+
 (defpackage #:lgame.loader
   (:use #:common-lisp #:annot.std #:annot.class)
   (:documentation
