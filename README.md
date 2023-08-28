@@ -12,11 +12,64 @@ study.
 If you do end up using lgame anyway, it'd be nice to know so I can try and avoid
 breaking your code with future changes, or at least provide a fix-up patch!
 
+# Example
+
+Compared to the 4-line example shown by
+[trivial-gamekit](https://github.com/borodust/trivial-gamekit), lgame takes a
+bit more effort. But for the full control it may be worth it. Assuming you have
+loaded lgame already (see next [Usage](#usage) section) you can copy this to a
+file and load it, or paste it directly into your REPL:
+
+```lisp
+(defpackage #:lgame.example.hello
+  (:use #:cl))
+(in-package :lgame.example.hello)
+
+(defun main ()
+  (lgame:init)
+  (lgame.display:create-centered-window "Hello Comparison" 800 600)
+  (lgame.display:create-renderer)
+
+  (let* ((font (lgame.font:load-font (lgame.font:get-default-font) 15))
+         (txt (lgame.font:render-text font "Hello, lgame!" 0 0 0))
+         (txt-rect (lgame.rect:get-texture-rect txt)))
+    (lgame.rect:move-rect txt-rect 240 (- 600 240 (sdl2:rect-height txt-rect))) ; gamekit's origin is bottom-left, we are top-left following SDL
+    (lgame.time:clock-start)
+    (unwind-protect
+      (loop while (lgame.time:clock-running?) do
+            (livesupport:continuable
+              (game-tick txt txt-rect)))
+
+      (sdl2:free-rect txt-rect)
+      (sdl2:destroy-texture txt)
+      (lgame:quit))))
+
+(defun game-tick (txt txt-rect)
+  (lgame.event:do-event (event)
+    (when (= (lgame.event:event-type event) lgame::+sdl-quit+)
+      (lgame.time:clock-stop)))
+
+  (lgame.render:set-draw-color 255 255 255)
+  (lgame.render:clear)
+
+  (lgame.render:blit txt txt-rect)
+
+  (lgame.render:present)
+
+  (livesupport:update-repl-link)
+  (lgame.time:clock-tick 60))
+
+(main)
+```
+
+If you are using SLIME, the use of the livesupport calls should prevent your
+main REPL loop from being taken over. This is great for interactive development.
+
 # Usage
 
-Because this isn't in quicklisp, you should first clone it to
+lgame is not in Quicklisp, so you should first clone it to
 ~/quicklisp/local-projects/ or put a symlink there so that your local quicklisp
-and ASDF can find it. Try to quickload it and verify all its dependencies are
+and ASDF can find it. Try to `(ql:quickload "lgame")` and verify all its dependencies are
 loaded. In particular, you'll need to first install some libraries to your OS if
 you haven't done so already:
 
@@ -31,7 +84,7 @@ default lgame tries to initialize SDL with "everything".
 
 After verifying it loads, you can try running some of the examples in
 [lgame-examples](https://github.com/Jach/lgame/tree/examples) to see that it
-works, they're written to be runnable standalone with `sbcl --script` or except
+works. They're written to be runnable standalone with `sbcl --script` or except
 for `taste.lisp` to be runnable by
 loading the file and executing `(main)`. Some examples will take over the REPL
 thread, but some make use of
@@ -82,11 +135,11 @@ your extension. Also happy if you want to put yourself in a new authors.md file.
 The goal of lgame is not to duplicate pygame's API entirely, or even to wrap
 SDL2 and friends as thoroughly and carefully, but to provide something close
 enough which facilitates making the sorts of programs found on pygame.org about
-as easily in Common Lisp. To further that end, lgame is not against eventually
-becoming a sort of "kitchen sink" of features that can be useful for a lot of
-games. For instance, some A\* pathfinding code is included. Basically as I make
-my own games or game concepts, if I find myself needing something in more than
-one of them, it's likely to end up in lgame, or at least an example.
+as easily but in Common Lisp. To further that end, lgame is not against
+eventually becoming a sort of "kitchen sink" of features that can be useful for
+a lot of games. For instance, some A\* pathfinding code is included. Basically
+as I make my own games or game concepts, if I find myself needing something in
+more than one of them, it's likely to end up in lgame, or at least an example.
 
 A lot of code so far is very optimistic and doesn't bother with all the error
 checks recommended by SDL or in many cases done for you by cl-sdl's `sdl2:`
@@ -120,12 +173,18 @@ eliminates that, mostly because it itself is implemented as mostly C code to
 expose a nicer interface to Python.
 
 cl-sdl2 *does not* handle the memory management for you in the general case.
-What's worse, the documentation can be actively misleading! This commentary
-isn't meant to denigrate anyone who has contributed to the project, I'm very
+What's worse, the documentation can be actively misleading!
+
+(In 2022, https://github.com/lispgames/cl-sdl2/commit/2d761165f01f03f2a8012be683828895ee6821c9
+made the following remarks obsolete; I've left it here for now as a historical note.)
+
+--begin outdated remarks--
+
+This commentary isn't meant to denigrate anyone who has contributed to the project, I'm very
 glad that cl-sdl2 exists, and arguably I could help things more with a pull
 request rather than this note, but consider
-[rect.lisp](https://github.com/lispgames/cl-sdl2/blob/master/src/rect.lisp). Its
-first function, `make-point`, has lying documentation that it will be garbage
+[rect.lisp](https://github.com/lispgames/cl-sdl2/blob/2b21bc2c18dc846e7a72951340014b8f504b2943/src/rect.lisp).
+Its first function, `make-point`, has lying documentation that it will be garbage
 collected as needed. It is lying because, if you look at
 [cl-autowrap](https://github.com/rpav/cl-autowrap)'s `plus-c:c-let` function
 that `make-point` is using, the let takes an optional `:free t` statement that
@@ -144,7 +203,7 @@ In theory, with careful usage, they allow you to create a GC-trackable object
 wrapper, and when the GC decides to garbage collect that wrapper, you can have
 it call a custom hook that can clean up the underlying foreign resource unknown
 to the GC. [cl-sdl2-ttf](https://github.com/Failproofshark/cl-sdl2-ttf), which
-lgame currently relies on to provide bindings for SDL2-TTF for font rendering,
+lgame currently [ed: *no longer*] relies on to provide bindings for SDL2-TTF for font rendering,
 *does* still use finalizers, possibly correctly, and even on underlying SDL
 objects like surfaces where my preference is to just explicitly free them.
 
@@ -161,6 +220,8 @@ does does have a call to `free-rect`. Similarly if they just used the previously
 mentioned `c-let` with `:free t`. However even that might not be desirable,
 see the [Library Organization](#lgameevent) section on the lgame.event package
 for some notes on how I try to have macros that enable stack allocation.
+
+--end outdated remarks--
 
 At the time of this writing, lgame expects the game to run in a single thread,
 but I want to make it multi-threaded eventually, or at least to not fall apart
@@ -212,11 +273,17 @@ trivial example is `(lgame.loader:get-texture ...)` which 1) keeps a centralized
 copy of the `SDL_Texture` making it easy to unload (and free) them all later,
 and 2) caches them so that a common 'mistake' I've found (and probably made) in
 pygame games of loading the images in a sprite object's constructor carries no
-penalty.  Basically I'm a fan of having program-wide managers or services
+penalty. Basically I'm a fan of having program-wide managers or services
 ("Services Architecture") for various things even inside libraries, that other
 objects talk to, subscribe to, or pluck stuff from, instead of having every
 program having to create functionally identical management systems for so many
 things on their own.
+
+This approach can in the future maybe be used to provide safe finalizers on
+wrapped objects -- e.g. the thing being wrapped keeps track of what thread
+created the foreign memory in addition to the foreign memory pointer itself, and
+so when the GC decides in its thread that it's time to deallocate it, the
+routine actually sends that request to the responsible thread.
 
 # Library Organization
 
@@ -242,13 +309,13 @@ that's a longer term plan.
 ## Packages
 
 lgame is divided into several packages to mimic (in a non-hierarchical way)
-pygame's structure and to hold to a general design principle that each service should
-get its own package/namespace. I try to document things in the Lisp code itself,
-so if you're comfortable jumping in consult `packages.lisp` and then each lisp
-file implementing the package you're interested in. Currently I make extensive
-use of [cl-annot](https://github.com/m2ym/cl-annot) and so you'll need to look
-file-by-file (or rely on your editor's symbol auto-completion) to see what
-symbols are actually exported to each package.
+pygame's structure and to hold to a general design principle that each service
+should get its own package/namespace. I try to document things in the Lisp code
+itself, so if you're comfortable jumping in consult `packages.lisp` and then
+each lisp file implementing the package you're interested in. Currently I make
+extensive use of [cl-annot](https://github.com/m2ym/cl-annot) and so generally
+speaking you'll need to look file-by-file (or rely on your editor's symbol
+auto-completion) to see what symbols are actually exported to each package.
 
 ### lgame.state
 
@@ -270,7 +337,8 @@ lgame state.)
 
 The second purpose is to use and re-export `lgame.state`'s state symbols, and to
 use (but not export) *all* symbols in the `sdl2-ffi.functions` and `sdl2-ffi`
-packages (that is, the underlying SDL functions and enums). The state symbols are:
+packages (that is, the underlying SDL functions and enums). The exported state
+symbols are:
 
 * `*screen*` -- aka the SDL\_Window created for you by
   `(lgame.display:create-window ...)` that wraps `SDL_CreateWindow(...)`.
@@ -280,8 +348,12 @@ packages (that is, the underlying SDL functions and enums). The state symbols ar
   the logical width and height instead of the actual window's.
 * `*renderer*` -- the SDL\_Renderer created for you by
   `(lgame.display:create-renderer)`, parented to the window.
+* ...possible misc singletons -- exported for internal convenience like
+  `*texture-loader*` but shouldn't be interfaced with directly (use
+  `lgame.loader`)
 
-These symbols may in the future turn into functions instead.
+These symbols may in the future turn into functions instead, so consider
+wrapping them in inline getters over using them directly...
 
 The benefit of having the FFI stuff available in this package is that if you
 read some random C/C++ code and see some functions you'd like to call, it's
@@ -382,7 +454,7 @@ general `ref` macro. Taken from `event.lisp`:
   (ref event :key :keysym :scancode))
 ```
 
-`plus-c:c-ref` lets you at nested struct fields. So you could write
+`plus-c:c-ref` lets you poke at nested struct fields. So you could write
 `key-scancode` as `(plus-c:c-ref event sdl2-ffi:sdl-event :key :keysym :scancode)`
 which is basically equivalent to C's `event.key.keysym.scancode`.
 
@@ -457,6 +529,9 @@ Example usage:
   (lgame.time:clock-tick 60))
 ```
 
+Note some examples still make use of their own `*running?*` variable. Do what
+you like.
+
 `clock-tick` should be called at the end of the frame, because it takes the duration of
 the frame into account for how long it should sleep for. Sleeping is done with `lgame::sdl-delay`.
 
@@ -492,9 +567,13 @@ touch the underlying x,y,w,h fields for everything. e.g.:
   )
 ```
 
+Note that since SDL Rects must use integers for their values, setters
+may automatically `truncate` their inputs (the same as casting to int in C),
+and destructive moves use `round`.
+
 ### lgame.sprite
 
-Similar set of classes and mixins to work with game sprites, similar to
+Similar set of classes and mixins to work with game sprites compared to
 [pygame.sprite](https://www.pygame.org/docs/ref/sprite.html). Check out
 `chimp.lisp` for a simple example or `aliens.lisp` for a bigger example. The
 main idea is that you give each sprite its own class inheriting from the
@@ -502,18 +581,18 @@ appropriate lgame.sprite base class, set the sprite's image and rect slots in a
 constructor, and implement the specializing method `update`. If you need
 something more complicated than "blitting" the sprite's image slot to the
 location specified by its rect slot, you can also implement the method `draw`.
-The game loop should call update/draw for all sprites every frame. There's also a
-`group` class to create sprite groups and thus only have to call (from the main
-loop) update/draw on the group itself.
+You should write your game loop to call update/draw for all sprites every frame.
+There's also a `group` class to create sprite groups and thus only have to call
+(from the main loop) update/draw on the group itself.
 
 ### lgame.font
 
-As mentioned earlier, sdl2-ttf uses GC finalizers, which can potentially be a
-problem. You can take the risk calling its functions directly yourself.
-For now, lgame however just provides a way to load and store TTF files
+For now, lgame just provides a way to load and store TTF files
 (it also includes a default liberally licensed font if you
 don't want to download one or specify a system font) and a single
-`lgame.font:render-text` function that functionally does the same as `sdl2-ttf:render-text-solid` but without using finalizers.
+`lgame.font:render-text` function that functionally does the same as `sdl2-ttf:render-text-solid`
+but without using finalizers. Other ttf functions are exposed in the
+`lgame-sdl2-ttf.ffi` package.
 
 Thus you *will* need to clean up the font texture yourself after you're done with
 it. See `chimp.lisp` for a static example which basically goes like this:
@@ -531,10 +610,11 @@ it. See `chimp.lisp` for a static example which basically goes like this:
 
   ; inside game loop:
   (lgame.render:blit banner-txt banner-txt-rect)
-  ; could also do:
+
+  ;; note: could also write:
   ;(sdl2:render-copy lgame:*renderer* banner-txt :dest-rect banner-txt-rect)
-  ; or:
-  ;(lgame::sdl-render-copy lgame:*renderer* banner-txt nil banner-txt-rect)
+  ;; or:
+  ;;(lgame::sdl-render-copy lgame:*renderer* banner-txt nil banner-txt-rect)
 ```
 
 ### lgame.render
@@ -547,6 +627,10 @@ the `*renderer*` all the time.
 * `lgame.render:present` - wraps sdl-render-present
 * `lgame.render:set-draw-color` - wraps sdl-set-render-draw-color, allows passing
 in a 3 or 4 length rgb/rgba list, or providing the rgba arguments explicitly.
+* `lgame.render:with-draw-color*` - macro to temporarily set and then restore a
+  render draw color
+* `lgame.render:with-render-target*` - macro to temporarily set and then restore
+  a render target to something besides the whole screen texture
 
 ### lgame.loader
 
@@ -578,14 +662,14 @@ Incomplete port of an old A\* implementation. Check out subdirectories of exampl
 usage until I get around with re-creating a playground and adding in all the
 extra functionality the original supported. I also want to benchmark it for
 speed and accuracy against some game maps before I declare it reliable
-(especially because it's using an odd extra map array for data that should be
-stored with the primary map array cells instead).
+(especially because it's using an odd extra map array for data that should
+probably be stored with the primary map array cells instead).
 
 ### lgame.util
 
 Utility functions that don't fit in other packages, and may indeed be better
 split off into separate libraries. Currently just a function for printing
-licensing information.
+licensing information that may be useful when shipping a game binary.
 
 ### Potential future packages...
 

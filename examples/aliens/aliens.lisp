@@ -12,7 +12,7 @@ Differences:
 * Groups are handled more explicitly, by passing in a :groups in the constructor rather than
   setting a class-allocated container field that is automatically used by the constructor
   (transparently by the add-groups-mixin). Also kills are more explicit.
-* Since we're using lgame:*texture-loader* which caches textures, there's not a penalty if we get the sprite image
+* Since we're using lgame.loader functions which caches textures, there's not a penalty if we get the sprite image
   each time in the constructor. We still class-allocate frames of images, though, so the list of frames is at least only stored once.
 * No dirty rects
 * Sane full-screen that doesn't mess with the user's monitor settings,
