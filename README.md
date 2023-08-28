@@ -6,7 +6,7 @@ simple games in Common Lisp using
 
 **This is very very pre-alpha quality** and as such I don't really recommend it to
 others yet. Still, perhaps it will be useful alongside
-[lgame-examples](https://github.com/Jach/lgame/tree/examples) as a reference or
+[lgame-examples](https://github.com/Jach/lgame/tree/master/examples) as a reference or
 study.
 
 If you do end up using lgame anyway, it'd be nice to know so I can try and avoid
