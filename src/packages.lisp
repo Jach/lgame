@@ -59,7 +59,8 @@
                 #:rect-width
                 #:rect-height)
   (:export #:rect-width
-           #:rect-height)
+           #:rect-height
+           #:with-rect)
   (:documentation
     "Utils around handling SDL_Rects. Several with- macros like 'with-rect are included to efficiently
      use a stack-allocated object instead of allocating and freeing, though for any longer-lasting rects
