@@ -93,7 +93,10 @@
     "Checks to see if any sprites within group1 collide with any sprites in group2 based on each sprite's .rect rect-colliding.
      Returns a list of collisions in the form ((sprite-from-group1 . (collided-sprite-from-group2 ...))
                                                (other-sprite-from-group1 . (collided-sprite-from-group2 ...))
-                                               ...)"))
+                                               ...)
+     Note: if a sprite from group 2 collides with multiple sprites from group 1, it will be represented multiple times.
+     Therefore, do not call methods on sprites from group 2 (like cleaning them up) until you have filtered out
+     duplicates to avoid calling a method multiple times and creating errors like a double-free."))
 
 @export
 (defgeneric group-query-class (group class)
@@ -140,7 +143,7 @@
   (:documentation
     "A sprite class mixin that provides a default :after method on 'kill
      which will automatically call the sprite's 'cleanup method, unless
-     that sprite is no longer '.alive?"))
+     that sprite is still '.alive?"))
 
 @export-class
 (defclass add-groups-mixin ()
@@ -215,7 +218,7 @@
   (apply #'remove-groups self (.groups self)))
 
 (defmethod kill :after ((self cleaned-on-kill-mixin))
-  (when (.alive? self)
+  (unless (.alive? self)
     (cleanup self)))
 
 (defmethod cleanup ((self sprite))

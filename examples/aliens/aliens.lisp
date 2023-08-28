@@ -65,7 +65,7 @@ Differences:
 (defparameter +screen-size+ '(640 480))
 (defparameter *full-screen* nil)
 
-(defclass player (sprite add-groups-mixin)
+(defclass player (sprite cleaned-on-kill-mixin add-groups-mixin)
   ((speed :accessor /speed :allocation :class :initform 10)
    (bounce :accessor /bounce :allocation :class :initform 24)
    (gun-offset :accessor /gun-offset :allocation :class :initform -11)
@@ -107,7 +107,7 @@ Differences:
         (rect-coord (.rect self) :top)))
 
 
-(defclass alien (sprite add-groups-mixin)
+(defclass alien (sprite cleaned-on-kill-mixin add-groups-mixin)
   ((speed :accessor /speed :allocation :class :initform 13)
    (animcycle :accessor /animcycle :allocation :class :initform 12)
 
@@ -186,7 +186,6 @@ Differences:
   (move-rect (.rect self) 0 (/speed self))
   (unless (plusp (rect-coord (.rect self) :top))
     (kill self)))
-
 
 (defclass bomb (sprite cleaned-on-kill-mixin add-groups-mixin)
   ((speed :accessor /speed :allocation :class :initform 9)))
@@ -362,14 +361,16 @@ Differences:
     (kill alien)))
 
 (defun handle-alien-shot-collisions (groups group-lists score boom-sound)
-  (dolist (collisions (lgame.sprite:group-collide (getf groups :aliens) (getf groups :shots)))
-    (let ((alien (car collisions))
-          (shots (cdr collisions)))
-      (sdl2-mixer:play-channel -1 boom-sound 0)
-      (make-instance 'explosion :groups (getf group-lists :for-explosion) :actor alien)
-      (incf (.score score))
-      (kill alien)
-      (mapc #'kill shots))))
+  (let ((shots-to-kill ()))
+    (dolist (collisions (lgame.sprite:group-collide (getf groups :aliens) (getf groups :shots)))
+      (let ((alien (car collisions))
+            (shots (cdr collisions)))
+        (sdl2-mixer:play-channel -1 boom-sound 0)
+        (make-instance 'explosion :groups (getf group-lists :for-explosion) :actor alien)
+        (incf (.score score))
+        (kill alien)
+        (setf shots-to-kill (union shots-to-kill shots))))
+    (mapc #'kill shots-to-kill)))
 
 (defun handle-bombs-player-collisions (player groups group-lists boom-sound)
   (dolist (bomb (lgame.sprite:sprite-collide player (getf groups :bombs)))
