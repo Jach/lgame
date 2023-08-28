@@ -617,6 +617,10 @@ it. See `chimp.lisp` for a static example which basically goes like this:
   ;;(lgame::sdl-render-copy lgame:*renderer* banner-txt nil banner-txt-rect)
 ```
 
+If you want to rely on system fonts, lgame uses
+[font-discovery](https://github.com/shinmera/font-discovery) and so can accept
+font family names via `load-font` or explicitly get paths via `find-font-path`.
+
 ### lgame.render
 
 Some wrappers like the just shown `blit` that let you avoid having to specify

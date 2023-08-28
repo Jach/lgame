@@ -1,7 +1,9 @@
 (in-package #:lgame)
 
-(define-condition sdl-error (error)
-  ((msg :initarg :msg :accessor sdl-error-msg)))
+(define-condition lgame-error (error)
+  ((msg :initarg :msg :accessor lgame-error-msg))
+  (:report (lambda (condition stream)
+             (format stream "lgame encountered an error: ~a" (lgame-error-msg condition)))))
 
 (defun show-sdl-error (msg)
   (format t "SDL Error: ~a~%" msg)
@@ -14,9 +16,9 @@
 
 (defun init ()
   (handler-bind
-    ((sdl-error (lambda (e)
-                  (show-sdl-error (lgame::sdl-error-msg e))
-                  (return-from init))))
+    ((lgame-error (lambda (e)
+                    (show-sdl-error (lgame-error-msg e))
+                    (return-from init))))
 
     (unless (zerop
               (lgame::sdl-init lgame::+sdl-init-everything+))

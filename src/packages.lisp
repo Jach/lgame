@@ -24,7 +24,8 @@
            #:*screen*
            #:*screen-rect*
            #:*renderer*
-           #:*texture-loader*))
+           #:*texture-loader*
+           #:lgame-error))
 
 (defpackage #:lgame.display
   (:use #:common-lisp)

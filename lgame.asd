@@ -6,6 +6,8 @@
                "alexandria" "livesupport"
                "cl-annot"
 
+               "font-discovery"
+
                "pileup" ; for A*
                )
   :components ((:module "sdl2-ttf/"

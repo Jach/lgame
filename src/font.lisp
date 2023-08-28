@@ -6,12 +6,28 @@
 
 @export
 (defun load-font (font-path pt-size)
-  (multiple-value-bind (font present?) (gethash (namestring font-path) *loaded-fonts*)
+  "Loads a font at the specified size.
+   If font-path is not a path or isn't a valid file, will attempt
+   to treat it as naming a font-family, and will use
+   #'find-font-path to attempt to resolve that into a path."
+
+  (multiple-value-bind (font present?) (gethash (cons (namestring font-path) pt-size) *loaded-fonts*)
     (unless present?
-      (setf font (lgame-sdl2-ttf.ffi:ttf-open-font (namestring font-path) pt-size))
-      (if (lgame:null-ptr? font)
-          (error 'sdl-error :msg (lgame::sdl-get-error))) ; add restart to use default font
-      (setf (gethash (namestring font-path) *loaded-fonts*) font))
+
+      (let ((true-path font-path))
+        (unless (uiop:file-exists-p font-path)
+          (if (equal (type-of font-path) 'pathname) ; attempted to use a path but doesn't exist, use default
+              (setf true-path (get-default-font))
+              (setf true-path (find-font-path font-path)))) ; otherwise if it was a string, try to delegate
+
+        (setf font (lgame-sdl2-ttf.ffi:ttf-open-font (namestring true-path) pt-size))
+
+        (if (lgame:null-ptr? font)
+            (restart-case (error 'lgame:lgame-error :msg (lgame::sdl-get-error))
+              (use-default-font () (return-from load-font (load-font (get-default-font) pt-size)))))
+
+        (setf (gethash (cons (namestring font-path) pt-size) *loaded-fonts*) font)))
+
     font))
 
 @export
@@ -55,3 +71,11 @@
 (defun get-default-font ()
   (asdf:system-relative-pathname :lgame "assets/open-sans/OpenSans-Regular.ttf"))
 
+@export
+(defun find-font-path (font-family)
+  "Using the font-discovery library, attempts to find a font
+   named by the font-family and return its path for use by load-font.
+   If the font cannot be found, the library uses a system default font like
+   dejavu sans."
+  (org.shirakumo.font-discovery:file
+    (org.shirakumo.font-discovery:find-font :family font-family)))
