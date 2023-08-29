@@ -30,7 +30,9 @@
 @export
 (defun cleanup-cursors ()
   (when *hover-cursor*
-    (lgame::sdl-free-cursor *hover-cursor*))
+    (lgame::sdl-free-cursor *hover-cursor*)
+    (setf *hover-cursor* nil))
   (when *normal-cursor*
-    (lgame::sdl-free-cursor *normal-cursor*)))
+    (lgame::sdl-free-cursor *normal-cursor*)
+    (setf *normal-cursor* nil)))
 
