@@ -236,18 +236,19 @@
 ;;;; Methods for default group
 
 (defmethod map-sprite (function (self group))
-  (dolist (sprite (.sprites self))
-    (funcall function sprite))
-  (values))
+  (mapcar function (.sprites self)))
 
 (defmethod update ((self group))
-  (map-sprite #'update self))
+  (map-sprite #'update self)
+  (values))
 
 (defmethod draw ((self group))
-  (map-sprite #'draw self))
+  (map-sprite #'draw self)
+  (values))
 
 (defmethod cleanup ((self group))
-  (map-sprite #'cleanup self))
+  (map-sprite #'cleanup self)
+  (values))
 
 ;; todo, don't use lists as sets...
 (defmethod add-sprites ((self group) &rest sprites)
