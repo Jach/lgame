@@ -32,6 +32,7 @@
     ))
 
 (defun quit ()
+  (lgame.mouse:cleanup-cursors)
   (lgame.font:unload-fonts)
   (lgame-sdl2-ttf.ffi:ttf-quit)
   (sdl2-mixer:close-audio)

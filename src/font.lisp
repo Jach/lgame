@@ -2,7 +2,10 @@
 
 (annot:enable-annot-syntax)
 
-(defvar *loaded-fonts* (make-hash-table :test #'equal))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+
+(defvar *loaded-fonts* (make-hash-table :test #'equal)))
+
 
 @export
 (defun load-font (font-path pt-size)
@@ -30,6 +33,8 @@
 
     font))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+
 @export
 (defun unload-fonts ()
   (maphash (lambda (k v)
@@ -37,6 +42,12 @@
              (lgame-sdl2-ttf.ffi:ttf-close-font v))
            *loaded-fonts*)
   (clrhash *loaded-fonts*))
+
+(when (plusp (hash-table-count *loaded-fonts*)) ; need to wipe cache and reinit ttf to avoid invalid memory errors...
+  (unload-fonts)
+  (lgame-sdl2-ttf.ffi:ttf-quit)
+  (lgame-sdl2-ttf.ffi:ttf-init)))
+
 
 (cffi:defcstruct sdl-color
   (r :uint8)
