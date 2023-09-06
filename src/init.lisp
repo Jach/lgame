@@ -39,6 +39,9 @@
   (sdl2-mixer:quit)
   (sdl2-image:quit)
 
+  (when (lgame.time:clock-running?)
+    (lgame.time:clock-stop))
+
   (when *texture-loader*
     (lgame.loader:unload-textures *texture-loader*)
     (setf *texture-loader* nil))
