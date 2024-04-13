@@ -73,12 +73,41 @@
   (< (path-node-total-cost node1) (path-node-total-cost node2)))
 
 
-
-
-(defun euclidean (r1 c1 r2 c2)
-  (let ((dist1 (- r1 r2))
-        (dist2 (- c1 c2)))
+(declaim (inline euclidean))
+@export
+(defun euclidean (a1 b1 a2 b2)
+  "Euclidean distance formula for a pair of points
+   (a1, b1) and (a2, b2)."
+  (let ((dist1 (- a1 a2))
+        (dist2 (- b1 b2)))
     (sqrt (+ (* dist1 dist1) (* dist2 dist2)))))
+
+(defconstant +sqrt2-minus-1+ (1- (sqrt 2)))
+
+(declaim (inline octile))
+@export
+(defun octile (a1 b1 a2 b2)
+  "Octile distance formula for a pair of points
+   (a1, b1) and (a2, b2)."
+  (let ((dist1 (abs (- a1 a2)))
+        (dist2 (abs (- b1 b2))))
+    (+ (* (min dist1 dist2) +sqrt2-minus-1+)
+       (max dist1 dist2))))
+
+(declaim (inline chebyshev))
+@export
+(defun chebyshev (a1 b1 a2 b2)
+  "Chebyshev distance formula for a pair of points
+   (a1, b1) and (a2, b2)."
+  (max (abs (- a1 a2)) (abs (- b1 b2))))
+
+(declaim (inline manhattan))
+@export
+(defun manhattan (a1 b1 a2 b2)
+  "Manhattan distance formula for a pair of points
+   (a1, b1) and (a2, b2)."
+  (+ (abs (- a1 a2) (abs (- b1 b2)))))
+
 
 (defun calc-cost-and-push (self r c real-cost best-r best-c)
   (let ((heuristic-cost (euclidean (elt (.end-pos self) 0) (elt (.end-pos self) 1) r c)))
