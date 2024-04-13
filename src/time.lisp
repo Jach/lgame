@@ -44,10 +44,20 @@
    cause the main loop to sleep for the remaining 6ms.
    Returns the duration amount (i.e. 'clock-time) from BEFORE any
    time spent delaying, allowing for a measure of frame duration
-   independent of the delay."
+   independent of the delay.
+
+   As an optional second value, returns the truncated millisecond difference
+   between the frame limit and the frame duration.
+   If fps-limit wasn't passed, or the frame duration matches the limit, it will be 0.
+   If the frame duration is exceeding the limit, it will be negative.
+   If there was a delay, it will be positive."
   (let* ((frame-duration (clock-time))
-         (millis-per-frame-limit (and fps-limit (/ 1000.0 fps-limit))))
-    (when (and millis-per-frame-limit (< frame-duration millis-per-frame-limit))
-      (lgame::sdl-delay (truncate (- millis-per-frame-limit frame-duration))))
+         (millis-per-frame-limit (and fps-limit (/ 1000.0 fps-limit)))
+         (any-delay (or (and millis-per-frame-limit (truncate (- millis-per-frame-limit
+                                                                 frame-duration)))
+                        0)))
+    (when (and millis-per-frame-limit (< frame-duration
+                                         millis-per-frame-limit))
+      (lgame::sdl-delay any-delay))
     (setf *tick-ms* (lgame::sdl-get-ticks))
-    frame-duration))
+    (values frame-duration any-delay)))
