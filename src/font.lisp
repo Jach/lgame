@@ -73,7 +73,7 @@
       (cffi:foreign-slot-value c '(:struct sdl-color) 'g) g
       (cffi:foreign-slot-value c '(:struct sdl-color) 'b) b
       (cffi:foreign-slot-value c '(:struct sdl-color) 'a) a)
-    (let* ((surf (lgame-sdl2-ttf.ffi:ttf-render-utf8-solid font text c))
+    (let* ((surf (lgame-sdl2-ttf.ffi:ttf-render-utf8-blended font text c))
            (tex (lgame::sdl-create-texture-from-surface lgame:*renderer* surf)))
       (lgame::sdl-free-surface surf)
       tex)))
@@ -81,6 +81,10 @@
 @export
 (defun get-default-font ()
   (asdf:system-relative-pathname :lgame "assets/open-sans/OpenSans-Regular.ttf"))
+
+@export
+(defun get-default-mono-font ()
+  (asdf:system-relative-pathname :lgame "assets/roboto-mono/RobotoMono-Regular.ttf"))
 
 @export
 (defun find-font-path (font-family)
