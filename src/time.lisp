@@ -7,6 +7,17 @@
   "Clock state, represents the number of milliseconds since the SDL library initialized.
    Updated by the clock functions.")
 
+(defvar *tick-us* 0
+  "Meant for internal use with SBCL, microsecond precision, represents us since unix epoch, or since SDL library initialized if not using SBCL.")
+
+#+sbcl
+(declaim (inline now-us))
+#+sbcl
+(defun now-us ()
+  "Microseconds since unix epoch"
+  (multiple-value-bind (s us) (sb-ext:get-time-of-day)
+    (+ us (* 1000000 s))))
+
 (defvar %running? nil
   "T if the lgame clock has been started/restarted and not stopped.")
 
@@ -15,8 +26,10 @@
   "Starts/restarts the clock, users should call this before
    entering their main loop and call 'clock-tick at the end
    of each loop."
-  (setf %running? T)
-  (setf *tick-ms* (lgame::sdl-get-ticks)))
+  (setf %running? T
+        *tick-ms* (lgame::sdl-get-ticks))
+
+  (setf *tick-us* #+sbcl (now-us) #-sbcl (* 1000 *tick-ms*)))
 
 @export
 (defun clock-stop ()
@@ -32,13 +45,18 @@
 @export
 (defun clock-time ()
   "Returns the time in milliseconds since the last call to
-   'clock-start or 'clock-tick."
-  (- (lgame::sdl-get-ticks) *tick-ms*))
+   'clock-start or 'clock-tick.
+   Note: will be a floating point value on SBCL because sub-ms precision
+   is available."
+  #-sbcl
+  (- (lgame::sdl-get-ticks) *tick-ms*)
+  #+sbcl
+  (/ (- (now-us) *tick-us*) 1000.0))
 
 @export
 (defun clock-tick (&optional fps-limit)
-  "Ticks the clock. If 'fps-limit is specified,
-   uses sdl-delay to wait the remainder of the frame time
+  "Ticks the clock. If 'fps-limit (in seconds) is specified,
+   uses sdl-delay (or sleep on sbcl) to wait the remainder of the frame time
    needed so that the game loop does not exceed the fps-limit.
    e.g. if 'fps-limit is 60, and a frame takes 10ms, this will
    cause the main loop to sleep for the remaining 6ms.
@@ -46,18 +64,24 @@
    time spent delaying, allowing for a measure of frame duration
    independent of the delay.
 
-   As an optional second value, returns the truncated millisecond difference
+   As an optional second value, returns the millisecond difference
    between the frame limit and the frame duration.
    If fps-limit wasn't passed, or the frame duration matches the limit, it will be 0.
    If the frame duration is exceeding the limit, it will be negative.
-   If there was a delay, it will be positive."
+   If there was a delay, it will be positive.
+
+   Note on SBCL, values will be floats due to microsecond precision."
   (let* ((frame-duration (clock-time))
          (millis-per-frame-limit (and fps-limit (/ 1000.0 fps-limit)))
-         (any-delay (or (and millis-per-frame-limit (truncate (- millis-per-frame-limit
-                                                                 frame-duration)))
+         (any-delay (or (and millis-per-frame-limit (- millis-per-frame-limit
+                                                       frame-duration))
                         0)))
     (when (and millis-per-frame-limit (< frame-duration
                                          millis-per-frame-limit))
-      (lgame::sdl-delay any-delay))
+      #+sbcl
+      (sleep (/ any-delay 1000.0))
+      #-sbcl
+      (lgame::sdl-delay (truncate any-delay)))
     (setf *tick-ms* (lgame::sdl-get-ticks))
+    (setf *tick-us* #+sbcl (now-us) #-sbcl (* 1000 *tick-ms*))
     (values frame-duration any-delay)))
