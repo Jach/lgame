@@ -63,7 +63,47 @@ file and load it, or paste it directly into your REPL:
 ```
 
 If you are using SLIME, the use of the livesupport calls should prevent your
-main REPL loop from being taken over. This is great for interactive development.
+main REPL loop from being taken over. This is great for interactive development,
+and makes making a single-game-thread sort of small game not too terrible.
+
+lgame isn't meant for big complex games, you really want a full-fledged engine
+for those.
+
+If you're lost on how to structure a game, a general pattern you can
+use (I picked it up long ago from [Andy Harris](http://www.aharrisbooks.net/websitebaker/))
+is acronymed as IDEA/ALTER. IDEA is the overall structure and ALTER is the
+structure of the game loop.
+
+* Initialize -- Init lgame and anything else that should be setup at the start
+* Display setup -- window and size, renderer, window title, etc.
+* Entities -- make all the game entities that will be used (player, background, enemies, HUD,
+  etc.)
+* Action -- create and run the game loop, every iteration should result in a new
+  frame to display
+
+The game loop itself can be broken down with ALTER:
+
+* Assign important values -- anything you need for the loop itself, like a clock
+* Loop -- begin the game loop running until the game is quit, often convenient to
+  have the body call a game-tick function
+* Time -- manage time to run at a desired frame rate. I prefer this at the end
+  of the loop, though
+* Events -- handle user events and use them to update entities, which themselves
+  may produce further events like AI logic or collisions. You can also think of
+  this section as a logic and physics processing step
+* Render -- when all the game state is finalized, render out the frame
+
+You can see this pattern in the example above.
+
+Avoiding spaghetti code can be difficult as the size of the game increases,
+though, so consider specific architecture beforehand to better assist in each
+step. Possibly even switching to an
+[ECS](https://awkravchuk.itch.io/cl-fast-ecs/devlog/622054/gamedev-in-lisp-part-1-ecs-and-metalinguistic-abstraction)
+framework instead. (Or as another example, if you have thousands of things
+bouncing around, instead of checking every object against every other object for
+collisions, you probably want to have some sort of collision manager / service /
+singleton that every object registers itself to and updates if needed, and then
+the collision manager itself can resolve collisions in a more efficient manner.)
 
 # Usage
 
