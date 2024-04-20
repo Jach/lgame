@@ -33,12 +33,17 @@
       (sdl2:free-rect lgame.state:*screen-rect*))
   (setf lgame.state:*screen-rect* (sdl2:make-rect 0 0 w h)))
 
+(defun window-pixel-format ()
+  (sdl2-ffi.functions:sdl-get-window-pixel-format lgame.state:*screen*))
+
 (defun screenshot-png (path-namestring)
   "Saves the current state of the renderer
    to a PNG image."
-  (let ((surface (sdl2:create-rgb-surface (sdl2:rect-width lgame.state:*screen-rect*) (sdl2:rect-height lgame.state:*screen-rect*) 32)))
-    (sdl2-ffi.functions:sdl-render-read-pixels lgame.state:*renderer* nil lgame::+sdl-pixelformat-rgba8888+
-                                               (plus-c:c-ref surface sdl2-ffi:sdl-surface :pixels)
-                                               (plus-c:c-ref surface sdl2-ffi:sdl-surface :pitch))
-    (sdl2-image:save-png surface path-namestring)
-    (sdl2:free-surface surface)))
+  (multiple-value-bind (w h) (sdl2:get-renderer-output-size lgame.state:*renderer*)
+    (let ((surface (sdl2:create-rgb-surface w h 32)))
+      (sdl2-ffi.functions:sdl-render-read-pixels lgame.state:*renderer* nil (window-pixel-format)
+                                                 (plus-c:c-ref surface sdl2-ffi:sdl-surface :pixels)
+                                                 (plus-c:c-ref surface sdl2-ffi:sdl-surface :pitch))
+      (sdl2-image:save-png surface path-namestring)
+      (sdl2:free-surface surface))))
+

@@ -396,6 +396,9 @@ Exports functions for setting up your game window.
   to preserve the aspect ratio. If you go into fullscreen, the monitor's display mode
   also doesn't need to change.
 * `lgame.display:screenshot-png` -- lets you save a screenshot of your rendered frame.
+  Note that it uses the rendered display size, not the logical display size, and a 4k image will take quite some time since it's doing a slow pixel copy.
+* `window-pixel-format` -- default window pixel format, useful when creating
+  your own textures
 
 An example usage:
 ```lisp

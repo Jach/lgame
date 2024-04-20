@@ -35,6 +35,7 @@
            #:create-centered-window
            #:create-renderer
            #:set-logical-size
+           #:window-pixel-format
            #:screenshot-png))
 
 (defpackage #:lgame.event
