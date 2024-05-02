@@ -7,8 +7,17 @@
   "Clock state, represents the number of milliseconds since the SDL library initialized.
    Updated by the clock functions.")
 
+@export
 (defvar *tick-us* 0
   "Meant for internal use with SBCL, microsecond precision, represents us since unix epoch, or since SDL library initialized if not using SBCL.")
+
+@export
+(defvar *last-frame-duration* 0
+  "Updated to the first return value of 'clock-tick, meant to ease access to the previous frame's duration in milliseconds")
+
+@export
+(defvar *last-any-delay* 0
+  "Updated to the second return value of 'clock-tick, meant to ease access to the previous frame's delay amount, if any. See 'clock-tick for possible values.")
 
 #+sbcl
 (declaim (inline now-us))
@@ -60,7 +69,8 @@
    needed so that the game loop does not exceed the fps-limit.
    e.g. if 'fps-limit is 60, and a frame takes 10ms, this will
    cause the main loop to sleep for the remaining 6ms.
-   Returns the duration amount (i.e. 'clock-time) from BEFORE any
+
+   Returns the duration amount in milliseconds (i.e. 'clock-time) from BEFORE any
    time spent delaying, allowing for a measure of frame duration
    independent of the delay.
 
@@ -84,4 +94,6 @@
       (lgame::sdl-delay (truncate any-delay)))
     (setf *tick-ms* (lgame::sdl-get-ticks))
     (setf *tick-us* #+sbcl (now-us) #-sbcl (* 1000 *tick-ms*))
+    (setf *last-frame-duration* frame-duration
+          *last-any-delay* any-delay)
     (values frame-duration any-delay)))
