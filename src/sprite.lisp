@@ -125,9 +125,12 @@
     ))
 
 (defmethod print-object ((o sprite) stream)
-  (print-unreadable-object (o stream :type t :identity t)
-    (format stream "rect ~a groups-length ~a alive? ~a"
-            (.rect o) (length (.groups o)) (.alive? o))))
+  (let ((r (if (slot-boundp o 'rect)
+               (.rect o)
+               "<unbound>")))
+    (print-unreadable-object (o stream :type t :identity t)
+      (format stream "rect ~a groups-length ~a alive? ~a"
+              r (length (.groups o)) (.alive? o)))))
 
 (defmethod (setf .angle) :after
   (new-value (self sprite))
@@ -151,10 +154,13 @@
   (:documentation
     "A sprite class mixin that provides an extra :after constructor that
      accepts a :groups argument and will apply 'add-groups to it,
-     adding the constructed sprite to the list of passed groups."))
+     adding the constructed sprite to the list of passed groups.
+     Can also be used with a single group to be added."))
 
 (defmethod initialize-instance :after ((self add-groups-mixin) &key groups)
-  (apply #'add-groups self groups))
+  (if (atom groups)
+      (add-groups self groups)
+      (apply #'add-groups self groups)))
 
 
 ;;;; Group classes
