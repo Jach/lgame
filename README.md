@@ -7,10 +7,18 @@ simple games in Common Lisp using
 **This is very very pre-alpha quality** and as such I don't really recommend it to
 others yet. Still, perhaps it will be useful alongside
 [lgame-examples](https://github.com/Jach/lgame/tree/master/examples) as a reference or
-study.
+study?
 
 If you do end up using lgame anyway, it'd be nice to know so I can try and avoid
 breaking your code with future changes, or at least provide a fix-up patch!
+
+**But seriously, don't use this.** It's fun to try and make games in an
+old-fashioned style, that is, trying to do everything on a single thread, and it
+can be a useful platform for learning a few things or just spinning up a quick
+UI window, but every time I do something with this library I have to resist the
+urge to throw it all away and start over with something new. Something that's
+multi-threaded and something that takes care of garbage memory, even the
+foreign-allocated stuff, automatically.
 
 # Example
 
