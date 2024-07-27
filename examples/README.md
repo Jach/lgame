@@ -3,6 +3,8 @@
 Here are provided examples showing how to use lgame (and sdl2 under the hood) to
 accomplish various things.
 
+Scroll down further if you just want to see some screenshots.
+
 Most of them are based on corresponding [pygame
 examples](https://github.com/pygame/pygame/tree/main/examples)
 
@@ -52,19 +54,31 @@ become familiar with SDL2's API to be fully effective.
 * Taste -- almost the simplest possible example, not a great pattern to build
   on, but shows the general flow of init -> setup screen -> load a ball image ->
   enter game loop -> detect the quit event -> bounce the ball around.
+
+  ![taste](screenshots/taste.png)
 * Snake -- another simple example with not great style, but uses SDL draw
   primitives instead of sprites.
+
+  ![snake](screenshots/snake.png)
 * Moveit -- builds on Taste by wrapping stuff in a main function and having more
   sprites, but is missing needed memory management.
+
+  ![moveit](screenshots/moveit.png)
 * Liquid -- introduces a 60 FPS limiting clock, shows a cool liquidy effect
   achieved by rendering chunks of a texture at offsets from each other.
+
+  ![liquid](screenshots/liquid.png)
 * Testsprite -- simple little benchmark drawing 100 (or more if you want)
   sprites bouncing around and showing FPS on quit. Introduces the lgame.loader and
   lgame.sprite packages, with each sprite being in its own object all inside a
   single sprite group.
+
+  ![testsprite](screenshots/testsprite.png)
 * Chimp -- Bigger example with sprites, sound effects, and mouse interaction.
   Shows off more of the lower level direct SDL2 calls instead of the nicer
   wrapping lgame ones.
+
+  ![chimp](screenshots/chimp.png)
 * Vgrade -- On the surface a simpler example, just shows mixing window flags (in
   this case borderless mode) and paints a new color gradient every frame. It
   prints out how long it took to render each gradient, and thus your max
@@ -79,6 +93,8 @@ become familiar with SDL2's API to be fully effective.
   conclusion to draw is that if you have a lot of graphics data, it will pay to
   be able to manipulate it through foreign memory rather than pay a cost each
   frame to translate it from Lisp memory.
+
+  ![vgrade](screenshots/vgrade.png)
 * Aliens - almost an actual game! Sprites, music, sfx, animations, creating a
   background from a (in this case screen height) tile.. shows some more
   experimental features of lgame like some sprite mixins to handle group
@@ -86,19 +102,29 @@ become familiar with SDL2's API to be fully effective.
   time. This could be made immediately cleaner by moving each sprite to its own
   file, but whatever.
 
+  ![aliens](screenshots/aliens.png)
+
 ## Others
 
 * gamekit-hello-comparison -- short example showing how trivial-gamekit's 4-line
   hello-world can be done in quite a few more lines with lgame. If you don't
   need the fine-grained lower-level control that lgame demands, trivial-gamekit
   should be your first stop...
+
+  ![gamekit](screenshots/gamekit-hello-comparison.png)
 * gl -- a short example showing how to use this with OpenGL and the classic (and obsolete)
   immediate mode API.
+
+  ![gl](screenshots/gl.png)
 * gl2 -- another short OpenGL example but this time using a more modern OpenGL
   3.1 core and demonstrating how to compile and use a shader (which could be put
   out into its own file and read from, here I just embedded it as a string).
+
+  ![gl2](screenshots/gl2.png)
 * Maze -- a port of an old maze generation program I made in pygame. Inside is
   also an example of using the A\* pathfinding hook in lgame to solve the maze.
+
+  ![maze](screenshots/maze.png)
 
 ## External
 
