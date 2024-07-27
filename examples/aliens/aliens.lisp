@@ -24,6 +24,7 @@ Differences:
 |#
 
 (ql:quickload :lgame)
+(ql:quickload :closer-mop)
 
 (defpackage #:lgame.example.aliens
   (:use #:cl)
@@ -272,14 +273,12 @@ Differences:
     (loop while *running?* do
           (game-tick background boom-sound shoot-sound groups group-lists player score))
 
-
     (sdl2-mixer:halt-music)
     (sdl2:destroy-texture background)
     ; to support running again in a repl, need to also clear alien's
     ; class-allocated image frames
-    (let ((final-alien (make-instance 'alien)))
-      (setf (/image-frames final-alien) nil)
-      (lgame.sprite:cleanup final-alien))
+    (let ((alien-class-proto (closer-mop:class-prototype (find-class 'alien))))
+      (setf (/image-frames alien-class-proto) nil)) ; or use slot-value?
     (lgame.sprite:cleanup (getf groups :all))
 
     ; may not need to be called because of sdl2-mixer's usage of autocollect...

@@ -158,7 +158,7 @@
      Can also be used with a single group to be added."))
 
 (defmethod initialize-instance :after ((self add-groups-mixin) &key groups)
-  (if (atom groups)
+  (if (and groups (atom groups))
       (add-groups self groups)
       (apply #'add-groups self groups)))
 
