@@ -11,16 +11,27 @@
 (defvar *tick-us* 0
   "Meant for internal use with SBCL, microsecond precision, represents us since unix epoch, or since SDL library initialized if not using SBCL.")
 
+(declaim (type double-float *last-frame-duration*))
 @export
-(defvar *last-frame-duration* 0
+(defvar *last-frame-duration* 0.0d0
   "Updated to the first return value of 'clock-tick, meant to ease access to the previous frame's duration in milliseconds")
 
+(declaim (type double-float *last-any-delay*))
 @export
-(defvar *last-any-delay* 0
+(defvar *last-any-delay* 0.0d0
   "Updated to the second return value of 'clock-tick, meant to ease access to the previous frame's delay amount, if any. See 'clock-tick for possible values.")
 
+(declaim (inline dt))
+@export
+(defun dt ()
+  "Returns the delta-time of the last frame, in unit seconds.
+   If the time is too large, returns 0.25 to try and avoid a potential physics explosion."
+  (let ((total-time (+ *last-frame-duration* *last-any-delay*)))
+    (min (* total-time 1d-3) 0.25d0)))
+
 #+sbcl
-(declaim (inline now-us))
+(declaim (inline now-us)
+         (ftype (function () (values (signed-byte 64))) now-us))
 #+sbcl
 (defun now-us ()
   "Microseconds since unix epoch"
@@ -60,7 +71,7 @@
   #-sbcl
   (- (lgame::sdl-get-ticks) *tick-ms*)
   #+sbcl
-  (/ (- (now-us) *tick-us*) 1000.0))
+  (/ (- (now-us) *tick-us*) 1000.0d0))
 
 @export
 (defun clock-tick (&optional fps-limit)
