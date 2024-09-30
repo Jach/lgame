@@ -13,7 +13,7 @@
 
    (waypoint-list :accessor .waypoint-list :initform (list) :type list :documentation "A list of (row column) locations, from start-pos to end-pos inclusive, representing the shortest path of node locations to travel to in order to reach the end-pos.")
 
-   (%open-list :accessor .open-list :type pileup:heap)
+   (%open-list :accessor .open-list)
    (%visited-list :accessor .visited-list)
    (%parent-list :accessor .parent-list))
   (:documentation
@@ -29,9 +29,11 @@
 
 
 (defmethod initialize-instance :after ((self A*) &key)
-  (setf (.open-list self) (pileup:make-heap #'node-compare :size (apply #'* (.size self))))
-  (setf (.visited-list self) (make-array (.size self) :element-type 'boolean)) ; could also be a hash table, maybe experiment? or a morton-number encoded bitstring?
-  (setf (.parent-list self) (make-array (.size self) :element-type 'parent-track)))
+  (let ((rows (elt (.size self) 0))
+        (cols (elt (.size self) 1)))
+    (setf (.open-list self) (make-open-list :size (* rows cols)))
+    (setf (.visited-list self) (make-array (list rows cols) :element-type 'boolean)) ; could also be a hash table, maybe experiment? or a morton-number encoded bitstring?
+    (setf (.parent-list self) (make-array (list rows cols) :element-type 'parent-track))))
 
 
 ;; A node along the shortest path,
@@ -44,11 +46,12 @@
 ;; of a neighboring node, the parent, from which
 ;; the costs of this node have been calculated assuming
 ;; the parent is along the path just before this node.
+;(declaim (optimize (speed 3) (space 3) (debug 1) (safety 1)))
 (defstruct path-node
   r
   c
-  real-cost
-  total-cost
+  (real-cost 0.0 :type single-float)
+  (total-cost 0.0 :type single-float)
   parent-r
   parent-c)
 
@@ -63,7 +66,7 @@
 (defstruct parent-track
   r
   c
-  real-cost)
+  (real-cost 0.0 :type single-float))
 
 (defun node-compare (node1 node2)
   "Compare two path nodes for the open-list
@@ -106,14 +109,14 @@
 (defun manhattan (a1 b1 a2 b2)
   "Manhattan distance formula for a pair of points
    (a1, b1) and (a2, b2)."
-  (+ (abs (- a1 a2) (abs (- b1 b2)))))
+  (+ (abs (- a1 a2)) (abs (- b1 b2))))
 
 
 (defun calc-cost-and-push (self r c real-cost best-r best-c)
   (let ((heuristic-cost (euclidean (elt (.end-pos self) 0) (elt (.end-pos self) 1) r c)))
     (setf heuristic-cost (* heuristic-cost (.heuristic-weight self)))
     (let ((node (make-path-node :r r :c c :real-cost real-cost :total-cost (+ heuristic-cost real-cost) :parent-r best-r :parent-c best-c)))
-      (pileup:heap-insert node (.open-list self))
+      (open-list-insert (.open-list self) node)
       (setf (aref (.visited-list self) r c) T)
       (let ((parent (aref (.parent-list self) r c)))
         (setf (parent-track-r parent) best-r
@@ -128,8 +131,8 @@
 
   (when new-request? ; push start first time this is called
     ; make sure open-list is empty
-    (loop until (pileup:heap-empty-p (.open-list self)) do
-          (pileup:heap-pop (.open-list self)))
+    (loop until (open-list-empty? (.open-list self)) do
+          (open-list-pop (.open-list self)))
     ; make sure visited-list is set to nil, parent-list structures are clear
     (loop for row below (elt (.size self) 0) do
           (loop for col below (elt (.size self) 1) do
@@ -139,8 +142,8 @@
     ; put the starting node location on top of the open-list
     (calc-cost-and-push self (elt (.start-pos self) 0) (elt (.start-pos self) 1) 0.0 (elt (.start-pos self) 0) (elt (.start-pos self) 1)))
 
-  (loop until (pileup:heap-empty-p (.open-list self)) do
-        (let ((best-node (pileup:heap-pop (.open-list self))))
+  (loop until (open-list-empty? (.open-list self)) do
+        (let ((best-node (open-list-pop (.open-list self))))
 
           (when (and (= (path-node-r best-node) (elt (.end-pos self) 0))
                      (= (path-node-c best-node) (elt (.end-pos self) 1))) ; goal!
@@ -176,11 +179,12 @@
           ; original has ISWALL which queries terrain for is-a-wall, but yeah, really just want get-neighbors on terrrain
           ; original also uses fancy bitwise algo to do it, not gonna do that here
 
-          (let ((neighbors-with-cost (funcall (.neighbor-fn self) (list (path-node-r best-node) (path-node-c best-node))))
+          (let ((neighbors-with-cost (funcall (.neighbor-fn self) (path-node-r best-node) (path-node-c best-node)))
                 ; if analysis, can also query terrain for 'influence' value of the best node, times 20 for some reason, which can be added to the cost
                 (initial-cost (path-node-real-cost best-node)))
-            (dolist (neighbor-cost neighbors-with-cost)
-              (let* ((neighbor (elt neighbor-cost 0))
+            (loop for i below (length neighbors-with-cost) do
+              (let* ((neighbor-cost (elt neighbors-with-cost i))
+                     (neighbor (elt neighbor-cost 0))
                      (cost (elt neighbor-cost 1))
                      (cost-adj (+ initial-cost cost)) ; + influence if analysis..
                      (neighbor-row (elt neighbor 0))
@@ -194,3 +198,33 @@
   ; we reached the end of the loop without finding a path or returning early,
   ; flag the search as failed
   (values nil nil))
+
+;;;; Below are necessary functions for the open-list interface.
+;;;; Old implementations are left as comments for educational purposes.
+;;;; Initial implementation was pileup's priority queue, each a single line commented out at the top.
+;;;; Next was a simple array version, which was scanned entirely during each pop to find the best node,
+;;;; this proved even slower at larger sizes though.
+
+(defun make-open-list (&key size)
+ ;(pileup:make-heap #'node-compare :size size))
+ (make-array size :adjustable t :fill-pointer 0 :element-type 'path-node))
+
+(defun open-list-insert (open-list node)
+  ;(pileup:heap-insert node open-list))
+  (vector-push-extend node open-list))
+
+(defun open-list-empty? (open-list)
+  ;(pileup:heap-empty-p open-list))
+  (zerop (length open-list)))
+
+(defun open-list-pop (open-list)
+  ;(pileup:heap-pop open-list))
+  (let ((best-idx 0)
+        (last-idx (1- (length open-list))))
+    (loop for i from 1 upto last-idx do
+          (when (node-compare (aref open-list i)
+                              (aref open-list best-idx))
+            (setf best-idx i)))
+    ; implementation note: when we find the best node, we swap it with the last node in the array, then 'pop' it off the end
+    (rotatef (aref open-list best-idx) (aref open-list last-idx))
+    (vector-pop open-list)))

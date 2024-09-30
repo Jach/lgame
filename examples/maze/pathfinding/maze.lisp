@@ -55,8 +55,8 @@ The new path won't update until you hit 'f' again.
                                      :start-pos (list (1- (first *dimensions*)) ; bottom-right
                                                       (1- (second *dimensions*)))
                                      :end-pos '(0 0) ; top-left
-                                     :neighbor-fn (lambda (location)
-                                                    (finished-valid-neighbors (.maze *maze-obj*) location))
+                                     :neighbor-fn (lambda (row col)
+                                                    (finished-valid-neighbors (.maze *maze-obj*) row col))
                                      )))
 
 (defmacro with-renderer-info ((info) &body body)

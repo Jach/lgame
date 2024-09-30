@@ -127,15 +127,13 @@ The actual maze structure, independent of the GUI
       ((and (= row-cel row-nei) (= col-cel (1- col-nei))) ; neighbor is to the east, knock cell's east wall
        (setf (node-east-wall (aref maze row-cel col-cel)) nil)))))
 
-(defun finished-valid-neighbors (maze cell)
+(defun finished-valid-neighbors (maze row-cel col-cel)
   "Once the maze has been constructed, this will return the same thing as get-neighbors, but with the addition
    that if there are any walls between the cell and a neighbor, that neighbor will not be returned.
    This is useful for path-finding.
    Additionally, the cost of moving to each neighbor is included (1),
    giving a structure of ((neighbor cost) ...)"
-  (let ((row-cel (first cell))
-        (col-cel (second cell))
-        (neighbors (get-neighbors maze cell)))
+  (let ((neighbors (get-neighbors maze (list row-cel col-cel))))
     (mapcar (lambda (neighbor)
               (vector neighbor 1))
             (remove-if (lambda (neighbor)
