@@ -21,7 +21,6 @@
 (defvar *last-any-delay* 0.0d0
   "Updated to the second return value of 'clock-tick, meant to ease access to the previous frame's delay amount, if any. See 'clock-tick for possible values.")
 
-(declaim (inline dt))
 @export
 (defun dt ()
   "Returns the delta-time of the last frame, in unit seconds.
