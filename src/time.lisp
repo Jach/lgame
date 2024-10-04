@@ -95,11 +95,11 @@
          (millis-per-frame-limit (and fps-limit (/ 1000.0 fps-limit)))
          (any-delay (or (and millis-per-frame-limit (- millis-per-frame-limit
                                                        frame-duration))
-                        0)))
+                        0d0)))
     (when (and millis-per-frame-limit (< frame-duration
                                          millis-per-frame-limit))
       #+sbcl
-      (sleep (/ any-delay 1000.0))
+      (sleep (/ any-delay 1000.0d0))
       #-sbcl
       (lgame::sdl-delay (truncate any-delay)))
     (setf *tick-ms* (lgame::sdl-get-ticks))
