@@ -35,7 +35,13 @@
 (defun now-us ()
   "Microseconds since unix epoch"
   (multiple-value-bind (s us) (sb-ext:get-time-of-day)
-    (+ us (* 1000000 s))))
+    (+ us (* #.(truncate 1e6) s))))
+
+#+sbcl
+(defun now-ns ()
+  "Nanoseconds since unix epoch"
+  (multiple-value-bind (s ns) (sb-unix:clock-gettime sb-unix:clock-realtime)
+    (+ ns (* #.(truncate 1e9) s))))
 
 (defvar %running? nil
   "T if the lgame clock has been started/restarted and not stopped.")
