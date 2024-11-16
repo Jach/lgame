@@ -60,3 +60,17 @@
             (some test any)
             (if all
                 (every test all))))))
+
+@export
+(defun modifier-pressed? (&key key any all)
+  "Works similarly to key-pressed? but checks for modifier keys like shift,
+   so expects values like +kmod-shift+ or +kmod-caps+"
+  (let* ((state (sdl2-ffi.functions:sdl-get-mod-state))
+         (test (lambda (key) (plusp (logand key state)))))
+    (if key
+        (funcall test key)
+        (if any
+            (some test any)
+            (if all
+                (every test all))))))
+
