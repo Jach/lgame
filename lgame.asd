@@ -2,13 +2,12 @@
   :description "Pygame-inspired library to help make Lisp games with SDL2"
   :author "Kevin Secretan <jach@thejach.com>"
   :license "Public Domain / Unlicense"
-  :depends-on ("cffi" "cl-autowrap/libffi" "sdl2" "sdl2-image" "sdl2-mixer"
-               "alexandria" "livesupport"
-               "cl-annot"
-
-               "font-discovery"
-
-               "pileup" ; for A*
+  :depends-on ("cffi" "cl-autowrap/libffi" "sdl2" "sdl2-image" "sdl2-mixer" ; core sdl deps and ffi wrapping...
+               "alexandria" "livesupport" ; development enhancements
+               "cl-annot" ; for lazy exports, will eventually remove
+ ;              "trivial-clock" ; more portable nanosecond clock precision? will also be part of sdl3...
+               "font-discovery" ; easier to use system fonts
+               "pileup" ; for A*, will probably remove eventually
                )
   :components ((:module "sdl2-ttf/"
                         :serial t
