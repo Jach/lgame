@@ -1,27 +1,20 @@
 (in-package #:lgame.time)
 
-(annot:enable-annot-syntax)
-
-@export
 (defvar *tick-ms* 0
   "Clock state, represents the number of milliseconds since the SDL library initialized.
    Updated by the clock functions.")
 
-@export
 (defvar *tick-us* 0
   "Meant for internal use with SBCL, microsecond precision, represents us since unix epoch, or since SDL library initialized if not using SBCL.")
 
 (declaim (type double-float *last-frame-duration*))
-@export
 (defvar *last-frame-duration* 0.0d0
   "Updated to the first return value of 'clock-tick, meant to ease access to the previous frame's duration in milliseconds")
 
 (declaim (type double-float *last-any-delay*))
-@export
 (defvar *last-any-delay* 0.0d0
   "Updated to the second return value of 'clock-tick, meant to ease access to the previous frame's delay amount, if any. See 'clock-tick for possible values.")
 
-@export
 (defun dt ()
   "Returns the delta-time of the last frame, in unit seconds.
    If the time is too large, returns 0.25 to try and avoid a potential physics explosion."
@@ -46,7 +39,6 @@
 (defvar %running? nil
   "T if the lgame clock has been started/restarted and not stopped.")
 
-@export
 (defun clock-start ()
   "Starts/restarts the clock, users should call this before
    entering their main loop and call 'clock-tick at the end
@@ -56,18 +48,15 @@
 
   (setf *tick-us* #+sbcl (now-us) #-sbcl (* 1000 *tick-ms*)))
 
-@export
 (defun clock-stop ()
   "Flags that the clock should be considered stopped."
   (setf %running? nil))
 
-@export
 (defun clock-running? ()
   "Useful as a main game loop while condition,
    T if the clock has been started/restarted and not stopped."
   %running?)
 
-@export
 (defun clock-time ()
   "Returns the time in milliseconds since the last call to
    'clock-start or 'clock-tick.
@@ -78,7 +67,6 @@
   #+sbcl
   (/ (- (now-us) *tick-us*) 1000.0d0))
 
-@export
 (defun clock-tick (&optional fps-limit)
   "Ticks the clock. If 'fps-limit (in seconds) is specified,
    uses sdl-delay (or sleep on sbcl) to wait the remainder of the frame time

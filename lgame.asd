@@ -4,7 +4,6 @@
   :license "Public Domain / Unlicense"
   :depends-on ("cffi" "cl-autowrap/libffi" "sdl2" "sdl2-image" "sdl2-mixer" ; core sdl deps and ffi wrapping...
                "alexandria" "livesupport" ; development enhancements
-               "cl-annot" ; for lazy exports, will eventually remove
  ;              "trivial-clock" ; more portable nanosecond clock precision? will also be part of sdl3...
                "font-discovery" ; easier to use system fonts
                "pileup" ; for A*, will probably remove eventually

@@ -1,8 +1,5 @@
 (in-package #:lgame.event)
 
-(annot:enable-annot-syntax)
-
-@export
 (defmacro with-event ((event) &body body)
   "Helper macro to enable sdl event allocation on the stack.
    Verify with macroexpand this:
@@ -24,7 +21,6 @@
     `(cffi:with-foreign-pointer (,event  ,size)
        ,@body)))
 
-@export
 (defmacro do-event ((event) &body loop-body)
   "Helper macro to iterate through SDL's event list until it is empty,
    binding each SDL_Event to event."
@@ -33,20 +29,16 @@
            do
            ,@loop-body)))
 
-@export
 (defmacro ref (event &rest fields)
   `(plus-c:c-ref ,event sdl2-ffi:sdl-event ,@fields))
 
-@export
 (defun event-type (event)
   (ref event :type))
 
-@export
 (defun key-scancode (event)
   ;(plus-c:c-ref event sdl2-ffi:sdl-event :key :keysym :scancode))
   (ref event :key :keysym :scancode))
 
-@export
 (defun key-pressed? (&key key any all)
   "If :key is given, checks a single-key for pressed state.
    If :any is given, checks if any in the list are pressed.
@@ -61,7 +53,6 @@
             (if all
                 (every test all))))))
 
-@export
 (defun modifier-pressed? (&key key any all)
   "Works similarly to key-pressed? but checks for modifier keys like shift,
    so expects values like +kmod-shift+ or +kmod-caps+"

@@ -1,9 +1,5 @@
 (in-package #:lgame.loader)
 
-(annot:enable-annot-syntax)
-
-(declaim (inline get-texture-rect))
-@export
 (defun get-texture-rect (texture)
   ; this is done since while the function belongs to rect proper,
   ; it's easy to mess up since texture loading and rect-getting often
@@ -11,7 +7,6 @@
   ; get an image and rect at the same time.
   (lgame.rect:get-texture-rect texture))
 
-@export
 (defun load-texture (path-or-file &key color-key)
   "Simple texture loader from a path-or-file pointing to an image on disk,
    using the default *renderer*.
@@ -25,17 +20,14 @@
       (lgame::sdl-free-surface surface)
       texture)))
 
-@export-class
 (defclass texture-loader ()
   ((textures :accessor .textures :initform (make-hash-table :test #'equal))
    (default-dir :accessor .default-dir :initarg :default-dir)))
 
-@export
 (defun create-texture-loader (default-dir)
   "Factory for a default lgame:*texture-loader*."
   (setf lgame.state:*texture-loader* (make-instance 'texture-loader :default-dir default-dir)))
 
-@export
 (defun get-texture (key-or-name &key dir color-key)
   "Get a texture using the default *texture-loader*
    Assumes the texture-loader has been previously created"
@@ -66,7 +58,6 @@
       (setf (gethash key-or-name (.textures self)) texture)
       texture)))
 
-@export
 (defmethod unload-textures ((self texture-loader))
   (maphash (lambda (key val)
              (declare (ignore key))

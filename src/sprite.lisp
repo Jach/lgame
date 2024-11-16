@@ -1,20 +1,15 @@
 (in-package #:lgame.sprite)
 
-(annot:enable-annot-syntax)
-
 ;;;; Protocol for sprites and groups
 
-@export
 (defgeneric update (sprite-or-group)
   (:documentation
     "Control the behavior of a Sprite, or each sprite in a Group"))
 
-@export
 (defgeneric draw (sprite-or-group)
   (:documentation
     "Render the Sprite image, or each sprite in a Group"))
 
-@export
 (defgeneric kill (sprite)
   (:documentation
     "Removes the Sprite from all groups it belongs to.
@@ -25,7 +20,6 @@
      or also inherit the 'cleaned-on-kill-mixin which defines
      such a method for you."))
 
-@export
 (defgeneric cleanup (sprite-or-group)
   (:documentation
     "Frees the Sprite's rect, or those of each sprite in a Group.
@@ -33,61 +27,50 @@
      was loaded with the texture-loader as it will be freed when textures
      are unloaded, but the user should do that themselves if loaded another way."))
 
-@export
 (defgeneric add-groups (sprite &rest groups)
   (:documentation
     "Add the sprite to any given groups it's not already a member of."))
 
-@export
 (defgeneric remove-groups (sprite &rest groups)
   (:documentation
     "Remove the sprite from any number of given groups, if it exists."))
 
-@export
 (defgeneric add-sprites (group &rest sprites)
   (:documentation
      "Add any number of sprites to the given group."))
 
-@export
 (defgeneric remove-sprites (group &rest sprites)
   (:documentation
      "Given a group, remove any number of sprites that exist in the group."))
 
-@export
 (defgeneric map-sprite (function group)
   (:documentation
     "Given a group, iterate over all sprites in its collection and call
      the given function with the sprite as its argument."))
 
-@export
 (defmacro do-sprite ((sprite-var group) &body body)
   "Iterate over each sprite in the group, binding to
    sprite-var. Ultimately just a wrapper around map-sprite."
   `(map-sprite (lambda (,sprite-var) ,@body) ,group))
 
-@export
 (defgeneric remove-all-sprites (group &optional cleanup?)
   (:documentation
     "Given a group, remove all its sprites.
      If optional cleanup? is T, calls cleanup first."))
 
-@export
 (defgeneric sprite-count (group)
   (:documentation
     "Returns how many sprites are part of this group"))
 
-@export
 (defgeneric empty? (group)
   (:documentation
     "True if a group contains sprites, nil otherwise."))
 
-@export
 (defgeneric sprite-collide (sprite group)
   (:documentation
     "Checks to see if the .rect of the sprite collides with any of the rects of the sprites within group.
      Returns a list of such colliding sprites."))
 
-@export
 (defgeneric group-collide (group1 group2)
   (:documentation
     "Checks to see if any sprites within group1 collide with any sprites in group2 based on each sprite's .rect rect-colliding.
@@ -98,14 +81,12 @@
      Therefore, do not call methods on sprites from group 2 (like cleaning them up) until you have filtered out
      duplicates to avoid calling a method multiple times and creating errors like a double-free."))
 
-@export
 (defgeneric group-query-class (group class)
   (:documentation
     "Returns all sprites inside group that are of the type class."))
 
 ;;;; Sprite class
 
-@export-class
 (defclass sprite ()
   ((image :accessor .image :type (or null sdl2-ffi:sdl-texture))
    (rect :accessor .rect :type (or null sdl2-ffi:sdl-rect))
@@ -140,7 +121,6 @@
 
 ;;;; Sprite mixins
 
-@export-class
 (defclass cleaned-on-kill-mixin ()
   ()
   (:documentation
@@ -148,7 +128,6 @@
      which will automatically call the sprite's 'cleanup method, unless
      that sprite is still '.alive?"))
 
-@export-class
 (defclass add-groups-mixin ()
   ()
   (:documentation
@@ -165,7 +144,6 @@
 
 ;;;; Group classes
 
-@export-class
 (defclass group ()
   ((sprites :accessor .sprites :initarg :sprites :initform (list) :type list :documentation "Collection of Sprites that this Group contains")
    )
@@ -182,14 +160,12 @@
   (print-unreadable-object (o stream :type t :identity t)
     (format stream "sprites ~a" (.sprites o))))
 
-@export-class
 (defclass ordered-group (group)
   ((seen-map :initform (make-hash-table :test #'equal) :documentation "Collection of seen sprites to avoid duplicate entries"))
   (:documentation
     "A group container that retains the order of existing sprites as you add/remove them, so you can count on
      draws to happen in order that you added sprites."))
 
-@export-class
 (defclass group-single (group)
   ((sprite :accessor .sprite :initarg :sprite :initform nil :type (or null sprite)))
   (:documentation

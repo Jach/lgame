@@ -360,10 +360,7 @@ lgame is divided into several packages to mimic (in a non-hierarchical way)
 pygame's structure and to hold to a general design principle that each service
 should get its own package/namespace. I try to document things in the Lisp code
 itself, so if you're comfortable jumping in consult `packages.lisp` and then
-each lisp file implementing the package you're interested in. Currently I make
-extensive use of [cl-annot](https://github.com/m2ym/cl-annot) and so generally
-speaking you'll need to look file-by-file (or rely on your editor's symbol
-auto-completion) to see what symbols are actually exported to each package.
+each lisp file implementing the package you're interested in.
 
 ### lgame.state
 

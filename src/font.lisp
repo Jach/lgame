@@ -1,13 +1,20 @@
 (in-package #:lgame.font)
 
-(annot:enable-annot-syntax)
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *loaded-fonts* (make-hash-table :test #'equal))
 
-(defvar *loaded-fonts* (make-hash-table :test #'equal)))
+  (defun unload-fonts ()
+    (maphash (lambda (k v)
+               (declare (ignore k))
+               (lgame-sdl2-ttf.ffi:ttf-close-font v))
+             *loaded-fonts*)
+    (clrhash *loaded-fonts*))
 
+  (when (plusp (hash-table-count *loaded-fonts*)) ; need to wipe cache and reinit ttf to avoid invalid memory errors...
+    (unload-fonts)
+    (lgame-sdl2-ttf.ffi:ttf-quit)
+    (lgame-sdl2-ttf.ffi:ttf-init)))
 
-@export
 (defun load-font (font-path pt-size)
   "Loads a font at the specified size.
    If font-path is not a path or isn't a valid file, will attempt
@@ -33,29 +40,12 @@
 
     font))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-
-@export
-(defun unload-fonts ()
-  (maphash (lambda (k v)
-             (declare (ignore k))
-             (lgame-sdl2-ttf.ffi:ttf-close-font v))
-           *loaded-fonts*)
-  (clrhash *loaded-fonts*))
-
-(when (plusp (hash-table-count *loaded-fonts*)) ; need to wipe cache and reinit ttf to avoid invalid memory errors...
-  (unload-fonts)
-  (lgame-sdl2-ttf.ffi:ttf-quit)
-  (lgame-sdl2-ttf.ffi:ttf-init)))
-
-
 (cffi:defcstruct sdl-color
   (r :uint8)
   (g :uint8)
   (b :uint8)
   (a :uint8))
 
-@export
 (defun render-text (font text r g b &optional (a 255))
   ; todo, add support for an optional cached? parameter.
   ; when t, and *texture-loader* has been created,
@@ -78,15 +68,12 @@
       (lgame::sdl-free-surface surf)
       tex)))
 
-@export
 (defun get-default-font ()
   (asdf:system-relative-pathname :lgame "assets/open-sans/OpenSans-Regular.ttf"))
 
-@export
 (defun get-default-mono-font ()
   (asdf:system-relative-pathname :lgame "assets/roboto-mono/RobotoMono-Regular.ttf"))
 
-@export
 (defun find-font-path (font-family)
   "Using the font-discovery library, attempts to find a font
    named by the font-family and return its path for use by load-font.

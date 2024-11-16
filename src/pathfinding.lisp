@@ -1,8 +1,5 @@
 (in-package #:lgame.pathfinding)
 
-(annot:enable-annot-syntax)
-
-@export-class
 (defclass A* ()
   ((size :accessor .size :initarg :size :type sequence :documentation "The size of the search grid, given as a (rows columns) pair")
    (start-pos :accessor .start-pos :initarg :start-pos :type sequence :documentation "A starting point, given as a (row column) pair")
@@ -22,7 +19,6 @@
      :end-pos defines the end or goal point. These are expected in (row column) format.
      "))
 
-@export-class
 (defclass a-star (A*)
   ()
   (:documentation "Alias for class A*"))
@@ -73,8 +69,6 @@
   (< (path-node-total-cost node1) (path-node-total-cost node2)))
 
 
-(declaim (inline euclidean))
-@export
 (defun euclidean (a1 b1 a2 b2)
   "Euclidean distance formula for a pair of points
    (a1, b1) and (a2, b2)."
@@ -84,8 +78,6 @@
 
 (defconstant +sqrt2-minus-1+ (1- (sqrt 2)))
 
-(declaim (inline octile))
-@export
 (defun octile (a1 b1 a2 b2)
   "Octile distance formula for a pair of points
    (a1, b1) and (a2, b2)."
@@ -94,15 +86,11 @@
     (+ (* (min dist1 dist2) +sqrt2-minus-1+)
        (max dist1 dist2))))
 
-(declaim (inline chebyshev))
-@export
 (defun chebyshev (a1 b1 a2 b2)
   "Chebyshev distance formula for a pair of points
    (a1, b1) and (a2, b2)."
   (max (abs (- a1 a2)) (abs (- b1 b2))))
 
-(declaim (inline manhattan))
-@export
 (defun manhattan (a1 b1 a2 b2)
   "Manhattan distance formula for a pair of points
    (a1, b1) and (a2, b2)."
@@ -122,7 +110,6 @@
   ; optional debugging, set r,c on the terrain to visited
   )
 
-@export
 (defmethod compute-path ((self A*) &key single-step? new-request?)
   ; later, take explicit row, col args that represent *goal-pos*
 

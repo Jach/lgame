@@ -1,8 +1,5 @@
 (in-package #:lgame.draw)
 
-(annot:enable-annot-syntax)
-
-@export
 (defun render-fill-circle (renderer x y radius &optional quadrant)
   "If QUADRANT is given as one of :top-left, :top-right, :bottom-left, or :bottom-right,
    then only that quadrant will be drawn."
@@ -20,7 +17,6 @@
                           (t t))
                     (lgame::sdl-render-draw-point renderer (+ x dx) (+ y dy))))))))
 
-@export
 (defun render-rounded-filled-rect (renderer rect radius)
   (multiple-value-bind (x0 y0 w0 h0) (lgame.rect:rect-fields rect)
     (setf radius (truncate (min radius (/ w0 2) (/ h0 2))))

@@ -1,7 +1,5 @@
 (in-package #:lgame.util)
 
-(annot:enable-annot-syntax)
-
 (defun collect-dependencies-into (systems root-system)
   "Recursively enumerates dependencies of 'root-system,
    placing them into the given 'systems hash-table
@@ -14,7 +12,6 @@
              (setf (gethash dependency-name systems) dependency)
              (collect-dependencies-into systems dependency))))
 
-@export
 (defun display-licenses (&optional (root-system-name "lgame"))
   "Displays the licenses for the 'root-system-name (default lgame) and all its
    sub-dependencies in alphabetical order.
