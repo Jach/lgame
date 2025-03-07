@@ -15,12 +15,6 @@
 (defvar *last-any-delay* 0.0d0
   "Updated to the second return value of 'clock-tick, meant to ease access to the previous frame's delay amount, if any. See 'clock-tick for possible values.")
 
-(defun dt ()
-  "Returns the delta-time of the last frame, in unit seconds.
-   If the time is too large, returns 0.25 to try and avoid a potential physics explosion."
-  (let ((total-time (+ *last-frame-duration* *last-any-delay*)))
-    (min (* total-time 1d-3) 0.25d0)))
-
 #+sbcl
 (declaim (inline now-us)
          (ftype (function () (values (signed-byte 64))) now-us))
@@ -44,9 +38,12 @@
    entering their main loop and call 'clock-tick at the end
    of each loop."
   (setf %running? T
-        *tick-ms* (lgame::sdl-get-ticks))
+        *tick-ms* (lgame::sdl-get-ticks)
+        *last-frame-duration* 0.0d0
+        *last-any-delay* 0.0d0)
 
   (setf *tick-us* #+sbcl (now-us) #-sbcl (* 1000 *tick-ms*)))
+
 
 (defun clock-stop ()
   "Flags that the clock should be considered stopped."
@@ -101,3 +98,13 @@
     (setf *last-frame-duration* frame-duration
           *last-any-delay* any-delay)
     (values frame-duration any-delay)))
+
+(defun dt ()
+  "Returns the delta-time between frames, inclusive of any delays from an fps-limit, in floating point unit seconds.
+   If the time is too large, returns 0.25 to try and avoid a potential physics explosion...
+   Note for the very first frame (frame 0), there is no previous frame, so the delta time is 0.
+   Thus be careful if relying on dt for certain calculations on the first frame.
+   After a frame has ended and clock-tick has been called, dt will be the correct delta time."
+  (let ((total-time (+ *last-frame-duration* *last-any-delay*)))
+    (min (* total-time 1d-3) 0.25d0)))
+
