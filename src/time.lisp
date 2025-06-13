@@ -15,6 +15,9 @@
 (defvar *last-any-delay* 0.0d0
   "Updated to the second return value of 'clock-tick, meant to ease access to the previous frame's delay amount, if any. See 'clock-tick for possible values.")
 
+(defvar *ticked-frames* 0
+  "Count of how many times or frames that clock-tick has been called.")
+
 #+sbcl
 (declaim (inline now-us)
          (ftype (function () (values (signed-byte 64))) now-us))
@@ -40,7 +43,8 @@
   (setf %running? T
         *tick-ms* (lgame::sdl-get-ticks)
         *last-frame-duration* 0.0d0
-        *last-any-delay* 0.0d0)
+        *last-any-delay* 0.0d0
+        *ticked-frames* 0)
 
   (setf *tick-us* #+sbcl (now-us) #-sbcl (* 1000 *tick-ms*)))
 
@@ -82,6 +86,7 @@
    If there was a delay, it will be positive.
 
    Note on SBCL, values will be floats due to microsecond precision."
+  (incf *ticked-frames*)
   (let* ((frame-duration (clock-time))
          (millis-per-frame-limit (and fps-limit (/ 1000.0 fps-limit)))
          (any-delay (or (and millis-per-frame-limit (- millis-per-frame-limit

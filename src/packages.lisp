@@ -74,7 +74,8 @@
            #:*last-any-delay*
            #:*last-frame-duration*
            #:*tick-us*
-           #:*tick-ms*))
+           #:*tick-ms*
+           #:*ticked-frames*))
 
 (defpackage #:lgame.rect
   (:use #:common-lisp)
