@@ -6,14 +6,14 @@
   (defun unload-fonts ()
     (maphash (lambda (k v)
                (declare (ignore k))
-               (lgame-sdl2-ttf.ffi:ttf-close-font v))
+               (lgame.font.ffi:ttf-close-font v))
              *loaded-fonts*)
     (clrhash *loaded-fonts*))
 
   (when (plusp (hash-table-count *loaded-fonts*)) ; need to wipe cache and reinit ttf to avoid invalid memory errors...
     (unload-fonts)
-    (lgame-sdl2-ttf.ffi:ttf-quit)
-    (lgame-sdl2-ttf.ffi:ttf-init)))
+    (lgame.font.ffi:ttf-quit)
+    (lgame.font.ffi:ttf-init)))
 
 (defun load-font (font-path pt-size)
   "Loads a font at the specified size.
@@ -30,7 +30,7 @@
               (setf true-path (get-default-font))
               (setf true-path (find-font-path font-path)))) ; otherwise if it was a string, try to delegate
 
-        (setf font (lgame-sdl2-ttf.ffi:ttf-open-font (namestring true-path) pt-size))
+        (setf font (lgame.font.ffi:ttf-open-font (namestring true-path) pt-size))
 
         (if (lgame:null-ptr? font)
             (restart-case (error 'lgame:lgame-error :msg (lgame::sdl-get-error))
@@ -40,11 +40,12 @@
 
     font))
 
-(cffi:defcstruct sdl-color
-  (r :uint8)
-  (g :uint8)
-  (b :uint8)
-  (a :uint8))
+(defun pack-sdl-color (r g b a)
+  "To avoid a dependency on libffi, which was used for being able to pass this sdl-color struct by value,
+   we instead create an integer-packed color that's bitwise identical.
+   https://wiki.libsdl.org/SDL2/SDL_Color
+   "
+  (logior (ash r 0) (ash g 8) (ash b 16) (ash a 24)))
 
 (defun render-text (font text r g b &optional (a 255))
   ; todo, add support for an optional cached? parameter.
@@ -57,13 +58,8 @@
   ; coordinate and directly calls the render-copy function.
   ; Maybe just do that and have implicit caching there.
 
-  (cffi:with-foreign-object (c '(:struct sdl-color))
-    (setf
-      (cffi:foreign-slot-value c '(:struct sdl-color) 'r) r
-      (cffi:foreign-slot-value c '(:struct sdl-color) 'g) g
-      (cffi:foreign-slot-value c '(:struct sdl-color) 'b) b
-      (cffi:foreign-slot-value c '(:struct sdl-color) 'a) a)
-    (let* ((surf (lgame-sdl2-ttf.ffi:ttf-render-utf8-blended font text c))
+  (let ((c (pack-sdl-color r g b a)))
+    (let* ((surf (lgame.font.ffi:ttf-render-utf8-blended font text c))
            (tex (lgame::sdl-create-texture-from-surface lgame:*renderer* surf)))
       (lgame::sdl-free-surface surf)
       tex)))

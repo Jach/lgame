@@ -103,10 +103,12 @@
            #:outside-screen?
            #:contains?)
   (:documentation
-    "Utils around handling SDL_Rects. Several with- macros like 'with-rect are included to efficiently
+    "Deprecated: use lgame.box.
+     Utils around handling SDL_Rects. Several with- macros like 'with-rect are included to efficiently
      use a stack-allocated object instead of allocating and freeing, though for any longer-lasting rects
      one should use the usual 'sdl2:make-rect and 'free-rect. Also included are some intuitive lookup/setter functions,
      and collision detection routines."))
+
 
 (defpackage #:lgame.sprite
   (:use #:common-lisp)
@@ -151,11 +153,22 @@
               #:group-single
               #:.sprite))
 
+(defpackage #:lgame.font.ffi
+  (:use #:cl)
+  (:documentation
+    "Foreign library and c function definitions for font rendering.
+     Currently using sdl2-ttf, only implementing the bare minimum.")
+  (:export #:ttf-init
+           #:ttf-quit
+           #:ttf-open-font
+           #:ttf-close-font
+           #:ttf-render-utf8-blended))
+
 (defpackage #:lgame.font
   (:use #:common-lisp)
   (:documentation
-    "Wrapper around sdl2-ttf, loads (and caches) fonts, provides a default font, and a render-text function that returns
-     a texture.")
+    "Provides higher level font rendering utilities, like loading (and caching) fonts,
+     a default font path, and a render-text function that returns a texture.")
      (:export #:load-font
               #:unload-fonts
               #:render-text

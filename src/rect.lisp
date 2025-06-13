@@ -1,5 +1,7 @@
 (in-package #:lgame.rect)
 
+;; Deprecated / Obsolete notice: consider using lgame.box instead
+
 (defmacro with-rect ((rect x y w h) &body body)
   "Helper macro if one needs a stack rect, with auto-truncated values"
   (let ((sz (autowrap:foreign-type-size (autowrap:find-type 'sdl2-ffi:sdl-rect))))
