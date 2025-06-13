@@ -109,6 +109,33 @@
      one should use the usual 'sdl2:make-rect and 'free-rect. Also included are some intuitive lookup/setter functions,
      and collision detection routines."))
 
+(defpackage #:lgame.box
+  (:use #:common-lisp)
+  (:documentation
+    "2D bounding boxes (rects) and helpful utilities like some collision detection tests.
+     Meant to replace uses of SDL_Rect.")
+     (:export #:box
+              #:make-box
+              #:make-box-from-minmax
+              #:copy-box
+
+              #:box-x
+              #:box-y
+              #:box-width
+              #:box-height
+
+              #:box-min-x
+              #:box-min-y
+              #:box-max-x
+              #:box-max-y
+
+              #:with-box-as-sdl-rect
+
+              #:box-attr
+
+              #:box-contains-point?
+              #:boxes-intersect?
+              #:boxes-collide?))
 
 (defpackage #:lgame.sprite
   (:use #:common-lisp)
