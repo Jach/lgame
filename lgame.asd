@@ -33,4 +33,14 @@
                                      (:file "util")
 
                                      (:file "init")
-                                     ))))
+                                     )))
+  :in-order-to ((asdf:test-op (asdf:test-op "lgame/test"))))
+
+(defsystem "lgame/test"
+  :depends-on ("lgame"
+               "str"
+               "fiveam")
+  :serial t
+  :pathname "test"
+  :components ((:file "box-tests"))
+  :perform (asdf:test-op (o c) (uiop:symbol-call ':5am '#:run-all-tests ':summary ':suite)))

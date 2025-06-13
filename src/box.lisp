@@ -25,9 +25,10 @@
 
 (defmethod print-object ((b box) stream)
   (print-unreadable-object (b stream :type t :identity t)
-    (format stream "X:~A Y:~A W:~A H:~A"
+    (format stream "X:~A Y:~A W:~A H:~A MAX-X:~A MAX-Y:~A"
             (box-x b) (box-y b)
-            (box-width b) (box-height b))))
+            (box-width b) (box-height b)
+            (box-max-x b) (box-max-y b))))
 
 (defun copy-box (b)
   (make-instance 'box
@@ -140,46 +141,52 @@
       (:max-y (setf (box-max-y box) value)) ; This changes height from min-y
       (:top (setf (box-y box) value))
       (:left (setf (box-x box) value))
-      (:bottom (setf (box-min-y box) (- value h))) ; Adjusts min-y to keep height
-      (:right (setf (box-min-x box) (- value w)))  ; Adjusts min-x to keep width
+      (:bottom
+        (let ((current-height (box-height box)))
+          (setf (box-max-y box) value)
+          (setf (box-min-y box) (- value current-height))))
+      (:right
+        (let ((current-width (box-width box)))
+          (setf (box-max-x box) value)
+          (setf (box-min-x box) (- value current-width))))
       (:centerx
-       (let ((half-w (/ w 2)))
-         (setf (box-min-x box) (- value half-w)
-               (box-max-x box) (+ value half-w))))
+        (let ((half-w (/ w 2)))
+          (setf (box-min-x box) (- value half-w)
+                (box-max-x box) (+ value half-w))))
       (:centery
-       (let ((half-h (/ h 2)))
-         (setf (box-min-y box) (- value half-h)
-               (box-max-y box) (+ value half-h))))
+        (let ((half-h (/ h 2)))
+          (setf (box-min-y box) (- value half-h)
+                (box-max-y box) (+ value half-h))))
       (:topleft
-       (setf (box-attr box :left) (elt value 0)
-             (box-attr box :top) (elt value 1)))
+        (setf (box-attr box :left) (elt value 0)
+              (box-attr box :top) (elt value 1)))
       (:bottomleft
-       (setf (box-attr box :left) (elt value 0)
-             (box-attr box :bottom) (elt value 1)))
+        (setf (box-attr box :left) (elt value 0)
+              (box-attr box :bottom) (elt value 1)))
       (:topright
-       (setf (box-attr box :right) (elt value 0)
-             (box-attr box :top) (elt value 1)))
+        (setf (box-attr box :right) (elt value 0)
+              (box-attr box :top) (elt value 1)))
       (:bottomright
-       (setf (box-attr box :right) (elt value 0)
-             (box-attr box :bottom) (elt value 1)))
+        (setf (box-attr box :right) (elt value 0)
+              (box-attr box :bottom) (elt value 1)))
       (:midtop
-       (setf (box-attr box :centerx) (elt value 0)
-             (box-attr box :top) (elt value 1)))
+        (setf (box-attr box :centerx) (elt value 0)
+              (box-attr box :top) (elt value 1)))
       (:midleft
-       (setf (box-attr box :left) (elt value 0)
-             (box-attr box :centery) (elt value 1)))
+        (setf (box-attr box :left) (elt value 0)
+              (box-attr box :centery) (elt value 1)))
       (:midbottom
-       (setf (box-attr box :centerx) (elt value 0)
-             (box-attr box :bottom) (elt value 1)))
+        (setf (box-attr box :centerx) (elt value 0)
+              (box-attr box :bottom) (elt value 1)))
       (:midright
-       (setf (box-attr box :right) (elt value 0)
-             (box-attr box :centery) (elt value 1)))
+        (setf (box-attr box :right) (elt value 0)
+              (box-attr box :centery) (elt value 1)))
       (:center
-       (setf (box-attr box :centerx) (elt value 0)
-             (box-attr box :centery) (elt value 1)))
+        (setf (box-attr box :centerx) (elt value 0)
+              (box-attr box :centery) (elt value 1)))
       (:size
-       (setf (box-width box) (elt value 0)
-             (box-height box) (elt value 1)))))
+        (setf (box-width box) (elt value 0)
+              (box-height box) (elt value 1)))))
   value)
 
 

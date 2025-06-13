@@ -94,7 +94,7 @@
 (defun manhattan (a1 b1 a2 b2)
   "Manhattan distance formula for a pair of points
    (a1, b1) and (a2, b2)."
-  (+ (abs (- a1 a2) (abs (- b1 b2)))))
+  (+ (abs (- a1 a2)) (abs (- b1 b2))))
 
 
 (defun calc-cost-and-push (self r c real-cost best-r best-c)
