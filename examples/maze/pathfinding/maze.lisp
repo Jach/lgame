@@ -1,9 +1,28 @@
 #|
 Interactively mutated from the original maze.lisp, includes pathfinding logic.
-Hit 'f' to 'find' and draw the path between the red block and the blue block.
-Left click a cell in the maze to move the red block there,
-Right click a cell in the maze to move the blue block there.
+
+Hit 'f' to 'find' and draw the path between the red block and the blue block. (If there is no path, nothing happens.)
+
+Left click a cell in the maze to move the red block there, (Starting position.)
+Right click a cell in the maze to move the blue block there. (Ending position.)
+
 The new path won't update until you hit 'f' again.
+
+Hit 'r' to reset the maze.
+
+Hit 0 to set the maze-mode to randomly generated on reset.
+Hit 1 to set the maze-mode to draw map1 from custom-maps.lisp on reset.
+Hit 2 to set the maze-mode to draw map2 from custom-maps.lisp on reset.
+Hit 3 to set the maze-mode to draw map3 from custom-maps.lisp on reset.
+Hit 4 to set the maze-mode to draw map4 from custom-maps.lisp on reset.
+Hit 5 to set the maze-mode to draw map5 from custom-maps.lisp on reset.
+Hit 6 to set the maze-mode to draw map6 from custom-maps.lisp on reset.
+
+Hit 's' to 'step' the path finding. This will advance the main pathfinding loop
+by one. You'll see squares color in pink to represent being or having been on
+the open-list, and a square colored yellow to indicate it's the top of the
+open-list and next-candidate to check for whether it's the goal.
+
 |#
 
 (ql:quickload :lgame)
@@ -24,7 +43,10 @@ The new path won't update until you hit 'f' again.
   (defvar *source-dir* (directory-namestring
                          (or *compile-file-pathname* *load-truename*))))
 (load (merge-pathnames "maze-class.lisp" *source-dir*))
+(load (merge-pathnames "custom-maps.lisp" *source-dir*))
 
+(defparameter *maze-mode* 0
+  "0 = random generation, 1-4 = use corresponding map")
 (defparameter *running?* t)
 
 (defparameter *size* '(800 600)
@@ -36,6 +58,8 @@ The new path won't update until you hit 'f' again.
 (defvar *maze-texture* nil)
 
 (defvar *pathfinder* nil)
+(defvar *pathfinder-step-started* nil)
+(defparameter *print-path?* nil)
 
 (defun init ()
   (lgame.display:create-centered-window "Maze" (first *size*) (second *size*))
@@ -47,17 +71,31 @@ The new path won't update until you hit 'f' again.
 
 (defun restart-game ()
   (setf *maze-obj* (make-instance 'maze :dimensions *dimensions*))
-  (generate *maze-obj*)
+  (case *maze-mode*
+    (0 (generate *maze-obj*)) ; random generation
+    (1 (setf *maze-obj* (map-to-maze :map1)))
+    (2 (setf *maze-obj* (map-to-maze :map2)))
+    (3 (setf *maze-obj* (map-to-maze :map3)))
+    (4 (setf *maze-obj* (map-to-maze :map4)))
+    (5 (setf *maze-obj* (map-to-maze :map5)))
+    (6 (setf *maze-obj* (map-to-maze :map6)))
+    (t (generate *maze-obj*))) ; fallback to random
   (print *maze-obj*)
   (draw-maze)
+  (setf *pathfinder-step-started* nil)
   (setf *pathfinder* (make-instance 'lgame.pathfinding::A*
-                                     :size *dimensions*
-                                     :start-pos (list (1- (first *dimensions*)) ; bottom-right
-                                                      (1- (second *dimensions*)))
-                                     :end-pos '(0 0) ; top-left
+                                     :size (.dims *maze-obj*)
+                                     :end-pos (list (1- (first (.dims *maze-obj*))) ; bottom-right
+                                                    (1- (second (.dims *maze-obj*))))
+                                     :start-pos '(0 0) ; top-left
+                                     :heuristic :manhattan
                                      :neighbor-fn (lambda (location)
                                                     (finished-valid-neighbors (.maze *maze-obj*) location))
                                      )))
+
+;(setf (lgame.pathfinding:.heuristic *pathfinder*) :zero)
+;(setf (lgame.pathfinding:.heuristic *pathfinder*) :octile)
+;(setf (lgame.pathfinding:.heuristic *pathfinder*) :manhattan)
 
 (defmacro with-renderer-info ((info) &body body)
   (let ((sz (autowrap:foreign-type-size (autowrap:find-type 'sdl2-ffi:sdl-renderer-info))))
@@ -114,10 +152,38 @@ The new path won't update until you hit 'f' again.
     (when (= (lgame.event:event-type event) lgame::+sdl-keydown+)
       (when (= (lgame.event:key-scancode event) lgame::+sdl-scancode-escape+)
         (setf *running?* nil))
+
       (when (and (= (lgame.event:key-scancode event) lgame::+sdl-scancode-f+)
                  (.start-pos *pathfinder*)
                  (.end-pos *pathfinder*))
-        (lgame.pathfinding::compute-path *pathfinder* :single-step? t :new-request? t))
+        (setf *pathfinder-step-started* nil)
+        (when (and (lgame.pathfinding::compute-path *pathfinder* :single-step? t :new-request? t)
+                   *print-path?*)
+            (format t "Found path: ~a~%Cost: ~a~%" (.waypoint-list *pathfinder*) (lgame.pathfinding::parent-track-real-cost (aref (lgame.pathfinding::.parent-list *pathfinder*) (elt (.end-pos *pathfinder*) 0) (elt (.end-pos *pathfinder*) 1))))))
+
+      (when (and (= (lgame.event:key-scancode event) lgame::+sdl-scancode-s+)
+                 (.start-pos *pathfinder*)
+                 (.end-pos *pathfinder*))
+        (when (and (lgame.pathfinding::compute-path *pathfinder* :single-step? nil :new-request? (not *pathfinder-step-started*))
+                   *print-path?*)
+          (format t "Found path: ~a~%Cost: ~a~%" (.waypoint-list *pathfinder*) (lgame.pathfinding::parent-track-real-cost (aref (lgame.pathfinding::.parent-list *pathfinder*) (elt (.end-pos *pathfinder*) 0) (elt (.end-pos *pathfinder*) 1)))))
+        (setf *pathfinder-step-started* t))
+
+      (when (= (lgame.event:key-scancode event) lgame::+sdl-scancode-0+)
+        (setf *maze-mode* 0))
+      (when (= (lgame.event:key-scancode event) lgame::+sdl-scancode-1+)
+        (setf *maze-mode* 1))
+      (when (= (lgame.event:key-scancode event) lgame::+sdl-scancode-2+)
+        (setf *maze-mode* 2))
+      (when (= (lgame.event:key-scancode event) lgame::+sdl-scancode-3+)
+        (setf *maze-mode* 3))
+      (when (= (lgame.event:key-scancode event) lgame::+sdl-scancode-4+)
+        (setf *maze-mode* 4))
+      (when (= (lgame.event:key-scancode event) lgame::+sdl-scancode-5+)
+        (setf *maze-mode* 5))
+      (when (= (lgame.event:key-scancode event) lgame::+sdl-scancode-6+)
+        (setf *maze-mode* 6))
+
       (when (= (lgame.event:key-scancode event) lgame::+sdl-scancode-r+)
         (restart-game)))
 
@@ -133,6 +199,7 @@ The new path won't update until you hit 'f' again.
 
              (clicked-row (truncate y cell-height))
              (clicked-col (truncate x cell-width)))
+        (setf *pathfinder-step-started* nil)
         (cond
           ((= button lgame::+sdl-button-left+)
            (setf (.start-pos *pathfinder*) (list clicked-row clicked-col)))
@@ -156,6 +223,22 @@ The new path won't update until you hit 'f' again.
       (lgame.rect::with-rect (r (+ 2 (* cell-width (second (.end-pos *pathfinder*)))) (+ 2 (* cell-height (first (.end-pos *pathfinder*)))) (- cell-width 4) (- cell-height 4))
         (sdl2:render-fill-rect lgame:*renderer* r))))
 
+  (when *pathfinder-step-started*
+    (sdl2:set-render-draw-color lgame:*renderer* 255 80 255 255)
+    (multiple-value-bind (rows cols cell-width cell-height) (get-draw-dims)
+      (loop for row below rows do
+            (loop for col below cols do
+                  (when (aref (lgame.pathfinding::.visited-list *pathfinder*) row col)
+                    (lgame.rect::with-rect (r (+ 4 (* cell-width col)) (+ 4 (* cell-height row)) (- cell-width 8) (- cell-height 8))
+                      (sdl2:render-fill-rect lgame:*renderer* r)))))
+
+      (alexandria:when-let ((best-node (and (not (.waypoint-list *pathfinder*)) (pileup:heap-top (lgame.pathfinding::.open-list *pathfinder*)))))
+        (sdl2:set-render-draw-color lgame:*renderer* 255 255 0 255)
+        (let ((row (lgame.pathfinding::path-node-r best-node))
+              (col (lgame.pathfinding::path-node-c best-node)))
+          (lgame.rect::with-rect (r (+ 4 (* cell-width col)) (+ 4 (* cell-height row)) (- cell-width 8) (- cell-height 8))
+            (sdl2:render-fill-rect lgame:*renderer* r))))))
+
   (when (.waypoint-list *pathfinder*)
     (sdl2:set-render-draw-color lgame:*renderer* 0 255 0 255)
     (multiple-value-bind (rows cols cell-width cell-height) (get-draw-dims)
@@ -163,7 +246,6 @@ The new path won't update until you hit 'f' again.
       (loop for waypoint in (.waypoint-list *pathfinder*) do
             (lgame.rect::with-rect (r (+ 4 (* cell-width (second waypoint))) (+ 4 (* cell-height (first waypoint))) (- cell-width 8) (- cell-height 8))
               (sdl2:render-fill-rect lgame:*renderer* r)))))
-
 
 
   (sdl2:render-present lgame:*renderer*)
