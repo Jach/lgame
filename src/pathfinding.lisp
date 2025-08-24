@@ -5,7 +5,7 @@
    (start-pos :accessor .start-pos :initarg :start-pos :type sequence :documentation "A starting point, given as a (row column) pair")
    (end-pos :accessor .end-pos :initarg :end-pos :type sequence :documentation "The end or goal point, given as a (row column) pair")
    (neighbor-fn :accessor .neighbor-fn :initarg :neighbor-fn :type function :documentation "A function taking (row column) pair and returning a list of neighbors with the associated numerical costs to move to the neighbor, i.e. (((neighbor1-row neighbor2-col) cost) ...).")
-   (heuristic :accessor .heuristic :initarg :heuristic :initform :euclidean :type (member :euclidean) :documentation "Specify which supported distance heuristic to use")
+   (heuristic :accessor .heuristic :initarg :heuristic :initform :euclidean :type (member :euclidean :manhattan :octile :chebyshev :zero) :documentation "Specify which supported distance heuristic to use")
    (heuristic-weight :accessor .heuristic-weight :initarg :heuristic-weight :initform 1.0 :type single-float :documentation "Specify a weight to apply to heuristic calculations. 1 is standard A*, 0 turns A* into djikstra, higher values turn it into a greedy search.")
 
    (waypoint-list :accessor .waypoint-list :initform (list) :type list :documentation "A list of (row column) locations, from start-pos to end-pos inclusive, representing the shortest path of node locations to travel to in order to reach the end-pos.")
@@ -96,12 +96,28 @@
    (a1, b1) and (a2, b2)."
   (+ (abs (- a1 a2)) (abs (- b1 b2))))
 
+(defun zero (a1 b1 a2 b2)
+  "Same as no heuristic, reduces A* to Djikstra"
+  (declare (ignore a1 b1 a2 b2))
+  0.0)
+
 
 (defun calc-cost-and-push (self r c real-cost best-r best-c)
-  (let ((heuristic-cost (euclidean (elt (.end-pos self) 0) (elt (.end-pos self) 1) r c)))
+  (let* ((heuristic-fn (case (.heuristic self)
+                        (:euclidean #'euclidean)
+                        (:manhattan #'manhattan)
+                        (:octile #'octile)
+                        (:chebyshev #'chebyshev)
+                        (:zero #'zero)))
+         (heuristic-cost (* (.heuristic-weight self) (funcall heuristic-fn (elt (.end-pos self) 0) (elt (.end-pos self) 1) r c))))
     (setf heuristic-cost (* heuristic-cost (.heuristic-weight self)))
     (let ((node (make-path-node :r r :c c :real-cost real-cost :total-cost (+ heuristic-cost real-cost) :parent-r best-r :parent-c best-c)))
       (pileup:heap-insert node (.open-list self))
+      (when (aref (.visited-list self) r c)
+        (format nil "~%Notice! Pushing a node (~a, ~a) that was already visisted before. Previous parent info: ~a New parent info: ~a~%"
+                r c
+                (aref (.parent-list self) r c)
+                (make-parent-track :r best-r :c best-c :real-cost real-cost)))
       (setf (aref (.visited-list self) r c) T)
       (let ((parent (aref (.parent-list self) r c)))
         (setf (parent-track-r parent) best-r
@@ -123,6 +139,9 @@
                 (setf (aref (.visited-list self) row col) nil)
                 (setf (aref (.parent-list self) row col) (make-parent-track :real-cost most-positive-single-float))
                 ))
+
+    ; empty any previous waypoint list
+    (setf (.waypoint-list self) (list))
     ; put the starting node location on top of the open-list
     (calc-cost-and-push self (elt (.start-pos self) 0) (elt (.start-pos self) 1) 0.0 (elt (.start-pos self) 0) (elt (.start-pos self) 1)))
 
@@ -172,7 +191,7 @@
                      (cost-adj (+ initial-cost cost)) ; + influence if analysis..
                      (neighbor-row (elt neighbor 0))
                      (neighbor-col (elt neighbor 1)))
-                (when (and (not (aref (.visited-list self) neighbor-row neighbor-col))
+                (when (or (not (aref (.visited-list self) neighbor-row neighbor-col))
                            (< cost-adj (parent-track-real-cost (aref (.parent-list self) neighbor-row neighbor-col))))
                   (calc-cost-and-push self neighbor-row neighbor-col cost-adj (path-node-r best-node) (path-node-c best-node)))))))
 
