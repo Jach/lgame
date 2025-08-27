@@ -28,6 +28,18 @@
            #:lgame-error
            #:null-ptr?))
 
+(defpackage #:lgame.data-structures
+  (:use #:cl)
+  (:documentation
+    "Various data structures implemented for supporting other packages but general enough to
+     potentially be useful elsewhere.")
+  (:export #:priority-queue
+           #:priority-queue-push
+           #:priority-queue-pop
+           #:priority-queue-top
+           #:priority-queue-empty?))
+
+
 (defpackage #:lgame.display
   (:use #:common-lisp)
   (:documentation
@@ -71,6 +83,7 @@
            #:clock-tick
            #:clock-time
            #:dt
+           #:now-seconds
            #:*last-any-delay*
            #:*last-frame-duration*
            #:*tick-us*
@@ -244,24 +257,10 @@
   (:documentation
     "Provides a fairly generic A* algorithm protocol for grids with several customization knobs.")
   (:export #:A*
-           #:.size
-           #:.start-pos
-           #:.end-pos
-           #:.neighbor-fn
-           #:.heuristic
-           #:.heuristic-weight
-           #:.waypoint-list
-           #:.open-list
-           #:.visited-list
-           #:.parent-list
            #:a-star
 
-           #:euclidean
-           #:octile
-           #:chebyshev
-           #:manhattan
-
-           #:compute-path))
+           #:compute-path
+           #:found-shortest-path))
 
 (defpackage #:lgame.util
   (:use #:common-lisp)

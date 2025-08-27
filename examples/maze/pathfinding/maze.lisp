@@ -34,9 +34,12 @@ open-list and next-candidate to check for whether it's the goal.
   (:import-from #:lgame.pathfinding
                 #:A*
                 #:compute-path
+                #:found-shortest-path
                 #:.start-pos
                 #:.end-pos
-                #:.waypoint-list))
+                #:goal-row
+                #:goal-col))
+
 (in-package #:lgame.example.maze-pathfinding)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -84,14 +87,14 @@ open-list and next-candidate to check for whether it's the goal.
   (draw-maze)
   (setf *pathfinder-step-started* nil)
   (setf *pathfinder* (make-instance 'lgame.pathfinding::A*
-                                     :size (.dims *maze-obj*)
-                                     :end-pos (list (1- (first (.dims *maze-obj*))) ; bottom-right
-                                                    (1- (second (.dims *maze-obj*))))
-                                     :start-pos '(0 0) ; top-left
-                                     :heuristic :manhattan
-                                     :neighbor-fn (lambda (location)
-                                                    (finished-valid-neighbors (.maze *maze-obj*) location))
-                                     )))
+                                    :size (.dims *maze-obj*)
+                                    :end-pos (list (1- (first (.dims *maze-obj*))) ; bottom-right
+                                                   (1- (second (.dims *maze-obj*))))
+                                    :start-pos '(0 0) ; top-left
+                                    :heuristic :manhattan
+                                    :neighbor-fn (lambda (location)
+                                                   (finished-valid-neighbors (.maze *maze-obj*) location))
+                                    )))
 
 ;(setf (lgame.pathfinding:.heuristic *pathfinder*) :zero)
 ;(setf (lgame.pathfinding:.heuristic *pathfinder*) :octile)
@@ -157,16 +160,18 @@ open-list and next-candidate to check for whether it's the goal.
                  (.start-pos *pathfinder*)
                  (.end-pos *pathfinder*))
         (setf *pathfinder-step-started* nil)
-        (when (and (lgame.pathfinding::compute-path *pathfinder* :single-step? t :new-request? t)
+        (when (and (time (lgame.pathfinding::compute-path *pathfinder*))
                    *print-path?*)
-            (format t "Found path: ~a~%Cost: ~a~%" (.waypoint-list *pathfinder*) (lgame.pathfinding::parent-track-real-cost (aref (lgame.pathfinding::.parent-list *pathfinder*) (elt (.end-pos *pathfinder*) 0) (elt (.end-pos *pathfinder*) 1))))))
+            (format t "Found path: ~a~%Cost: ~a~%" (found-shortest-path *pathfinder*) (lgame.pathfinding::seen-path-node-best-real-cost
+                                                                                        (aref (lgame.pathfinding::.seen-nodes *pathfinder*) (goal-row *pathfinder*) (goal-col *pathfinder*))))))
 
       (when (and (= (lgame.event:key-scancode event) lgame::+sdl-scancode-s+)
                  (.start-pos *pathfinder*)
                  (.end-pos *pathfinder*))
-        (when (and (lgame.pathfinding::compute-path *pathfinder* :single-step? nil :new-request? (not *pathfinder-step-started*))
+        (when (and (lgame.pathfinding::compute-path *pathfinder* :compute-in-single-step? nil :new-request? (not *pathfinder-step-started*))
                    *print-path?*)
-          (format t "Found path: ~a~%Cost: ~a~%" (.waypoint-list *pathfinder*) (lgame.pathfinding::parent-track-real-cost (aref (lgame.pathfinding::.parent-list *pathfinder*) (elt (.end-pos *pathfinder*) 0) (elt (.end-pos *pathfinder*) 1)))))
+          (format t "Found path: ~a~%Cost: ~a~%" (found-shortest-path *pathfinder*) (lgame.pathfinding::seen-path-node-best-real-cost
+                                                                                      (aref (lgame.pathfinding::.seen-nodes *pathfinder*) (goal-row *pathfinder*) (goal-col *pathfinder*)))))
         (setf *pathfinder-step-started* t))
 
       (when (= (lgame.event:key-scancode event) lgame::+sdl-scancode-0+)
@@ -228,22 +233,23 @@ open-list and next-candidate to check for whether it's the goal.
     (multiple-value-bind (rows cols cell-width cell-height) (get-draw-dims)
       (loop for row below rows do
             (loop for col below cols do
-                  (when (aref (lgame.pathfinding::.visited-list *pathfinder*) row col)
+                  (when (aref (lgame.pathfinding::.seen-nodes *pathfinder*) row col)
                     (lgame.rect::with-rect (r (+ 4 (* cell-width col)) (+ 4 (* cell-height row)) (- cell-width 8) (- cell-height 8))
                       (sdl2:render-fill-rect lgame:*renderer* r)))))
 
-      (alexandria:when-let ((best-node (and (not (.waypoint-list *pathfinder*)) (pileup:heap-top (lgame.pathfinding::.open-list *pathfinder*)))))
+      (alexandria:when-let ((best-node (and (not (found-shortest-path *pathfinder*))
+                                            (lgame.data-structures:priority-queue-top (lgame.pathfinding::.open-nodes *pathfinder*)))))
         (sdl2:set-render-draw-color lgame:*renderer* 255 255 0 255)
-        (let ((row (lgame.pathfinding::path-node-r best-node))
-              (col (lgame.pathfinding::path-node-c best-node)))
+        (let ((row (lgame.pathfinding::open-path-node-row best-node))
+              (col (lgame.pathfinding::open-path-node-col best-node)))
           (lgame.rect::with-rect (r (+ 4 (* cell-width col)) (+ 4 (* cell-height row)) (- cell-width 8) (- cell-height 8))
             (sdl2:render-fill-rect lgame:*renderer* r))))))
 
-  (when (.waypoint-list *pathfinder*)
+  (when (found-shortest-path *pathfinder*)
     (sdl2:set-render-draw-color lgame:*renderer* 0 255 0 255)
     (multiple-value-bind (rows cols cell-width cell-height) (get-draw-dims)
       (declare (ignore rows cols))
-      (loop for waypoint in (.waypoint-list *pathfinder*) do
+      (loop for waypoint in (found-shortest-path *pathfinder*) do
             (lgame.rect::with-rect (r (+ 4 (* cell-width (second waypoint))) (+ 4 (* cell-height (first waypoint))) (- cell-width 8) (- cell-height 8))
               (sdl2:render-fill-rect lgame:*renderer* r)))))
 

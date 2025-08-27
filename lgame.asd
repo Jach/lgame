@@ -13,6 +13,7 @@
                         :components ((:file "packages")
                                      (:file "state")
                                      (:file "globals")
+                                     (:file "data-structures")
                                      (:file "display")
                                      (:file "event")
                                      (:file "mouse")
@@ -28,6 +29,7 @@
 
                                      (:file "texture-loader")
 
+                                     (:file "pathfinding.heuristics")
                                      (:file "pathfinding")
 
                                      (:file "util")

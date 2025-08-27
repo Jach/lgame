@@ -18,6 +18,15 @@
 (defvar *ticked-frames* 0
   "Count of how many times or frames that clock-tick has been called.")
 
+(declaim (inline now-seconds)
+         (ftype (function () double-float) now-seconds))
+(defun now-seconds ()
+  "Represents a floating-point number of seconds from some epoch. Under SBCL, this is the unix epoch and has nanosecond resolution.
+   Under other implementations, it is implementation-defined and has resolution of INTERNAL-TIME-UNITS-PER-SECOND."
+  #+sbcl (multiple-value-bind (s ns) (sb-unix:clock-gettime sb-unix:clock-realtime)
+           (+ s (* ns 1d-9)))
+  #-sbcl (float (/ (get-internal-real-time) internal-time-units-per-second) 1.0d0))
+
 #+sbcl
 (declaim (inline now-us)
          (ftype (function () (values (signed-byte 64))) now-us))
