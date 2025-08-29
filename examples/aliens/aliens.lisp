@@ -23,8 +23,15 @@ Differences:
 
 |#
 
-(ql:quickload :lgame)
-(ql:quickload :closer-mop)
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :lgame)
+  (ql:quickload :closer-mop))
 
 (defpackage #:lgame.example.aliens
   (:use #:cl)
