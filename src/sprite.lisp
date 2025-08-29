@@ -13,19 +13,9 @@
 (defgeneric kill (sprite)
   (:documentation
     "Removes the Sprite from all groups it belongs to.
-     Note it does not free any resources like the sprite rect,
-     if you plan to manage sprites entirely with groups
-     and expect a kill to cleanup, you might want to create
-     an :after method for kill on your sprite to handle that,
-     or also inherit the 'cleaned-on-kill-mixin which defines
-     such a method for you."))
-
-(defgeneric cleanup (sprite-or-group)
-  (:documentation
-    "Frees the Sprite's rect, or those of each sprite in a Group.
-     Note it does not free the sprite's image, which is fine if it
-     was loaded with the texture-loader as it will be freed when textures
-     are unloaded, but the user should do that themselves if loaded another way."))
+     If you plan to manage sprites entirely with groups
+     and expect a kill to additionally clean up any foreign memory,
+     you might want to create an :after method for kill on your sprite to handle that"))
 
 (defgeneric add-groups (sprite &rest groups)
   (:documentation
@@ -68,12 +58,12 @@
 
 (defgeneric sprite-collide (sprite group)
   (:documentation
-    "Checks to see if the .rect of the sprite collides with any of the rects of the sprites within group.
+    "Checks to see if the .box of the sprite collides with any of the boxes of the sprites within group.
      Returns a list of such colliding sprites."))
 
 (defgeneric group-collide (group1 group2)
   (:documentation
-    "Checks to see if any sprites within group1 collide with any sprites in group2 based on each sprite's .rect rect-colliding.
+    "Checks to see if any sprites within group1 collide with any sprites in group2 based on each sprite's .box box-colliding.
      Returns a list of collisions in the form ((sprite-from-group1 . (collided-sprite-from-group2 ...))
                                                (other-sprite-from-group1 . (collided-sprite-from-group2 ...))
                                                ...)
@@ -88,30 +78,28 @@
 ;;;; Sprite class
 
 (defclass sprite ()
-  ((image :accessor .image :type (or null sdl2-ffi:sdl-texture))
-   (rect :accessor .rect :type (or null sdl2-ffi:sdl-rect))
-   (angle :accessor .angle :type double-float :initform 0.0d0
-          :documentation "Angle in degrees applied to the rect when rendering, rotating it clockwise")
-   (flip :accessor .flip :type bit ;sdl2-ffi:sdl-renderer-flip
-         :initform sdl2-ffi:+sdl-flip-none+)
+  ((image :accessor .image :initarg :image :type (or null sdl2-ffi:sdl-texture))
+   (box :accessor .box :initarg :box :type (or null lgame.box:box))
+   (angle :accessor .angle :initarg :angle :type double-float :initform 0.0d0
+          :documentation "Angle in degrees applied to the box when rendering, rotating it clockwise")
+   (flip :accessor .flip :initarg :flip ; :type ;sdl2-ffi:sdl-renderer-flip ? it's an enum with values 0-2
+         :initform sdl2-ffi:+sdl-flip-none+
+         :documentation "One of +sdl-flip-none+, +sdl-flip-vertical+, or +sdl-flip-horizontal+. Will automatically draw the sprite flipped in the provided orientation if given.")
 
    (alive? :accessor .alive? :type boolean :initform T :documentation "Has this sprite been killed yet?")
    (groups :accessor .groups :type list :initform (list) :documentation "List of groups containing this sprite"))
   (:documentation
     "A sprite object contains a reference to a texture, stored with the image attribute,
-     and a rect attribute corresponding to the sprite's location and size.
+     and a box attribute corresponding to the sprite's location and size.
      These are used by the default implementation of draw to copy the texture
-     to the global renderer at the position and size of the rect.
+     to the global renderer at the position and size of the box.
      Additionally, a rotation angle and/or flip attribute can be given." ; should be a subclass, along with alive?/groups?
     ))
 
 (defmethod print-object ((o sprite) stream)
-  (let ((r (if (slot-boundp o 'rect)
-               (.rect o)
-               "<unbound>")))
-    (print-unreadable-object (o stream :type t :identity t)
-      (format stream "rect ~a groups-length ~a alive? ~a"
-              r (length (.groups o)) (.alive? o)))))
+  (print-unreadable-object (o stream :type t :identity t)
+    (format stream "box ~a groups-length ~a alive? ~a"
+            (.box o) (length (.groups o)) (.alive? o))))
 
 (defmethod (setf .angle) :after
   (new-value (self sprite))
@@ -121,20 +109,17 @@
 
 ;;;; Sprite mixins
 
-(defclass cleaned-on-kill-mixin ()
-  ()
-  (:documentation
-    "A sprite class mixin that provides a default :after method on 'kill
-     which will automatically call the sprite's 'cleanup method, unless
-     that sprite is still '.alive?"))
-
 (defclass add-groups-mixin ()
   ()
   (:documentation
     "A sprite class mixin that provides an extra :after constructor that
      accepts a :groups argument and will apply 'add-groups to it,
      adding the constructed sprite to the list of passed groups.
-     Can also be used with a single group to be added."))
+
+     Can also be used with a single group to be added, instead of a list of groups.
+
+     You don't need to use this mixin to use the groups feature, it's just often convenient to
+     specify the groups in the sprite constructor since they are typically created before the sprites themselves."))
 
 (defmethod initialize-instance :after ((self add-groups-mixin) &key groups)
   (if (and groups (atom groups))
@@ -189,22 +174,16 @@
 
 (defmethod draw ((self sprite))
   "Default draw uses the global renderer *renderer* to copy the image of the sprite
-   onto the location defined by the rect of the sprite.
-   If the angle is non-zero a rotation will be applied around the sprite's center based on its rect location.
+   onto the location defined by the box of the sprite.
+   If the angle is non-zero a rotation will be applied around the sprite's center based on its box location.
    If flip is +sdl-flip-horizontal+ or +sdl-flip-vertical+ the image will be flipped accordingly."
-  (sdl2::check-rc
-    (sdl2-ffi.functions:sdl-render-copy-ex lgame:*renderer* (.image self) nil (.rect self) (.angle self) nil (.flip self))))
+  (lgame.box:with-box-as-sdl-rect (rect (.box self))
+    (sdl2::check-rc
+      (sdl2-ffi.functions:sdl-render-copy-ex lgame:*renderer* (lgame.texture:.sdl-texture (.image self)) nil rect (.angle self) nil (.flip self)))))
 
 (defmethod kill ((self sprite))
   (setf (.alive? self) nil)
   (apply #'remove-groups self (.groups self)))
-
-(defmethod kill :after ((self cleaned-on-kill-mixin))
-  (unless (.alive? self)
-    (cleanup self)))
-
-(defmethod cleanup ((self sprite))
-  (sdl2:free-rect (.rect self)))
 
 (defmethod add-groups ((self sprite) &rest groups)
   (dolist (group groups)
@@ -257,7 +236,7 @@
 (defmethod sprite-collide ((sprite sprite) (group group))
   (let ((collisions (list)))
     (do-sprite (group-sprite group)
-      (when (lgame.rect:collide-rect? (.rect sprite) (.rect group-sprite))
+      (when (lgame.box:boxes-collide? (.box sprite) (.box group-sprite))
         (push group-sprite collisions)))
     collisions))
 
@@ -266,7 +245,7 @@
     (do-sprite (sprite1 group1)
       (let ((sprite1-collisions (list)))
         (do-sprite (sprite2 group2)
-          (when (lgame.rect:collide-rect? (.rect sprite1) (.rect sprite2))
+          (when (lgame.box:boxes-collide? (.box sprite1) (.box sprite2))
             (push sprite2 sprite1-collisions)))
         (when sprite1-collisions
           (push (cons sprite1 sprite1-collisions) all-collisions))))

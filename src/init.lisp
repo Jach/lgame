@@ -52,6 +52,8 @@
   (unless (lgame::null-ptr? *screen*)
     (lgame::sdl-destroy-window *screen*)
     (setf *screen* nil))
-  (sdl2:free-rect *screen-rect*)
+  (when *screen-rect*
+    (sdl2:free-rect *screen-rect*))
   (setf *screen-rect* nil)
+  (setf *screen-box* nil)
   (lgame::sdl-quit))

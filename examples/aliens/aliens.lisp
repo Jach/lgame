@@ -38,19 +38,23 @@ Differences:
   (:export #:main)
   (:import-from #:lgame.sprite
                 #:sprite
-                #:cleaned-on-kill-mixin
                 #:add-groups-mixin
                 #:.image
-                #:.rect
+                #:.box
                 #:.flip
 
                 #:update
                 #:draw
                 #:kill)
-  (:import-from #:lgame.rect
-                #:rect-coord
-                #:move-rect
-                #:get-texture-rect)
+  (:import-from #:lgame.box
+                #:box-attr
+                #:move-box
+                #:with-moved-box
+                #:get-texture-box
+                #:clamp
+                #:box-contains?
+                #:make-box
+                #:with-box-as-sdl-rect)
 
   (:import-from #:lgame.event
                 #:event-type
@@ -73,7 +77,7 @@ Differences:
 (defparameter +screen-size+ '(640 480))
 (defparameter *full-screen* nil)
 
-(defclass player (sprite cleaned-on-kill-mixin add-groups-mixin)
+(defclass player (sprite add-groups-mixin)
   ((speed :accessor /speed :allocation :class :initform 10)
    (bounce :accessor /bounce :allocation :class :initform 24)
    (gun-offset :accessor /gun-offset :allocation :class :initform -11)
@@ -84,38 +88,38 @@ Differences:
 
 (defmethod initialize-instance :after ((self player) &key)
   (setf (.image self) (lgame.loader:get-texture "player1.png")
-        (.rect self) (get-texture-rect (.image self))
-        (rect-coord (.rect self) :midbottom) (rect-coord lgame:*screen-rect* :midbottom)
+        (.box self) (get-texture-box (.image self))
+        (box-attr (.box self) :midbottom) (box-attr lgame:*screen-box* :midbottom)
 
-        (.origtop self) (rect-coord (.rect self) :top)))
+        (.origtop self) (box-attr (.box self) :top)))
 
 (defmethod move ((self player) direction)
   (declare (type (member :left :right) direction))
   (case direction
     (:left
       (setf (.flip self) lgame::+sdl-flip-none+)
-      (move-rect (.rect self) (- (/speed self)) 0))
+      (move-box (.box self) (- (/speed self)) 0))
     (:right
       (setf (.flip self) lgame::+sdl-flip-horizontal+)
-      (move-rect (.rect self) (/speed self) 0)))
+      (move-box (.box self) (/speed self) 0)))
 
   ; forbid moving outside the screen:
-  (lgame.rect:clamp (.rect self) lgame:*screen-rect*)
+  (lgame.box:clamp (.box self) lgame:*screen-box*)
   ; bouncing effect:
-  (setf (rect-coord (.rect self) :top) (- (.origtop self)
-                                        (mod (truncate (rect-coord (.rect self) :left)
-                                                       (/bounce self))
-                                             2))))
+  (setf (box-attr (.box self) :top) (- (.origtop self)
+                                       (mod (truncate (box-attr (.box self) :left)
+                                                      (/bounce self))
+                                            2))))
 
 (defmethod gunpos ((self player))
   (list (+ (if (eql (.flip self) lgame::+sdl-flip-none+)
                (- (/gun-offset self))
                (/gun-offset self))
-           (rect-coord (.rect self) :centerx))
-        (rect-coord (.rect self) :top)))
+           (box-attr (.box self) :centerx))
+        (box-attr (.box self) :top)))
 
 
-(defclass alien (sprite cleaned-on-kill-mixin add-groups-mixin)
+(defclass alien (sprite add-groups-mixin)
   ((speed :accessor /speed :allocation :class :initform 13)
    (animcycle :accessor /animcycle :allocation :class :initform 12)
 
@@ -140,24 +144,24 @@ Differences:
                                      (lgame.loader:get-texture "alien2.png")
                                      (lgame.loader:get-texture "alien3.png"))))
   (setf (.image self) (first (/image-frames self))
-        (.rect self) (get-texture-rect (.image self))
+        (.box self) (get-texture-box (.image self))
         (.facing self) (* (/speed self) (random-choice '(-1 1)))
         (.frame self) 0)
   (when (minusp (.facing self))
-    (setf (rect-coord (.rect self) :right) (rect-coord lgame:*screen-rect* :right))))
+    (setf (box-attr (.box self) :right) (box-attr lgame:*screen-box* :right))))
 
 (defmethod update ((self alien))
-  (with-accessors ((rect .rect) (facing .facing) (frame .frame) (image .image)) self
-    (move-rect rect (.facing self) 0)
-    (unless (lgame.rect:contains? lgame:*screen-rect* rect) ; alien reached the edge of screen
+  (with-accessors ((box .box) (facing .facing) (frame .frame) (image .image)) self
+    (move-box box (.facing self) 0)
+    (unless (box-contains? lgame:*screen-box* box) ; alien reached the edge of screen
       (setf facing (- facing)
-            (rect-coord rect :top) (1+ (rect-coord rect :bottom)))
-      (lgame.rect:clamp rect lgame:*screen-rect*))
+            (box-attr box :top) (1+ (box-attr box :bottom)))
+      (clamp box lgame:*screen-box*))
     (incf frame) ; change frame image every animcycle frames
     (setf image (elt (/image-frames self) (mod (truncate frame (/animcycle self)) (length (/image-frames self)))))))
 
 
-(defclass explosion (sprite cleaned-on-kill-mixin add-groups-mixin)
+(defclass explosion (sprite add-groups-mixin)
   ((lifetime :accessor /lifetime :allocation :class :initform 12)
    (animcycle :accessor /animcycle :allocation :class :initform 3)
 
@@ -168,10 +172,10 @@ Differences:
 
 (defmethod initialize-instance :after ((self explosion) &key actor)
   (setf (.image self) (lgame.loader:get-texture "explosion1.png")
-        (.rect self) (get-texture-rect (.image self))
+        (.box self) (get-texture-box (.image self))
         (.life self) (/lifetime self))
   (if actor
-  (setf (rect-coord (.rect self) :center) (rect-coord (.rect actor) :center))))
+  (setf (box-attr (.box self) :center) (box-attr (.box actor) :center))))
 
 (defmethod update ((self explosion))
   (decf (.life self))
@@ -182,31 +186,31 @@ Differences:
     (kill self)))
 
 
-(defclass shot (sprite cleaned-on-kill-mixin add-groups-mixin)
+(defclass shot (sprite add-groups-mixin)
   ((speed :accessor /speed :allocation :class :initform -11)))
 
 (defmethod initialize-instance :after ((self shot) &key pos)
   (setf (.image self) (lgame.loader:get-texture "shot.png")
-        (.rect self) (get-texture-rect (.image self))
-        (rect-coord (.rect self) :midbottom) pos))
+        (.box self) (get-texture-box (.image self))
+        (box-attr (.box self) :midbottom) pos))
 
 (defmethod update ((self shot))
-  (move-rect (.rect self) 0 (/speed self))
-  (unless (plusp (rect-coord (.rect self) :top))
+  (move-box (.box self) 0 (/speed self))
+  (unless (plusp (box-attr (.box self) :top))
     (kill self)))
 
-(defclass bomb (sprite cleaned-on-kill-mixin add-groups-mixin)
+(defclass bomb (sprite add-groups-mixin)
   ((speed :accessor /speed :allocation :class :initform 9)))
 
 (defmethod initialize-instance :after ((self bomb) &key alien)
   (setf (.image self) (lgame.loader:get-texture "bomb.png")
-        (.rect self) (get-texture-rect (.image self)))
-  (lgame.rect:with-moved-rect (moved (.rect alien) 0 5)
-    (setf (rect-coord (.rect self) :midbottom) (rect-coord moved :midbottom))))
+        (.box self) (get-texture-box (.image self)))
+  (with-moved-box (moved (.box alien) 0 5)
+    (setf (box-attr (.box self) :midbottom) (box-attr moved :midbottom))))
 
 (defmethod update ((self bomb))
-  (move-rect (.rect self) 0 (/speed self))
-  (when (>= (rect-coord (.rect self) :bottom) (- (rect-coord lgame:*screen-rect* :bottom) 10))
+  (move-box (.box self) 0 (/speed self))
+  (when (>= (box-attr (.box self) :bottom) (- (box-attr lgame:*screen-box* :bottom) 10))
     (make-instance 'explosion :actor self :groups (lgame.sprite:.groups self))
     (kill self)))
 
@@ -215,11 +219,13 @@ Differences:
   ((score :accessor .score :initform 0)
    (last-score :accessor .last-score :initform -1)))
 
+;; Score is special in that it doesn't use a fixed image but instead its own
+;; continuously created and destroyed texture that results from rendering text.
 (defmethod initialize-instance :after ((self score) &key)
   (setf (.image self) nil)
   (update self)
-  (setf (.rect self) (get-texture-rect (.image self)))
-  (move-rect (.rect self) 10 (- (rect-coord lgame:*screen-rect* :bottom) 30)))
+  (setf (.box self) (get-texture-box (.image self)))
+  (move-box (.box self) 10 (- (box-attr lgame:*screen-box* :bottom) 30)))
 
 (defmethod update ((self score))
   (when (/= (.score self) (.last-score self))
@@ -227,8 +233,8 @@ Differences:
     (let* ((font (lgame.font:load-font (lgame.font:get-default-font) 20))
            (msg (format nil "Score: ~a" (.score self)))
            (new-score-texture (lgame.font:render-text font msg 255 255 255)))
-      (when (.image self)
-        (sdl2:destroy-texture (.image self)))
+      (when (.image self) ; destroy previous score
+        (lgame.texture:destroy-texture (.image self)))
       (setf (.image self) new-score-texture))))
 
 
@@ -247,9 +253,9 @@ Differences:
     (setf background (sdl2:create-texture lgame:*renderer* lgame::+sdl-pixelformat-rgba8888+ lgame::+sdl-textureaccess-target+
                                           (first +screen-size+) (second +screen-size+)))
     (sdl2:set-render-target lgame:*renderer* background)
-    (loop for x from 0 below (first +screen-size+) by (sdl2:texture-width bg-tile) do
-          (lgame.rect:with-rect (r x 0 (sdl2:texture-width bg-tile) (sdl2:texture-height bg-tile))
-            (sdl2:render-copy lgame:*renderer* bg-tile :dest-rect r)))
+    (loop for x from 0 below (first +screen-size+) by (lgame.texture:.width bg-tile) do
+          (with-box-as-sdl-rect (r (make-box x 0 (lgame.texture:.width bg-tile) (lgame.texture:.height bg-tile)))
+            (sdl2:render-copy lgame:*renderer* (lgame.texture:.sdl-texture bg-tile) :dest-rect r)))
     (sdl2:set-render-target lgame:*renderer* nil))
 
   (setf boom-sound (sdl2-mixer:load-wav (merge-pathnames "boom.wav" *source-dir*)))
@@ -286,7 +292,6 @@ Differences:
     ; class-allocated image frames
     (let ((alien-class-proto (closer-mop:class-prototype (find-class 'alien))))
       (setf (/image-frames alien-class-proto) nil)) ; or use slot-value?
-    (lgame.sprite:cleanup (getf groups :all))
 
     ; may not need to be called because of sdl2-mixer's usage of autocollect...
     ;(sdl2-mixer:free-music music)

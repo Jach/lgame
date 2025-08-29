@@ -11,16 +11,25 @@
   :components ((:module "src/"
                         :serial t
                         :components ((:file "packages")
+
+                                     ;; files wrapping or replacing key sdl data structures
+                                     (:file "texture")
+                                     (:file "box")
+
+                                     ;; global utilities and global state/singletons
                                      (:file "state")
                                      (:file "globals")
+
+                                     ;; data structures, should be fairly independent of the rest of lgame
                                      (:file "data-structures")
+
                                      (:file "display")
                                      (:file "event")
                                      (:file "mouse")
                                      (:file "time")
 
+
                                      (:file "rect")
-                                     (:file "box")
                                      (:file "sprite")
                                      (:file "font.ffi")
                                      (:file "font")

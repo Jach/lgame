@@ -1,5 +1,52 @@
 (in-package #:cl-user)
 
+(defpackage #:lgame.texture
+  (:use #:cl)
+  (:documentation
+    "Provides a wrapper around an SDL texture. This is done to potentially simplify foreign resource management in the future, or move to a different backing library than SDL.")
+  (:export #:texture
+           #:.width
+           #:.height
+           #:.sdl-texture
+           #:destroy-texture))
+
+(defpackage #:lgame.box
+  (:use #:common-lisp)
+  (:documentation
+    "2D bounding boxes (rects) and helpful utilities like some collision detection tests.
+     Meant to replace uses of SDL_Rect.")
+     (:export #:box
+              #:make-box
+              #:make-box-from-minmax
+              #:copy-box
+
+              #:box-x
+              #:box-y
+              #:box-width
+              #:box-height
+
+              #:box-min-x
+              #:box-min-y
+              #:box-max-x
+              #:box-max-y
+
+              #:with-box-as-sdl-rect
+              #:get-texture-box
+
+              #:box-attr
+
+              #:box-contains-point?
+              #:boxes-intersect?
+              #:boxes-collide?
+              #:box-contains?
+              #:box-properly-contains?
+
+              #:move-box
+              #:set-box
+              #:clamp
+
+              #:with-moved-box))
+
 (defpackage #:lgame.state
   (:use #:common-lisp)
   (:documentation
@@ -8,6 +55,7 @@
      just one window/screen, one renderer, one resource manager for each resource type...")
   (:export #:*screen*
            #:*screen-rect*
+           #:*screen-box*
            #:*renderer*
            #:*texture-loader*))
 
@@ -23,6 +71,7 @@
            #:quit
            #:*screen*
            #:*screen-rect*
+           #:*screen-box*
            #:*renderer*
            #:*texture-loader*
            #:lgame-error
@@ -122,34 +171,6 @@
      one should use the usual 'sdl2:make-rect and 'free-rect. Also included are some intuitive lookup/setter functions,
      and collision detection routines."))
 
-(defpackage #:lgame.box
-  (:use #:common-lisp)
-  (:documentation
-    "2D bounding boxes (rects) and helpful utilities like some collision detection tests.
-     Meant to replace uses of SDL_Rect.")
-     (:export #:box
-              #:make-box
-              #:make-box-from-minmax
-              #:copy-box
-
-              #:box-x
-              #:box-y
-              #:box-width
-              #:box-height
-
-              #:box-min-x
-              #:box-min-y
-              #:box-max-x
-              #:box-max-y
-
-              #:with-box-as-sdl-rect
-
-              #:box-attr
-
-              #:box-contains-point?
-              #:boxes-intersect?
-              #:boxes-collide?))
-
 (defpackage #:lgame.sprite
   (:use #:common-lisp)
   (:documentation
@@ -241,8 +262,7 @@
   (:documentation
     "Provides loader wrappers for various assets (currently just *texture-loader*) that may be easier
      than calling the underlying functions directly.")
-     (:export #:get-texture-rect
-              #:load-texture
+     (:export #:load-texture
 
               #:texture-loader
               #:.textures

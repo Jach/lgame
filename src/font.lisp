@@ -48,7 +48,10 @@
   (logior (ash r 0) (ash g 8) (ash b 16) (ash a 24)))
 
 (defun render-text (font text r g b &optional (a 255))
-  ; todo, add support for an optional cached? parameter.
+  "Using the provided font, renders the text string with a specified rgba color.
+   This calls the underlying ttf-render-utf8-blended function.
+   An lgame.texture:texture is returned, which must be destroyed manually."
+  ; todo improvement, add support for an optional cached? parameter.
   ; when t, and *texture-loader* has been created,
   ; the (font+text) key is used to cache the created texture.
   ; This way, a game can naively call render-text every frame
@@ -60,7 +63,7 @@
 
   (let ((c (pack-sdl-color r g b a)))
     (let* ((surf (lgame.font.ffi:ttf-render-utf8-blended font text c))
-           (tex (lgame::sdl-create-texture-from-surface lgame:*renderer* surf)))
+           (tex (make-instance 'lgame.texture:texture :sdl-texture (lgame::sdl-create-texture-from-surface lgame:*renderer* surf))))
       (lgame::sdl-free-surface surf)
       tex)))
 
