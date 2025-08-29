@@ -250,13 +250,12 @@ Differences:
   (lgame::sdl-raise-window lgame:*screen*)
 
   (let ((bg-tile (lgame.loader:get-texture "background.png")))
-    (setf background (sdl2:create-texture lgame:*renderer* lgame::+sdl-pixelformat-rgba8888+ lgame::+sdl-textureaccess-target+
-                                          (first +screen-size+) (second +screen-size+)))
-    (sdl2:set-render-target lgame:*renderer* background)
-    (loop for x from 0 below (first +screen-size+) by (lgame.texture:.width bg-tile) do
-          (with-box-as-sdl-rect (r (make-box x 0 (lgame.texture:.width bg-tile) (lgame.texture:.height bg-tile)))
-            (sdl2:render-copy lgame:*renderer* (lgame.texture:.sdl-texture bg-tile) :dest-rect r)))
-    (sdl2:set-render-target lgame:*renderer* nil))
+    (setf background (lgame.texture:create-sdl-texture lgame:*renderer* lgame::+sdl-pixelformat-rgba8888+ lgame::+sdl-textureaccess-target+
+                                                       (first +screen-size+) (second +screen-size+)))
+    (lgame.render:with-render-target background
+      (loop for x from 0 below (first +screen-size+) by (lgame.texture:.width bg-tile) do
+            (with-box-as-sdl-rect (r (make-box x 0 (lgame.texture:.width bg-tile) (lgame.texture:.height bg-tile)))
+              (sdl2:render-copy lgame:*renderer* (lgame.texture:.sdl-texture bg-tile) :dest-rect r)))))
 
   (setf boom-sound (sdl2-mixer:load-wav (merge-pathnames "boom.wav" *source-dir*)))
   (setf shoot-sound (sdl2-mixer:load-wav (merge-pathnames "car_door.wav" *source-dir*)))
@@ -287,7 +286,7 @@ Differences:
           (game-tick background boom-sound shoot-sound groups group-lists player score))
 
     (sdl2-mixer:halt-music)
-    (sdl2:destroy-texture background)
+    (lgame.texture:destroy-texture background)
     ; to support running again in a repl, need to also clear alien's
     ; class-allocated image frames
     (let ((alien-class-proto (closer-mop:class-prototype (find-class 'alien))))

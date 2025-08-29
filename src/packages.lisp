@@ -8,7 +8,8 @@
            #:.width
            #:.height
            #:.sdl-texture
-           #:destroy-texture))
+           #:destroy-texture
+           #:create-sdl-texture))
 
 (defpackage #:lgame.box
   (:use #:common-lisp)
@@ -44,6 +45,7 @@
               #:move-box
               #:set-box
               #:clamp
+              #:inflate-box
 
               #:with-moved-box))
 
@@ -176,7 +178,7 @@
   (:documentation
     "WIP sprite module, inspired by pygame.sprite. The idea is to provide a base Sprite
      class that sprite objects can inherit from and optionally override their own update
-     and draw methods to use the image/rect slots differently. Additionally a Group class
+     and draw methods to use the image/box slots differently. Additionally a Group class
      concept is provided to manage collections of sprites.")
      (:export #:update
               #:draw
@@ -197,13 +199,12 @@
 
               #:sprite
               #:.image
-              #:.rect
+              #:.box
               #:.angle
               #:.flip
               #:.alive?
               #:.groups
 
-              #:cleaned-on-kill-mixin
               #:add-groups-mixin
 
               #:group

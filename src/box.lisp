@@ -239,12 +239,10 @@
 
 (defun set-box (box &key x y w h)
   "Updates any of the provided box properties with new values."
-  (let ((min-x (or x (.min-x box)))
-        (min-y (or y (.min-y box))))
-    (setf (.min-x box) min-x
-          (.min-y box) min-y)
-    (when w (setf (.max-x box) (+ min-x w)))
-    (when h (setf (.max-y box) (+ min-y w)))))
+  (when x (setf (box-x box) x))
+  (when y (setf (box-y box) y))
+  (when w (setf (box-width box) w))
+  (when h (setf (box-height box) h)))
 
 (defun clamp (box1 box2)
   "Updates the x, y position of box1 so that it is clamped within the dimensions of box2.
@@ -268,6 +266,22 @@
      (setf (box-attr box1 :bottom) (box-attr box2 :bottom))))
   box1)
 
+(defun inflate-box (box width-change height-change)
+  "Inflates/deflates the given box by changed width/height around the center.
+   Thus if the change is 2 pixels wider, the top-left corner will move left
+   by one and top right corner move right by one with the overall width increasing by two."
+  (let ((dx (if (and (integerp width-change) (evenp width-change))
+                (ash width-change -1)
+                (* 0.5 width-change)))
+        (dy (if (and (integerp height-change) (evenp height-change))
+                (ash height-change -1)
+                (* 0.5 height-change))))
+    (decf (.min-x box) dx)
+    (incf (.max-x box) dx)
+    (decf (.min-y box) dy)
+    (incf (.max-y box) dy))
+  box)
+
 ;;; Macros
 
 (defmacro with-moved-box((box source-box moved-x moved-y) &body body)
@@ -286,14 +300,18 @@
    Otherwise the default behavior is rounding."
   (let ((sz (autowrap:foreign-type-size (autowrap:find-type 'sdl2-ffi:sdl-rect)))
         (conversion-fn (if truncate? 'truncate 'round))
-        (src-box (gensym)))
-    `(cffi:with-foreign-pointer (,rect ,sz)
-       (let ((,src-box ,box))
-         (setf (sdl2:rect-x ,rect) (,conversion-fn (box-x ,src-box))
-               (sdl2:rect-y ,rect) (,conversion-fn (box-y ,src-box))
-               (sdl2:rect-width ,rect) (,conversion-fn (box-width ,src-box))
-               (sdl2:rect-height ,rect) (,conversion-fn (box-height ,src-box)))
-         ,@body))))
+        (src-box (gensym))
+        (rect-ptr (gensym)))
+    `(let ((,rect nil)
+           (,src-box ,box))
+       (cffi:with-foreign-pointer (,rect-ptr ,sz)
+         (when ,src-box
+           (setf (sdl2:rect-x ,rect-ptr) (,conversion-fn (box-x ,src-box))
+                 (sdl2:rect-y ,rect-ptr) (,conversion-fn (box-y ,src-box))
+                 (sdl2:rect-width ,rect-ptr) (,conversion-fn (box-width ,src-box))
+                 (sdl2:rect-height ,rect-ptr) (,conversion-fn (box-height ,src-box)))
+           (setf ,rect ,rect-ptr)
+           ,@body)))))
 
 (defun get-texture-box (texture)
   "Returns a box object representing the bounding box of the passed 2D texture, initially positioned with x, y = 0, 0."

@@ -4,10 +4,17 @@
   "Wrapper around sdl-render-clear."
   (lgame::sdl-render-clear lgame:*renderer*))
 
-(defun blit (texture destination-rect)
+(defun blit (texture destination-box &optional (source-box nil))
   "Wrapper around sdl-render-copy for the common case of 'blitting' a texture to
-   a destination-rect on the screen."
-  (lgame::sdl-render-copy lgame:*renderer* texture nil destination-rect))
+   a destination-box on the screen.
+   Expects an lgame.texture:texture object and handles conversion of the box to an sdl rect.
+   An optional source box can be passed but is often not needed."
+
+  (sdl2-ffi.functions:sdl-render-copy lgame:*renderer* (lgame.texture:.sdl-texture texture) nil nil))
+;  (lgame.box:with-box-as-sdl-rect (dest-rect destination-box)
+;    (lgame.box:with-box-as-sdl-rect (source-rect source-box)
+;      (sdl2::check-rc
+;        (sdl2-ffi.functions:sdl-render-copy lgame:*renderer* (lgame.texture:.sdl-texture texture) source-rect dest-rect)))))
 
 (defun present ()
   "Wrapper around sdl-render-present."
@@ -32,7 +39,12 @@
        (set-draw-color ,current))))
 
 (defmacro with-render-target (target-texture &body body)
-  `(progn
-     (sdl2:set-render-target lgame:*renderer* ,target-texture)
-     ,@body
-     (sdl2:set-render-target lgame:*renderer* nil)))
+  "Set the renderer target to the given target-texture for the context of body.
+   target-texture is expected to be an lgame.texture:texture object."
+  (let ((old-target (gensym)))
+  `(let ((,old-target (sdl2:get-render-target lgame:*renderer*)))
+     (unwind-protect
+       (progn
+         (sdl2:set-render-target lgame:*renderer* (lgame.texture:.sdl-texture ,target-texture))
+         ,@body)
+       (sdl2:set-render-target lgame:*renderer* ,old-target)))))

@@ -13,12 +13,22 @@ calls may be desired (e.g. make *allsprites* then you could dynamically
 add to it, or the banner text so you could dynamically find the right
 font/size/color/placement you prefer).
 
-Our base Sprite class, besides image and rect slots, also contains slots
+Our base Sprite class, besides image and box slots, also contains slots
 to handle flipping and rotation, so we don't need the same methods as the
 original to accomplish that.
 
 |#
 
+;; quicklisp preamble and quickloading for script usage
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :lgame)
+  (ql:quickload :livesupport))
 
 (defpackage #:lgame.example.chimp
   (:use #:cl)
@@ -28,10 +38,11 @@ original to accomplish that.
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *source-dir* (directory-namestring
                          (or *compile-file-pathname* *load-truename*))))
-(defparameter *running?* t)
 
-(ql:quickload :lgame)
-(ql:quickload :livesupport)
+(defparameter *screen-width* 468)
+(defparameter *screen-height* 60)
+
+(defvar *allsprites* nil)
 
 (defun load-sound (name)
   (sdl2-mixer:load-wav (merge-pathnames name *source-dir*)))
@@ -42,25 +53,26 @@ original to accomplish that.
 
 (defmethod initialize-instance :after ((self fist) &key)
   (let ((image (lgame.loader:get-texture :fist :color-key '(0 0 0))))
-    (setf (lgame.sprite:.image self) image)
-    (setf (lgame.sprite:.rect self) (lgame.rect:get-texture-rect image))))
+    (setf (lgame.sprite:.image self) image
+          (lgame.sprite:.box self) (lgame.box:get-texture-box image))))
 
 (defmethod lgame.sprite:update ((self fist))
   "Move the fist based on mouse position"
-  (with-accessors ((rect lgame.sprite:.rect) (punching? .punching?)) self
+  (with-accessors ((box lgame.sprite:.box) (punching? .punching?)) self
     ; could also use (lgame.mouse:get-mouse-pos)
     (multiple-value-bind (x y) (sdl2:mouse-state)
-      (lgame.rect:set-rect rect :x x :y y)
-      (lgame.rect:move-rect rect (/ (sdl2:rect-width rect) -2) 0))
+      (lgame.box:set-box box :x x :y y)
+      (lgame.box:move-box box (/ (lgame.box:box-width box) -2.0) 0))
     (when punching?
-      (lgame.rect:move-rect rect 5 10))))
+      (lgame.box:move-box box 5 10))))
 
 (defmethod punch ((self fist) target)
   "Set punch state, returns true if the fist collides with the target"
   (unless (.punching? self)
     (setf (.punching? self) t)
-    (lgame.rect:with-inflated-rect (hitbox (lgame.sprite:.rect self) -5 -5)
-      (lgame.rect:collide-rect? (lgame.sprite:.rect target) hitbox))))
+    (let ((hitbox (lgame.box:copy-box (lgame.sprite:.box self))))
+      (lgame.box:inflate-box hitbox -5 -5)
+      (lgame.box:boxes-collide? hitbox (lgame.sprite:.box target)))))
 
 (defmethod unpunch ((self fist))
   "Pull the fist back"
@@ -73,9 +85,9 @@ original to accomplish that.
 
 (defmethod initialize-instance :after ((self chimp) &key)
   (let ((image (lgame.loader:get-texture :chimp :color-key '(255 0 0))))
-    (setf (lgame.sprite:.image self) image)
-    (setf (lgame.sprite:.rect self) (lgame.rect:get-texture-rect image))
-    (lgame.rect:move-rect (lgame.sprite:.rect self) 10 10)))
+    (setf (lgame.sprite:.image self) image
+          (lgame.sprite:.box self) (lgame.box:get-texture-box image))
+    (lgame.box:move-box (lgame.sprite:.box self) 10 10)))
 
 (defmethod lgame.sprite:update ((self chimp))
   (if (zerop (lgame.sprite:.angle self))
@@ -84,11 +96,11 @@ original to accomplish that.
 
 (defmethod walk ((self chimp))
   "Moves monkey back and forth across the screen"
-  (with-accessors ((rect lgame.sprite:.rect) (speed .move) (flip lgame.sprite:.flip)) self
-    (lgame.rect:move-rect rect speed 0)
-    (when (or (<= (lgame.rect:rect-coord rect :left) 0) (>= (lgame.rect:rect-coord rect :right) (lgame.rect:rect-coord lgame:*screen-rect* :right)))
+  (with-accessors ((box lgame.sprite:.box) (speed .move) (flip lgame.sprite:.flip)) self
+    (lgame.box:move-box box speed 0)
+    (when (or (<= (lgame.box:box-attr box :left) 0) (>= (lgame.box:box-attr box :right) (lgame.box:box-attr lgame:*screen-box* :right)))
       (setf speed (- speed))
-      (lgame.rect:move-rect rect speed 0)
+      (lgame.box:move-box box speed 0)
       (if (= flip lgame::+sdl-flip-none+)
           (setf flip lgame::+sdl-flip-horizontal+)
           (setf flip lgame::+sdl-flip-none+)))))
@@ -107,45 +119,43 @@ original to accomplish that.
 (defun main ()
   (lgame:init)
   (lgame.loader:create-texture-loader *source-dir*)
-  (lgame.display:create-centered-window "Monkey Fever" 468 60)
+  (lgame.display:create-centered-window "Monkey Fever" *screen-width* *screen-height*)
   (lgame.display:create-renderer)
   (sdl2:hide-cursor)
 
   (let* ((font (lgame.font:load-font (lgame.font:get-default-font) 20))
          (banner-txt (lgame.font:render-text font "Pummel The Chimp, And Win $$$" 10 10 10))
-         (banner-txt-rect (lgame.rect:get-texture-rect banner-txt))
+         (banner-txt-box (lgame.box:get-texture-box banner-txt))
 
          (whiff-sound (load-sound "whiff.wav"))
          (punch-sound (load-sound "punch.wav"))
          (chimp (make-instance 'chimp))
-         (fist (make-instance 'fist))
-         (allsprites (make-instance 'lgame.sprite:group :sprites (list fist chimp))))
+         (fist (make-instance 'fist)))
+    (setf *allsprites* (make-instance 'lgame.sprite:group :sprites (list fist chimp)))
 
-    (lgame.rect:move-rect banner-txt-rect (- (/ 468 2) (/ (sdl2:rect-width banner-txt-rect) 2)) 1) ; no centerx/centery construction yet
+    (lgame.box:move-box banner-txt-box (- (/ *screen-width* 2.0) (/ (lgame.box:box-width banner-txt-box) 2.0)) 1) ; no centerx/centery construction yet
 
     (lgame.time:clock-start)
     (unwind-protect
-      (loop while *running?* do
+      (loop while (lgame.time:clock-running?) do
             (livesupport:continuable
-              (game-tick banner-txt banner-txt-rect
+              (game-tick banner-txt banner-txt-box
                          whiff-sound punch-sound
-                         chimp fist allsprites)))
+                         chimp fist)))
 
       ; cleanup
-      (lgame.sprite:cleanup allsprites)
-      (sdl2:free-rect banner-txt-rect)
-      (sdl2:destroy-texture banner-txt)
+      (lgame.texture:destroy-texture banner-txt)
       (sdl2-mixer:free-chunk whiff-sound)
       (sdl2-mixer:free-chunk punch-sound)
       (lgame:quit))))
 
-(defun game-tick (banner-txt banner-txt-rect whiff-sound punch-sound chimp fist allsprites)
+(defun game-tick (banner-txt banner-txt-box whiff-sound punch-sound chimp fist)
   (lgame.event:do-event (event)
     (if (or
           (= (lgame.event:event-type event) lgame::+sdl-quit+)
           (and (= (lgame.event:event-type event) lgame::+sdl-keydown+)
                (= (lgame.event:key-scancode event) lgame::+sdl-scancode-escape+)))
-        (setf *running?* nil))
+        (lgame.time:clock-stop))
     (if (= (lgame.event:event-type event) lgame::+sdl-mousebuttondown+)
         (if (punch fist chimp)
             (progn (sdl2-mixer:play-channel -1 punch-sound 0)
@@ -154,14 +164,14 @@ original to accomplish that.
     (if (= (lgame.event:event-type event) lgame::+sdl-mousebuttonup+)
         (unpunch fist)))
 
-  (lgame.sprite:update allsprites)
+  (lgame.sprite:update *allsprites*)
 
   (lgame::sdl-set-render-draw-color lgame:*renderer* 170 238 187 255)
   (lgame::sdl-render-clear lgame:*renderer*)
 
-  (sdl2:render-copy lgame:*renderer* banner-txt :dest-rect banner-txt-rect)
+  (lgame.render:blit banner-txt banner-txt-box)
 
-  (lgame.sprite:draw allsprites)
+  (lgame.sprite:draw *allsprites*)
 
   (sdl2:render-present lgame:*renderer*)
 

@@ -25,4 +25,7 @@
   (when (.sdl-texture self)
     (sdl2:destroy-texture (.sdl-texture self))))
 
-
+(defun create-sdl-texture (renderer pixel-format access width height)
+  "Creates a new lgame.texture:texture object with a backing sdl-texture
+   created by calling sdl2:create-texture with these function arguments."
+  (make-instance 'texture :sdl-texture (sdl2:create-texture renderer pixel-format access width height)))
