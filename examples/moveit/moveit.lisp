@@ -14,7 +14,15 @@ it on your own streaming/target texture and render that texture every frame.
 This example should free up its foreign memory (textures and rects) but doesn't.
 |#
 
-(ql:quickload :lgame)
+;; quicklisp preamble and quickloading for script usage
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :lgame))
 
 (defpackage #:lgame.example.moveit
   (:use #:cl)
@@ -24,24 +32,25 @@ This example should free up its foreign memory (textures and rects) but doesn't.
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *source-dir* (directory-namestring
                          (or *compile-file-pathname* *load-truename*))))
-(defparameter *running?* t)
-
-(defclass game-object ()
-  ((image :initarg :image :reader .image)
-   (speed :initarg :speed :reader .speed)
-   (pos :reader .pos)))
-
-(defmethod initialize-instance :after ((self game-object) &key (height 0) &allow-other-keys)
-  (setf (slot-value self 'pos) (lgame.rect:get-texture-rect (.image self)))
-  (lgame.rect:move-rect (.pos self) 0 height))
-
-(defmethod move ((self game-object))
-  (lgame.rect:move-rect (.pos self) (.speed self) 0)
-  (when (> (lgame.rect:rect-coord (.pos self) :right) 600)
-    (lgame.rect:set-rect (.pos self) :x 0)))
 
 (defun load-image (name)
   (lgame.loader:load-texture (merge-pathnames name *source-dir*)))
+
+
+(defclass game-object () ; lgame.sprite:sprite inheritance can make this a bit nicer
+  ((image :initarg :image :reader .image) ; texture, passed in make-instance
+   (speed :initarg :speed :reader .speed) ; horizontal speed
+   (pos :reader .pos))) ; position but also bounding box of image
+
+(defmethod initialize-instance :after ((self game-object) &key (height 0) &allow-other-keys)
+  (setf (slot-value self 'pos) (lgame.box:get-texture-box (.image self)))
+  (lgame.box:move-box (.pos self) 0 height))
+
+(defmethod move ((self game-object))
+  (lgame.box:move-box (.pos self) (.speed self) 0)
+  (when (> (lgame.box:box-attr (.pos self) :right) 600) ; reset to other side of screen
+    (lgame.box:set-box (.pos self) :x 0)))
+
 
 (defun main (&aux player background objects)
   (lgame:init)
@@ -54,21 +63,24 @@ This example should free up its foreign memory (textures and rects) but doesn't.
   (setf objects (loop for x below 10 collect
                       (make-instance 'game-object :image player :speed x :height (* x 40))))
 
-  (setf *running?* t)
-  (loop while *running?* do
-    (sleep (/ 1 60.0)) ; even the original is super fast, this is a simple way to slow things down, accurate way in a future example
-    (lgame.event:do-event (event)
-      (if (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+) :test #'=)
-          (setf *running?* nil)))
+  (lgame.time:clock-start)
+  (unwind-protect
+    (loop while (lgame.time:clock-running?) do
+          (lgame.event:do-event (event)
+            (when (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+) :test #'=)
+              (lgame.time:clock-stop)))
 
-    (sdl2:render-copy lgame:*renderer* background)
+          (lgame.render:blit background nil)
 
-    (dolist (o objects)
-      (move o)
-      (sdl2:render-copy lgame:*renderer* (.image o) :dest-rect (.pos o)))
+          (dolist (o objects)
+            (move o)
+            (lgame.render:blit (.image o) (.pos o)))
 
-    (sdl2:render-present lgame:*renderer*))
-  (lgame:quit))
+          (lgame.render:present)
+
+          (lgame.time:clock-tick 60))
+
+    (lgame:quit)))
 
 (eval-when (:execute)
   (main))
