@@ -10,16 +10,22 @@ After loading this up, you can try following along with http://3bb.cc/tutorials/
 Code to draw a colorful triangle is commented out before the window swap.
 |#
 
-(ql:quickload :lgame)
-(ql:quickload :livesupport)
-(ql:quickload :cl-opengl)
+;; quicklisp preamble and quickloading for script usage
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :lgame)
+  (ql:quickload :livesupport)
+  (ql:quickload :cl-opengl)) ;; WARNING: the version of cl-opengl in quicklisp might be broken, consider downloading latest from https://github.com/3b/cl-opengl/
 
 (defpackage #:lgame.example.gl
   (:use #:cl)
   (:export #:main))
 (in-package #:lgame.example.gl)
-
-(defvar *running?* t)
 
 (defvar *gl-context* nil)
 
@@ -29,30 +35,30 @@ Code to draw a colorful triangle is commented out before the window swap.
   (lgame.display:create-renderer)
 
   (setf cl-opengl-bindings:*gl-get-proc-address* #'sdl2-ffi.functions:sdl-gl-get-proc-address)
-  (setf *gl-context* (lgame::sdl-gl-create-context lgame:*screen*))
-  )
+  (setf *gl-context* (lgame::sdl-gl-create-context lgame:*screen*)))
 
 (defun game-loop ()
   (lgame.time:clock-start)
-  (setf *running?* t)
-  (loop while *running?* do
+  (loop while (lgame.time:clock-running?) do
         (livesupport:continuable
           (game-tick))))
 
 (defun game-tick ()
   (lgame.event:do-event (event)
-    (if (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+))
-        (setf *running?* nil)))
-  ; for old fashioned gl, instead of:
+    (when (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+))
+      (lgame.time:clock-stop)))
+
+  ;; For old fashioned gl, instead of:
   ;(sdl2:set-render-draw-color lgame:*renderer* 255 0 255 255)
   ;(sdl2:render-clear lgame:*renderer*)
   ;(sdl2:render-present lgame:*renderer*)
+  ;; We do:
 
   ; Call functions in gl: and work with the *screen* instead.
   (gl:clear-color 1.0 0 1 1)
   (gl:clear :color-buffer-bit)
 
-  ; add a triangle..
+  ;; Add a triangle
   (gl:with-primitive :triangles
     (gl:color 1 0 0)
     (gl:vertex -1 -1 0)
