@@ -31,7 +31,7 @@ file and load it, or paste it directly into your REPL:
 ```lisp
 (defpackage #:lgame.example.hello
   (:use #:cl))
-(in-package :lgame.example.hello)
+(in-package #:lgame.example.hello)
 
 (defun main ()
   (lgame:init)
@@ -40,19 +40,18 @@ file and load it, or paste it directly into your REPL:
 
   (let* ((font (lgame.font:load-font (lgame.font:get-default-font) 15))
          (txt (lgame.font:render-text font "Hello, lgame!" 0 0 0))
-         (txt-rect (lgame.rect:get-texture-rect txt)))
-    (lgame.rect:move-rect txt-rect 240 (- 600 240 (sdl2:rect-height txt-rect))) ; gamekit's origin is bottom-left, we are top-left following SDL
+         (txt-box (lgame.box:get-texture-box txt)))
+    (lgame.box:move-box txt-box 240 (- 600 240 (lgame.box:box-height txt-box))) ; gamekit's origin is bottom-left, we are top-left following SDL
     (lgame.time:clock-start)
     (unwind-protect
       (loop while (lgame.time:clock-running?) do
             (livesupport:continuable
               (game-tick txt txt-rect)))
 
-      (sdl2:free-rect txt-rect)
-      (sdl2:destroy-texture txt)
+      (lgame.texture:destroy-texture txt)
       (lgame:quit))))
 
-(defun game-tick (txt txt-rect)
+(defun game-tick (txt txt-box)
   (lgame.event:do-event (event)
     (when (= (lgame.event:event-type event) lgame::+sdl-quit+)
       (lgame.time:clock-stop)))
@@ -60,7 +59,7 @@ file and load it, or paste it directly into your REPL:
   (lgame.render:set-draw-color 255 255 255)
   (lgame.render:clear)
 
-  (lgame.render:blit txt txt-rect)
+  (lgame.render:blit txt txt-box)
 
   (lgame.render:present)
 
