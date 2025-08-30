@@ -6,16 +6,22 @@ You probably will want to check out https://github.com/3b/cl-opengl/blob/master/
 for a saner way of dealing with the vertex and index arrays.
 |#
 
-(ql:quickload :lgame)
-(ql:quickload :livesupport)
-(ql:quickload :cl-opengl)
+;; quicklisp preamble and quickloading for script usage
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :lgame)
+  (ql:quickload :livesupport)
+  (ql:quickload :cl-opengl))
 
 (defpackage #:lgame.example.gl2
   (:use #:cl)
   (:export #:main))
 (in-package #:lgame.example.gl2)
-
-(defvar *running?* t)
 
 (defvar *gl-context* nil)
 (defvar *gl-program-ID* 0)
@@ -117,15 +123,14 @@ for a saner way of dealing with the vertex and index arrays.
 
 (defun game-loop ()
   (lgame.time:clock-start)
-  (setf *running?* t)
-  (loop while *running?* do
+  (loop while (lgame.time:clock-running?) do
         (livesupport:continuable
           (game-tick))))
 
 (defun game-tick ()
   (lgame.event:do-event (event)
-    (if (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+))
-        (setf *running?* nil)))
+    (when (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+))
+      (lgame.time:clock-stop)))
   ;(gl:clear-color 1.0 0 1 1)
   (gl:clear :color-buffer-bit)
 
