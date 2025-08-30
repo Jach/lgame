@@ -21,6 +21,18 @@ from outside the texture. For the effect to work, the maximum perturbation of
 the data should still be within the texture.
 
 |#
+
+;; quicklisp preamble and quickloading for script usage
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :lgame)
+  (ql:quickload :cmu-infix))
+
 (defpackage #:lgame.example.liquid
   (:use #:cl)
   (:export #:main))
@@ -30,8 +42,6 @@ the data should still be within the texture.
   (defvar *source-dir* (directory-namestring
                          (or *compile-file-pathname* *load-truename*))))
 
-(ql:quickload :lgame)
-(ql:quickload :cmu-infix)
 (named-readtables:in-readtable cmu-infix:syntax)
 
 (defun main (&aux background anim)
@@ -41,35 +51,40 @@ the data should still be within the texture.
 
   ;(lgame::sdl-set-hint lgame::+sdl-hint-render-scale-quality+ "linear")
   (let ((liquid (lgame.loader:load-texture (merge-pathnames "../moveit/liquid.png" *source-dir*))))
-    (setf background (sdl2:create-texture lgame:*renderer* lgame::+sdl-pixelformat-rgba8888+ lgame::+sdl-textureaccess-target+ (* (sdl2:texture-width liquid) 4) (* (sdl2:texture-height liquid) 4)))
-    (sdl2:set-render-target lgame:*renderer* background)
-    (sdl2:render-copy lgame:*renderer* liquid)
-    (sdl2:set-render-target lgame:*renderer* nil)
-    (sdl2:destroy-texture liquid))
+    (setf background (lgame.texture:create-sdl-texture lgame:*renderer*
+                                                       lgame::+sdl-pixelformat-rgba8888+
+                                                       lgame::+sdl-textureaccess-target+
+                                                       (* (lgame.texture:.width liquid) 4)
+                                                       (* (lgame.texture:.height liquid) 4)))
+    (lgame.render:with-render-target background
+      (lgame.render:blit liquid nil))
+    (lgame.texture:destroy-texture liquid))
 
   (setf anim 0.0)
 
   (lgame.time:clock-start)
-  (loop while (lgame.time:clock-running?) do
-    (lgame.event:do-event (event)
-      (if (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+ ,lgame::+sdl-mousebuttondown+))
-          (lgame.time:clock-stop)))
+  (unwind-protect
+    (loop while (lgame.time:clock-running?) do
+          (lgame.event:do-event (event)
+            (when (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+ ,lgame::+sdl-mousebuttondown+))
+              (lgame.time:clock-stop)))
 
-    (incf anim 0.2)
-    (loop for x from 0 below 640 by 20 do
-          (let ((xpos #I(x + sin(anim + x*0.01)*15 + 20)))
-            (loop for y from 0 below 480 by 20 do
-                  (uiop:nest
-                    (let ((ypos #I(y + sin(anim + y*0.01)*15 + 20))))
-                    (lgame.rect:with-rect (source (round xpos) (round ypos) 20 20))
-                    (lgame.rect:with-rect (dest x y 20 20))
-                    (sdl2:render-copy lgame:*renderer* background :source-rect source :dest-rect dest)))))
+          (incf anim 0.2)
+          (loop for x from 0 below 640 by 20 do
+                (let ((xpos #I(x + sin(anim + x*0.01)*15 + 20)))
+                  (loop for y from 0 below 480 by 20 do
+                        (let* ((ypos #I(y + sin(anim + y*0.01)*15 + 20))
+                               (source (lgame.box:make-box xpos ypos 20 20))
+                               (dest (lgame.box:make-box x y 20 20)))
+                          (lgame.render:blit background dest source)))))
 
-    (sdl2:render-present lgame:*renderer*)
-    (lgame.time:clock-tick 60))
+          (lgame.render:present)
 
-  (sdl2:destroy-texture background)
-  (lgame:quit))
+          (lgame.time:clock-tick 60))
+
+    (progn
+      (lgame.texture:destroy-texture background)
+      (lgame:quit))))
 
 (eval-when (:execute)
   (main))
