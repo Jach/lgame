@@ -10,11 +10,18 @@
    Expects an lgame.texture:texture object and handles conversion of the box to an sdl rect.
    An optional source box can be passed but is often not needed."
 
-  (sdl2-ffi.functions:sdl-render-copy lgame:*renderer* (lgame.texture:.sdl-texture texture) nil nil))
-;  (lgame.box:with-box-as-sdl-rect (dest-rect destination-box)
-;    (lgame.box:with-box-as-sdl-rect (source-rect source-box)
-;      (sdl2::check-rc
-;        (sdl2-ffi.functions:sdl-render-copy lgame:*renderer* (lgame.texture:.sdl-texture texture) source-rect dest-rect)))))
+  (sdl2::check-rc
+    (cond ((and destination-box source-box)
+           (lgame.box:with-box-as-sdl-rect (dest-rect destination-box)
+             (lgame.box:with-box-as-sdl-rect (source-rect source-box)
+               (sdl2-ffi.functions:sdl-render-copy lgame:*renderer* (lgame.texture:.sdl-texture texture) source-rect dest-rect))))
+          (destination-box
+            (lgame.box:with-box-as-sdl-rect (dest-rect destination-box)
+              (sdl2-ffi.functions:sdl-render-copy lgame:*renderer* (lgame.texture:.sdl-texture texture) nil dest-rect)))
+          (source-box
+            (lgame.box:with-box-as-sdl-rect (source-rect source-box)
+              (sdl2-ffi.functions:sdl-render-copy lgame:*renderer* (lgame.texture:.sdl-texture texture) source-rect nil)))
+          (t (sdl2-ffi.functions:sdl-render-copy lgame:*renderer* (lgame.texture:.sdl-texture texture) nil nil)))))
 
 (defun present ()
   "Wrapper around sdl-render-present."

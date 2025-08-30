@@ -64,6 +64,7 @@
   (let ((c (pack-sdl-color r g b a)))
     (let* ((surf (lgame.font.ffi:ttf-render-utf8-blended font text c))
            (tex (make-instance 'lgame.texture:texture :sdl-texture (lgame::sdl-create-texture-from-surface lgame:*renderer* surf))))
+      ;(format t "w/h: ~a ~a~%" (lgame.texture:.width tex) (lgame.texture:.height tex))
       (lgame::sdl-free-surface surf)
       tex)))
 

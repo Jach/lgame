@@ -14,13 +14,20 @@ running. As you can see, lgame is quite a bit more verbose.
 
 |#
 
-(ql:quickload :lgame)
+;; quicklisp preamble and quickloading for script usage
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :lgame))
+
 (defpackage #:lgame.example.gamekit-hello-comparison
   (:use #:cl)
   (:export #:main))
 (in-package #:lgame.example.gamekit-hello-comparison)
-
-(defparameter *running?* t)
 
 (defun main ()
   (lgame:init)
@@ -29,27 +36,25 @@ running. As you can see, lgame is quite a bit more verbose.
 
   (let* ((font (lgame.font:load-font (lgame.font:get-default-font) 15))
          (txt (lgame.font:render-text font "Hello, gamekit!" 0 0 0))
-         (txt-rect (lgame.rect:get-texture-rect txt)))
-    (lgame.rect:move-rect txt-rect 240 (- 600 240 (sdl2:rect-height txt-rect))) ; gamekit's origin is bottom-left, we are top-left following SDL
-    (setf *running?* t)
+         (txt-box (lgame.box:get-texture-box txt)))
+    (lgame.box:move-box txt-box 240 (- 600 240 (lgame.box:box-height txt-box))) ; gamekit's origin is bottom-left, we are top-left following SDL
     (lgame.time:clock-start)
     (unwind-protect
-      (loop while *running?* do
-            (game-tick txt txt-rect))
+      (loop while (lgame.time:clock-running?) do
+            (game-tick txt txt-box))
 
-      (sdl2:free-rect txt-rect)
-      (sdl2:destroy-texture txt)
+      (lgame.texture:destroy-texture txt)
       (lgame:quit))))
 
-(defun game-tick (txt txt-rect)
+(defun game-tick (txt txt-box)
   (lgame.event:do-event (event)
     (when (= (lgame.event:event-type event) lgame::+sdl-quit+)
-      (setf *running?* nil)))
+      (lgame.time:clock-stop)))
 
   (lgame.render:set-draw-color 255 255 255)
   (lgame.render:clear)
 
-  (lgame.render:blit txt txt-rect)
+  (lgame.render:blit txt txt-box)
 
   (lgame.render:present)
 
