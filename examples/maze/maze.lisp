@@ -19,11 +19,25 @@ or just (restart-game) on its own, and generate new mazes to your heart's conten
 You can also print out an ASCII version of the maze by printing a maze object like *maze-obj*,
 done by default in restart-game.
 
+If playing with this interactively from your slime editor, I suggest this order of operations:
+* Evaluate just the defpackage below
+* compile-and-load maze-class.lisp
+* compile-and-load this file
+* run (main)
+
 |#
 
-(ql:quickload :lgame)
-(ql:quickload :livesupport)
-(ql:quickload :alexandria)
+;; quicklisp preamble and quickloading for script usage
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :lgame)
+  (ql:quickload :livesupport)
+  (ql:quickload :alexandria))
 
 (defpackage #:lgame.example.maze
   (:use #:cl)

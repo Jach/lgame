@@ -23,11 +23,27 @@ by one. You'll see squares color in pink to represent being or having been on
 the open-list, and a square colored yellow to indicate it's the top of the
 open-list and next-candidate to check for whether it's the goal.
 
+
+If playing with this interactively from your slime editor, I suggest this order of operations:
+* Evaluate just the defpackage below
+* compile-and-load maze-class.lisp
+* compile-and-load custom-maps.lisp
+* compile-and-load this file
+* run (main)
+
 |#
 
-(ql:quickload :lgame)
-(ql:quickload :livesupport)
-(ql:quickload :alexandria)
+;; quicklisp preamble and quickloading for script usage
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :lgame)
+  (ql:quickload :livesupport)
+  (ql:quickload :alexandria))
 
 (defpackage #:lgame.example.maze-pathfinding
   (:use #:cl)

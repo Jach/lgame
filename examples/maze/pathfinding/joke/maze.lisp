@@ -1,20 +1,36 @@
 #|
-Interactively modified from the pathfinding/maze.lisp example,
-this one implemented a 'joke' that instead of drawing the path
-with green blocks, it was formed by a vtuber's neck: https://twitter.com/jachy/status/1441803861522407437/photo/1
+Interactively modified from the first version of pathfinding/maze.lisp example, this one implemented a 'joke'.
+Instead of drawing the path with green blocks, it was formed by a vtuber's neck: https://twitter.com/jachy/status/1441803861522407437/photo/1
 
 I've poorly redrawn the assets to something else so they can be included here.
-Same controls as the pathfinding version, though the marking squares disappear after drawing the path.
+You can still click to set custom start/end points like the first version, and use f to draw the path, or r to reset with a new maze.
+The start/end blocks aren't drawn after the path has been drawn, but they are still set, just re-run the path finder to see.
 
-One visual edge case remains because the final head-neck connector (neck-top) includes part of the head's hair,
-which must be oriented with the head. This could be avoided by not doing that with the final connecting asset,
-so that the head can be on a curve with the previous segment. I've left it to retain parity with the original's
-limitation.
+One visual edge case remains because the final head-neck connector (neck-top)
+includes part of the head's hair, which must be oriented with the head. This
+could be avoided by not doing that with the final connecting asset, so that the
+head can be on a curve with the previous segment. I've left it to retain parity
+with the original's limitation.
+
+
+If playing with this interactively from your slime editor, I suggest this order of operations:
+* Evaluate just the defpackage below
+* compile-and-load maze-class.lisp
+* compile-and-load this file
+* run (main)
 |#
 
-(ql:quickload :lgame)
-(ql:quickload :livesupport)
-(ql:quickload :alexandria)
+;; quicklisp preamble and quickloading for script usage
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :lgame)
+  (ql:quickload :livesupport)
+  (ql:quickload :alexandria))
 
 (defpackage #:lgame.example.maze-pathfinding-joke
   (:use #:cl)
@@ -63,9 +79,9 @@ limitation.
   (draw-maze)
   (setf *pathfinder* (make-instance 'lgame.pathfinding::A*
                                      :size *dimensions*
-                                     :start-pos (list (1- (first *dimensions*)) ; bottom-right
+                                     :end-pos (list (1- (first *dimensions*)) ; bottom-right
                                                       (1- (second *dimensions*)))
-                                     :end-pos '(0 0) ; top-left
+                                     :start-pos '(0 0) ; top-left
                                      :neighbor-fn (lambda (location)
                                                     (finished-valid-neighbors (.maze *maze-obj*) location))
                                      )))
@@ -128,7 +144,7 @@ limitation.
       (when (and (= (lgame.event:key-scancode event) lgame::+sdl-scancode-f+)
                  (.start-pos *pathfinder*)
                  (.end-pos *pathfinder*))
-        (lgame.pathfinding::compute-path *pathfinder* :single-step? t :new-request? t))
+        (lgame.pathfinding::compute-path *pathfinder*))
       (when (= (lgame.event:key-scancode event) lgame::+sdl-scancode-r+)
         (restart-game)))
 
@@ -231,13 +247,13 @@ limitation.
               (lgame.rect::with-rect (r (* cell-width (second waypoint)) (* cell-height (first waypoint)) cell-width cell-height)
                 ; todo, check rounding above rect values instead of truncate to see if that gets rid of one-pixel disconnect at 20x30 size
                 (cond
-                  ((= i 0) (sdl2:render-copy-ex lgame:*renderer* (lgame.loader:get-texture :neck-bottom) :dest-rect r :angle angle))
+                  ((= i 0) (sdl2:render-copy-ex lgame:*renderer* (lgame.texture:.sdl-texture (lgame.loader:get-texture :neck-bottom)) :dest-rect r :angle angle))
                   ((= i (1- (1- (length waypoints))))
-                   (sdl2:render-copy-ex lgame:*renderer* (lgame.loader:get-texture :neck-top) :dest-rect r :angle angle))
+                   (sdl2:render-copy-ex lgame:*renderer* (lgame.texture:.sdl-texture (lgame.loader:get-texture :neck-top)) :dest-rect r :angle angle))
                   ((= i (1- (length waypoints)))
-                   (sdl2:render-copy-ex lgame:*renderer* (lgame.loader:get-texture :head) :dest-rect r :angle angle))
+                   (sdl2:render-copy-ex lgame:*renderer* (lgame.texture:.sdl-texture (lgame.loader:get-texture :head)) :dest-rect r :angle angle))
                   (t
-                   (sdl2:render-copy-ex lgame:*renderer* (lgame.loader:get-texture img) :dest-rect r :angle angle)))
+                   (sdl2:render-copy-ex lgame:*renderer* (lgame.texture:.sdl-texture (lgame.loader:get-texture img)) :dest-rect r :angle angle)))
                 )))))
 
 
