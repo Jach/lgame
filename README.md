@@ -17,7 +17,7 @@ old-fashioned style, that is, trying to do everything on a single thread, and it
 can be a useful platform for learning a few things or just spinning up a quick
 UI window, but every time I do something with this library I have to resist the
 urge to throw it all away and start over with something new. Something that's
-multi-threaded and something that takes care of garbage memory, even the
+multi-threaded and something that takes care of garbage memory, particularly the
 foreign-allocated stuff, automatically.
 
 # Example
@@ -92,7 +92,7 @@ The game loop itself can be broken down with ALTER:
 
 * Assign important values -- anything you need for the loop itself, like a clock
 * Loop -- begin the game loop running until the game is quit, often convenient to
-  have the body call a game-tick function
+  have the body call a game-tick function that you can redefine interactively
 * Time -- manage time to run at a desired frame rate. I prefer this at the end
   of the loop, though
 * Events -- handle user events and use them to update entities, which themselves
@@ -103,7 +103,7 @@ The game loop itself can be broken down with ALTER:
 You can see this pattern in the example above.
 
 Avoiding spaghetti code can be difficult as the size of the game increases,
-though, so consider specific architecture beforehand to better assist in each
+so consider specific architecture beforehand to better assist in each
 step. Possibly even switching to an
 [ECS](https://awkravchuk.itch.io/cl-fast-ecs/devlog/622054/gamedev-in-lisp-part-1-ecs-and-metalinguistic-abstraction)
 framework instead. (Or as another example, if you have thousands of things
@@ -111,6 +111,11 @@ bouncing around, instead of checking every object against every other object for
 collisions, you probably want to have some sort of collision manager / service /
 singleton that every object registers itself to and updates if needed, and then
 the collision manager itself can resolve collisions in a more efficient manner.)
+
+# Projects Using lgame
+
+* [ecs-compare](https://github.com/Jach/ecs-compare) -- a comparison of a typical 'game object' oriented way of doing the asteroid fields demo from the ecs
+  framework tutorial
 
 # Usage
 
@@ -179,36 +184,30 @@ your extension. Also happy if you want to put yourself in a new authors.md file.
 
 # Library Philosophy
 
-The goal of lgame is not to duplicate pygame's API entirely, or even to wrap
-SDL2 and friends as thoroughly and carefully, but to provide something close
-enough which facilitates making the sorts of programs found on pygame.org about
-as easily but in Common Lisp. To further that end, lgame is not against
-eventually becoming a sort of "kitchen sink" of features that can be useful for
-a lot of games. For instance, some A\* pathfinding code is included. Basically
-as I make my own games or game concepts, if I find myself needing something in
-more than one of them, it's likely to end up in lgame, or at least an example.
+First and foremost this is just a fun little hobby project to hack on and my views about it have changed over time and probably will change some more in the
+future, without necessarily updating this section.
 
-A lot of code so far is very optimistic and doesn't bother with all the error
-checks recommended by SDL or in many cases done for you by cl-sdl's `sdl2:`
-package wrapper functions. I'll try to improve such things over time but it's
-not a high priority.
+The main object-level goal of lgame is not to duplicate pygame's API entirely, or even to wrap SDL2 and friends as thoroughly and carefully, but to provide
+something close enough which facilitates making the sorts of programs found on pygame.org about as easily but in Common Lisp. To further that end, lgame is not
+against eventually becoming a sort of "kitchen sink" of features that can be useful for a lot of games. For instance, some A\* pathfinding code is included.
+Basically as I make my own games or game concepts, if I find myself needing something in more than one of them, it's likely to end up in lgame, or at least an
+example.
 
-Similarly I haven't gotten anything to the point where I want to build and
-distribute binaries beyond my own machines. I develop with gentoo linux, so
-there may be platform specific bugs with Mac or Windows that I haven't run into.
-I also don't plan on ever explicitly testing and supporting Mac for either
-development or game binaries, so only Windows will realistically receive my
-attention for faults. If you want to contribute Mac fixes though, I'll accept
-them.
+A lot of code so far is very optimistic and doesn't bother with all the error checks recommended by SDL or in many cases done for you by cl-sdl's `sdl2:`
+package wrapper functions. I'll try to improve such things over time but it's not a high priority. It'll become a higher priority if I ever ship something, but
+honestly, the solution is likely just going to be a crash with backtrace that you hope will be sent with a bug report. I have mixed feelings about games that
+try to automatically send such crash data to a server.
 
-lgame is currently "single-threaded preferred". That is, like most pygame games,
-the style of development should be that one thread is responsible for
-initializing everything, loading assets (and unloading them later), and running
-the game loop. This keeps things on a relatively 'happy' path with respect to
-threading issues, especially around foreign memory and GL stuff, but it's
-obviously not modern. I'd like to experiment sometime with a more multi-threading
-aware architecture, including one that automatically and safely manages foreign
-memory, but this will likely end up changing a lot of interfaces and may be
+So obviously I haven't gotten anything to the point where I want to build and distribute binaries beyond my own machines. I develop with gentoo linux, so there
+may be platform specific bugs with Mac or Windows that I haven't run into. Especially Mac which I hear not only wants things that touch the graphics stack to
+all be on the same thread, but to furthermore be on the "main" thread of the program. For that and other reasons I don't plan on ever explicitly testing and
+supporting Mac for either development or game binaries, so only Windows will realistically receive my attention for faults. If you want to contribute Mac fixes
+though, I'll accept them.
+
+lgame is currently "single-threaded preferred". That is, like most pygame games, the style of development should be that one thread is responsible for
+initializing everything, loading assets (and unloading them later), and running the game loop. This keeps things on a relatively 'happy' path with respect to
+threading issues, especially around foreign memory and GL stuff, but it's obviously not modern. I'd like to experiment sometime with a more multi-threading
+aware architecture, including one that automatically and safely manages foreign memory, but this will likely end up changing a lot of interfaces and may be
 better to do without SDL under the hood in the first place.
 
 ## Why not just use plain cl-sdl2 for a game?
@@ -297,21 +296,26 @@ often, you almost might as well treat cl-sdl2 as just handling the bare minimum
 of using cl-autowrap yourself on the header files. If it has something higher
 level you can safely and intuitively use, great!
 
+Oh yeah, and sdl3 fixes none of that, and meanwhile changed the API names of almost everything.
+
 ## What does/doesn't lgame wrap?
 
-If there's a corresponding direct way of doing something pygame provides in one
-or maybe two function calls to something provided by cl-sdl2 or an SDL2 FFI
-call, then I don't want to wrap it with an lgame namespaced function. Though for
-convenience lgame does :use all the functions and symbols in the FFI. See the
-project organization section.
+My initial philosophy was: if there's a corresponding direct way of doing something pygame does in one or maybe two function calls to something provided by
+cl-sdl2 or an SDL2 FFI call, then I don't want to wrap it with an lgame namespaced function.
 
-The core viewpoint is that "how can I do X?" should be answerable by looking up
-how it's done in regular SDL2 or sometimes pygame (many examples available
-online) and then just translating it directly (including manual memory
-management!), but possibly searching lgame for existing usage and discovering a
-convenient wrapper. (For example, a single function call to handle loading an
-image with sdl2-image into a surface, converting that to a texture, and freeing
-the surface.)
+However I've moved towards thinking that lgame should wrap more things, and in fact enforced it when it comes to some "helpers" and their relationships like my
+code around texture loading, Lisp bounding boxes instead of SDL\_Rects, and my sprite class. Plus some wrappers that are convenient for most games I care to
+make where there's only one window and one renderer.
+
+A good game in lgame is one that doesn't use the sdl2 package directly for anything.
+
+But for convenience, the top level `lgame` package does `:use` all the functions and symbols in the SDL FFI. See the project organization section. This is
+mainly to make it easy to access enum constants for things like keyboard characters but perhaps those should turn into lgame constants or even keywords.
+
+A core viewpoint is that "how can I do X?" should be answerable by looking up how it's done in regular SDL2 or sometimes pygame (many examples available
+online) and then just translating it directly (including manual memory management!), but possibly searching lgame for existing usage and discovering a
+convenient wrapper. (For example, a single function call to handle loading an image with sdl2-image into a surface, converting that to a texture, and freeing
+the surface.) I have a goal to provide ports of other people's pygames to serve as demonstrations.
 
 As I work on my own small game ideas, I may want to generalize and include
 something into lgame that has no equivalent in pygame, for example A\*
@@ -346,12 +350,10 @@ state for you. Similar idea with `lgame:*screen*` and `lgame:*renderer*` which
 are exported and intended to be passed to appropriate sdl2 functions if I didn't
 bother making a wrapper for them that uses them implicitly.
 
-**Currently foreign memory must be manually managed.** lgame does manage or
-provide helpers for managing a few things (and I'll need to better document
-them) but generally if you do something like making a texture or long-lived
-SDL\_Rect you're responsible for freeing it. I may investigate using finalizers
-so that things can be garbage collected, or perhaps make it configurable, but
-that's a longer term plan.
+**Currently foreign memory must be manually managed.** lgame does manage or provide helpers for managing a few things (and I'll need to better document them)
+but generally if you do something with the sdl2 package explicitly like making a texture or long-lived SDL\_Rect you're responsible for freeing it. Similarly
+for things in lgame that might return textures, beware unless they mention that they'll be destroyed e.g. during `lgame:quit`. I may investigate using
+finalizers so that things can be garbage collected, or perhaps make it configurable, but that's a longer term plan.
 
 ## Packages
 
@@ -386,10 +388,8 @@ symbols are:
 
 * `*screen*` -- aka the SDL\_Window created for you by
   `(lgame.display:create-window ...)` that wraps `SDL_CreateWindow(...)`.
-* `*screen-rect*` -- a convenient SDL\_Rect with fields x=0, y=0,
-  width=windowWidth, height=windowHeight. Note that if you use
-  `lgame.display:set-logical-size` the `*screen-rect*` will be updated to have
-  the logical width and height instead of the actual window's.
+* `*screen-box*` -- a convenient box object with xy-position at 0, 0 (top left) and width, height equal to the window width and window height. However, note that if you use
+  `lgame.display:set-logical-size` the `*screen-box*` will be updated to have the logical width and height instead of the actual window's.
 * `*renderer*` -- the SDL\_Renderer created for you by
   `(lgame.display:create-renderer)`, parented to the window.
 * ...possible misc singletons -- exported for internal convenience like
@@ -413,11 +413,11 @@ turns to:
 (setf texture (lgame::sdl-create-texture-from-surface lgame:*renderer* source-surface))
 ```
 
-You can of course explicitly use `sdl2-ffi.functions:sdl-create-texture-from-surface`, the symbols refer to the same thing.
-Or even use `sdl2:create-texture-from-surface`, which wraps the sdl- function
-but includes a null pointer check.
+You can of course explicitly use `sdl2-ffi.functions:sdl-create-texture-from-surface`, the symbols refer to the same thing. Or even use
+`sdl2:create-texture-from-surface`, which wraps the sdl- function but includes a null pointer check.
 
-Similarly using things like either `lgame::+sdl-windowpos-centered+` vs. `sdl2-ffi:+sdl-windowpos-centered+` is up to you.
+Similarly using things like either `lgame::+sdl-windowpos-centered+` vs. `sdl2-ffi:+sdl-windowpos-centered+` is up to you. Eventually I might wrap some and put
+them in logical packages.
 
 ### lgame.display
 
@@ -455,10 +455,8 @@ An example usage:
 
 ### lgame.event
 
-Utils and wrappers around SDL2 events, particularly handling the event loop
-somewhat nice and intuitively with a `lgame.event:do-event` macro and to reference such
-event data with `ref` or a specialized function on top of `ref`.
-Here is some more explanation in the context of code:
+Utils and wrappers around SDL2 events, particularly handling the event loop somewhat nicely and intuitively with a `lgame.event:do-event` macro and to reference
+such event data with `ref` or a specialized function on top of `ref`. Here is some more explanation in the context of code:
 
 ```lisp
 ;; Example do-event usage for a few event types and properties:
@@ -487,8 +485,7 @@ Here is some more explanation in the context of code:
         (progn (lgame::sdl-set-window-fullscreen lgame:*screen* lgame::+sdl-window-fullscreen-desktop+) (setf *full-screen* t)))))
 ```
 
-Support functions are `lgame.event:event-type` and `lgame.event:key-scancode`. They both build on a
-general `ref` macro. Taken from `event.lisp`:
+Support functions are `lgame.event:event-type` and `lgame.event:key-scancode`. They both build on a general `ref` macro. Taken from `event.lisp`:
 
 ```lisp
 (defmacro ref (event &rest fields)
@@ -501,8 +498,7 @@ general `ref` macro. Taken from `event.lisp`:
   (ref event :key :keysym :scancode))
 ```
 
-`plus-c:c-ref` lets you poke at nested struct fields. So you could write
-`key-scancode` as `(plus-c:c-ref event sdl2-ffi:sdl-event :key :keysym :scancode)`
+`plus-c:c-ref` lets you poke at nested struct fields. So you could write `key-scancode` as `(plus-c:c-ref event sdl2-ffi:sdl-event :key :keysym :scancode)`
 which is basically equivalent to C's `event.key.keysym.scancode`.
 
 Knowing what fields exist requires looking at
@@ -576,7 +572,7 @@ Example usage:
   (lgame.time:clock-tick 60))
 ```
 
-Note some examples still make use of their own `*running?*` variable. Do what
+Note some examples might make use of their own `*running?*` variable. Do what
 you like.
 
 `clock-tick` should be called at the end of the frame, because it takes the duration of
@@ -596,12 +592,30 @@ If you intentionally delay a frame with `(sleep (/ 1 30))`, or dropped to around
 or 34. Keeping statistics of this number can help you notice when you don't have
 consistent frame times (e.g. a garbage collection might have kicked off).
 
+### lgame.box
+
+This package is for working with axis-aligned bounding-boxes (AABBs). These are just normal lisp objects. You can create one by specifying an x, y location and
+a width, height. There are some functions to mutate them, some functions to check for collisions, and a convenient function to access locations on the box
+itself. It's easier to explain with code:
+
+```lisp
+(let ((box (lgame.box:make-box 0 0 5 5))) ; 5x5 box at x,y coordinate 0,0
+  (lgame.box:box-attr box :center) ; query its center position, i.e. (2,2)
+  (lgame.box:box-attr box :topright) ; query its top-right position, i.e. (5,0)
+  (setf (lgame.box:box-attr box :topright) '(20 40)) ; moves top-right position to coord (20,40)
+  (lgame.box:box-attr box :center) ; now box center is at (17,42). Its left axis is at 15, its right at 20, i.e. it's still a 5x5 box.
+  )
+```
+
 ### lgame.rect
 
-Package for working with SDL\_Rects. You can create them, update them, and do
-useful things like checking for collisions or scaling. There's also a handy
-`rect-coord` function to query or set things about the rect without having to
-touch the underlying x,y,w,h fields for everything. e.g.:
+This package is kept around for historical purposes at the moment, and perhaps there's occasionally some useful functions to call, but in general it should be
+avoided and is considered deprecated, with potential removal someday.
+
+Use lgame.box instead.
+
+If you use it anyway, it's for working with SDL\_Rects. You can create them, update them, and do useful things like checking for collisions or scaling. There's
+also a handy `rect-coord` function to query or set things about the rect without having to touch the underlying x,y,w,h fields for everything. e.g.:
 
 ```lisp
 (lgame.rect:with-rect (r 0 0 5 5)
@@ -624,10 +638,11 @@ Similar set of classes and mixins to work with game sprites compared to
 [pygame.sprite](https://www.pygame.org/docs/ref/sprite.html). Check out
 `chimp.lisp` for a simple example or `aliens.lisp` for a bigger example. The
 main idea is that you give each sprite its own class inheriting from the
-appropriate lgame.sprite base class, set the sprite's image and rect slots in a
+appropriate lgame.sprite base class, set the sprite's image and box slots in a
 constructor, and implement the specializing method `update`. If you need
 something more complicated than "blitting" the sprite's image slot to the
-location specified by its rect slot, you can also implement the method `draw`.
+location specified by its box slot, you can also implement the method `draw`.
+
 You should write your game loop to call update/draw for all sprites every frame.
 There's also a `group` class to create sprite groups and thus only have to call
 (from the main loop) update/draw on the group itself.
@@ -648,32 +663,36 @@ it. See `chimp.lisp` for a static example which basically goes like this:
   ; pre-game loop setup
   (let* ((font (lgame.font:load-font (lgame.font:get-default-font) 20))
          (banner-txt (lgame.font:render-text font "Your message here" 10 10 10))
-         (banner-txt-rect (lgame.rect:get-texture-rect banner-txt)))
+         (banner-txt-box (lgame.box:get-texture-box banner-txt)))
     ; ...
-    (unwind-protect (game-loop)
-      (sdl2:free-rect banner-txt-rect)
-      (sdl2:destroy-texture banner-txt)
+    (unwind-protect
+      (game-loop)
+
+      (lgame.texture:destroy-texture banner-txt)
       (lgame:quit)))
 
   ; inside game loop:
-  (lgame.render:blit banner-txt banner-txt-rect)
+  (lgame.render:blit banner-txt banner-txt-box)
 
   ;; note: could also write:
-  ;(sdl2:render-copy lgame:*renderer* banner-txt :dest-rect banner-txt-rect)
-  ;; or:
-  ;;(lgame::sdl-render-copy lgame:*renderer* banner-txt nil banner-txt-rect)
+  ;(lgame.box:with-box-as-sdl (dest-rect banner-txt-box)
+  ;  (sdl2:render-copy lgame:*renderer* (lgame.texture:.sdl-texture banner-txt) :dest-rect dest-rect))
+  ;  ; or (lgame::sdl-render-copy lgame:*renderer* (lgame.texture:.sdl-texture banner-txt) nil dest-rect)
 ```
 
-If you want to rely on system fonts, lgame uses
-[font-discovery](https://github.com/shinmera/font-discovery) and so can accept
-font family names via `load-font` or explicitly get paths via `find-font-path`.
+Note that for the box to rect macro, there's an optional third parameter `truncate?`. Default behavior is to round box values to match the fixed uints of sdl's
+rects, but truncation is possible instead if desired.
+
+If you want to rely on system fonts, lgame uses [font-discovery](https://github.com/shinmera/font-discovery) and so can accept font family names via `load-font`
+or explicitly get paths via `find-font-path`.
 
 ### lgame.render
 
 Some wrappers like the just shown `blit` that let you avoid having to specify
 the `*renderer*` all the time.
 
-* `lgame.render:blit` - wraps sdl-render-copy for a texture and only dest-rect
+* `lgame.render:blit` - wraps sdl-render-copy, but expects an `lgame.texture:texture` instead of an SDL\_Texture and an `lgame.texture:box` instead of an
+  SDL\_Rect. It must take a texture and a destination box (or nil, which targets the whole screen). It optionally takes a source box.
 * `lgame.render:clear` - wraps sdl-render-clear
 * `lgame.render:present` - wraps sdl-render-present
 * `lgame.render:set-draw-color` - wraps sdl-set-render-draw-color, allows passing
@@ -699,7 +718,7 @@ being destroyed on `lgame:quit`. Example:
 ; later on in game:
 (let ((image (lgame.loader:get-texture :ball)))
   (setf (lgame.sprite:.image self) image)
-  (setf (lgame.sprite:.rect self) (lgame.rect:get-texture-rect image)))
+  (setf (lgame.sprite:.box self) (lgame.box:get-texture-box image)))
 ```
 
 That will try to load "ball.png" from the directory that the lisp file resides
@@ -727,16 +746,17 @@ Utility functions that don't fit in other packages, and may indeed be better
 split off into separate libraries. Currently just a function for printing
 licensing information that may be useful when shipping a game binary.
 
+### lgame.data-structures
+
+Supporting data structures that I wanted or needed to make myself instead of using a third party library.
+
 ### Potential future packages...
 
 There is no lgame.sound, but that may change. For now, using sdl2-mixer directly
 as some examples do is easy enough.
 
-The two GL examples show that using OpenGL is a lot of work, even when using SDL
-to do the initial window setup. If I start experimenting with more 3D games and
-using raw GL calls, some useful things may end up in something like a lgame.gl
-package.
+The two GL examples show that using OpenGL is a lot of work, even when using SDL to do the initial window setup. If I start experimenting with more 3D games and
+using raw GL calls, some useful things may end up in something like a lgame.gl package.
 
-If lgame ever does become a true 'kitchen sink' it might become better to think
-of it as an engine, but I'd rather at that point just split things off into an
-engine.
+If lgame ever does become a true 'kitchen sink' it might become better to think of it as an engine, but I'd rather at that point just split things off into an
+engine. Especially for any 3D game, I don't really think pygame or anything directly inspired by it is the right approach.
