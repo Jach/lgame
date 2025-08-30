@@ -33,11 +33,19 @@ while 1:                                                                      #6
     pygame.display.flip()
 |#
 
-(ql:quickload :lgame)                                                         ;1
+;; quicklisp preamble and quickloading for script usage
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :lgame))                                                      ;1
 
 (defpackage #:taste
   (:use #:cl)
-  (:import-from #:lgame.rect #:rect-coord))
+  (:import-from #:lgame.box #:box-attr))
 (in-package #:taste)
 
 (lgame:init)                                                                  ;2
@@ -56,26 +64,25 @@ while 1:                                                                      #6
 
 (defparameter *ball* (lgame.loader:load-texture                               ;5
                        (merge-pathnames "intro_ball.png" *source-dir*)))
-(defparameter *ball-rect* (lgame.rect:get-texture-rect *ball*))
+(defparameter *ball-box* (lgame.box:get-texture-box *ball*))
 
 (loop :named game-loop do                                                     ;6
   (lgame.event:do-event (event)                                               ;7
     (when (= (lgame.event:event-type event) lgame::+sdl-quit+)
-      (sdl2:free-rect *ball-rect*)
       (lgame:quit)
       (return-from game-loop)))
 
-  (lgame.rect:move-rect *ball-rect* (aref *speed* 0) (aref *speed* 1))        ;8
-  (if (or (< (rect-coord *ball-rect* :left) 0)
-          (> (rect-coord *ball-rect* :right) *width*))
+  (lgame.box:move-box *ball-box* (aref *speed* 0) (aref *speed* 1))           ;8
+  (if (or (< (box-attr *ball-box* :left) 0)
+          (> (box-attr *ball-box* :right) *width*))
       (setf (aref *speed* 0) (- (aref *speed* 0))))
-  (if (or (< (rect-coord *ball-rect* :top) 0)
-          (> (rect-coord *ball-rect* :bottom) *height*))
+  (if (or (< (box-attr *ball-box* :top) 0)
+          (> (box-attr *ball-box* :bottom) *height*))
       (setf (aref *speed* 1) (- (aref *speed* 1))))
 
   (lgame.render:set-draw-color *black*)                                       ;9
   (lgame.render:clear)
-  (lgame.render:blit *ball* *ball-rect*)
+  (lgame.render:blit *ball* *ball-box*)
   (lgame.render:present))
 
 #|
@@ -92,7 +99,7 @@ here, I picked a vector for *speed* though a (list 2 2) would have worked too,
 however that leads to the temptation of a literal list '(2 2) where such
 literals should be used immutably, which *speed* here isn't, but *black* is.
 
-4: Need two function calls instead of 1 due to SDL2 giving both a window and a
+4: Need two function calls instead of 1 due to SDL2 using both a window and a
 renderer. I may one day create a unifying create-screen command that does both,
 but for now being somewhat explicit about certain SDL2 features is better.
 Nevertheless I have hid the underlying *renderer* reality from this starting
@@ -110,13 +117,16 @@ editor or REPL that has placed the .fasl file into some other location than next
 to the .lisp file.
 
 Note that even this is not sufficient if your goal is to build a binary and
-distribute it to other computers. See [future example here] for that.
+distribute it to other computers.
+
+I also decided to not use sdl2 rects and instead we use similar-purpose
+bounding-boxes which are lisp objects.
 
 6: Infinite game loop. I opted to give it a name to break out of from the inner
-event loop that follows, rather than call quit.
+event loop that follows, rather than do a system exit.
 
 7: Mostly the same event loop, other than being more 'proper' in breaking out
-instead of hard quitting, and making sure to free the rect and quit lgame.
+instead of hard quitting, and making sure to quit lgame.
 
 8: Movement is done in-place so a reassignment doesn't need to happen.
 Checking for collision is uglier.
