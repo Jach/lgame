@@ -1,6 +1,8 @@
 #|
 Based on https://github.com/pygame/pygame/blob/main/examples/vgrade.py
-Displays a random-colored gradient twice per second.
+
+Displays a random-colored gradient, then sleeps for half a second.
+Should show a new gradient twice per second.
 
 Differences:
 
@@ -38,7 +40,7 @@ differently is that it loops through each row of the screen, updates the color
 to draw, and calls render-fill-rect to draw a one-pixel high rect of color
 across row's columns. This is so fast that SDL's millisecond precision is no
 longer good enough to time it, and exposed a divide-by-zero bug in my stopwatch
-macro. You can use with-stopwatch-unix instead to get microsecond precision,
+macro. I added an sbcl-specific version to instead to get microsecond precision,
 which reveals each gradient takes about half a millisecond, with occasional spikes
 to 1-1.5ms (perhaps due to a GC).
 
@@ -47,16 +49,41 @@ it goes pixel-by-pixel too but instead of updating a Lisp array it just renders
 immediately with sdl2:render-draw-point. This ended up being 30ms, which is quite
 a bit better, but still clearly not a great idea.
 
+In summary, doing direct render calls on hardware is way faster. Lgame tries to no
+longer use sdl rects directly, but if you aren't interfacing with parts of lgame that
+otherwise try to make using textures and their bounding boxes more safe to work with,
+you can go nuts and call directly into the sdl layer with your rects and whatever.
+
+Timing Updates:
+
+On my higher end machine with an AMD Ryzen 9 5900X CPU and an Nvidia 4090 GPU,
+I get these performance values:
+
+Using a buffer: 42ms per gradient or 24 gradients per second
+Using rects:    0.2ms per gradient or 5000 gradients per second
+Using points:   6.8ms per gradient or 145 gradients per second
+
+(And for Python, with
+pygame 2.6.1 (SDL 2.32.6, Python 3.13.5)
+there may be timing problems because it goes between 1 to 3 ms or 333 to 1000 gradients per second.)
+
 |#
+
+;; quicklisp preamble and quickloading for script usage
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :lgame)
+  (ql:quickload :livesupport))
+
 (defpackage #:lgame.example.vgrade
   (:use #:cl)
   (:export #:main))
 (in-package #:lgame.example.vgrade)
-
-(defparameter *running?* t)
-
-(ql:quickload :lgame)
-(ql:quickload :livesupport)
 
 (defparameter *width* 600)
 (defparameter *height* 400)
@@ -73,12 +100,12 @@ a bit better, but still clearly not a great idea.
   ; with this format, pixel colors are in the form #xRRGGBBAA
   (setf buffer (make-array *size* :initial-element 0 :element-type '(unsigned-byte 32)))
 
-  (setf *running?* t)
-  (loop while *running?* do
+  (lgame.time:clock-start)
+  (loop while (lgame.time:clock-running?) do
         (livesupport:continuable
           (lgame.event:do-event (event)
-            (if (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+ ,lgame::+sdl-mousebuttondown+))
-                (setf *running?* nil)))
+            (when (find (lgame.event:event-type event) `(,lgame::+sdl-quit+ ,lgame::+sdl-keydown+ ,lgame::+sdl-mousebuttondown+))
+              (lgame.time:clock-stop)))
 
           (render-gradient background buffer)
           (livesupport:update-repl-link)))
@@ -88,9 +115,9 @@ a bit better, but still clearly not a great idea.
   (lgame:quit))
 
 (defun render-gradient (background buffer)
-  (display-gradient background buffer :use-buffer t)
+  ;(display-gradient background buffer :use-buffer t)
   ;(display-gradient background buffer :use-rects t)
-  ;(display-gradient background buffer :use-render-point t)
+  (display-gradient background buffer :use-render-point t)
   )
 
 (defmacro with-stopwatch (&body body)
@@ -101,7 +128,7 @@ a bit better, but still clearly not a great idea.
          (format t "Gradient: ~a ms (~$fps)~%" (* end 1000) (/ 1 end))))))
 
 #+sbcl
-(defmacro with-stopwatch-unix (&Body body)
+(defmacro with-stopwatch (&Body body)
   (let ((start (gensym)))
     `(let ((,start (nth-value 2 (sb-unix:unix-gettimeofday))))
        ,@body
