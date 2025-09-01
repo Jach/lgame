@@ -48,7 +48,6 @@ file and load it, or paste it directly into your REPL:
             (livesupport:continuable
               (game-tick txt txt-rect)))
 
-      (lgame.texture:destroy-texture txt)
       (lgame:quit))))
 
 (defun game-tick (txt txt-box)
@@ -656,8 +655,11 @@ don't want to download one or specify a system font) and a single
 but without using finalizers. Other ttf functions are exposed in the
 `lgame-sdl2-ttf.ffi` package.
 
-Thus you *will* need to clean up the font texture yourself after you're done with
-it. See `chimp.lisp` for a static example which basically goes like this:
+You should consider destroying the returned font texture yourself with `(lgame.texture:destroy-texture txt)` once you're done with it.
+
+However, if the rendered text is "static" for the lifetime of the game, and so you wouldn't normally
+destroy it until you call `(lgame:quit)` anyway, then you may opt to not make the explicit call because
+the texture will be automatically destroyed at that point. See `chimp.lisp` for a static example which basically goes like this:
 
 ```lisp
   ; pre-game loop setup
@@ -668,20 +670,25 @@ it. See `chimp.lisp` for a static example which basically goes like this:
     (unwind-protect
       (game-loop)
 
-      (lgame.texture:destroy-texture banner-txt)
+      ;(lgame.texture:destroy-texture banner-txt) ; more commentary about having this line or not in chimp.lisp
       (lgame:quit)))
 
   ; inside game loop:
   (lgame.render:blit banner-txt banner-txt-box)
 
   ;; note: could also write:
-  ;(lgame.box:with-box-as-sdl (dest-rect banner-txt-box)
+  ;(lgame.box:with-box-as-sdl-rect (dest-rect banner-txt-box)
   ;  (sdl2:render-copy lgame:*renderer* (lgame.texture:.sdl-texture banner-txt) :dest-rect dest-rect))
   ;  ; or (lgame::sdl-render-copy lgame:*renderer* (lgame.texture:.sdl-texture banner-txt) nil dest-rect)
 ```
 
 Note that for the box to rect macro, there's an optional third parameter `truncate?`. Default behavior is to round box values to match the fixed uints of sdl's
 rects, but truncation is possible instead if desired.
+
+In contrast, the example given at the top of the readme and in `gamekit-hello-comparison.lisp` does not have the destroy texture call.
+
+In contrast still, the example in `aliens.lisp` renders the score text and keeps the texture around until it changes, destroys it then, and replaces it with a
+new texture.
 
 If you want to rely on system fonts, lgame uses [font-discovery](https://github.com/shinmera/font-discovery) and so can accept font family names via `load-font`
 or explicitly get paths via `find-font-path`.

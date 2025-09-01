@@ -1,5 +1,20 @@
 (in-package #:lgame.font)
 
+(defvar *rendered-texts-count* 0)
+(defvar *rendered-text-textures* (trivial-garbage:make-weak-hash-table :weakness :value))
+(defvar *successful-destroys* 0)
+
+(defun destroy-rendered-text-textures ()
+  "Called automatically by lgame:quit, any textures still reachable
+   through the weak hash map that haven't been destroyed will be destroyed."
+  (maphash (lambda (k v)
+             (declare (ignore k))
+             (when (and (not (lgame.texture::.destroyed? v))
+                        (lgame.texture:destroy-texture v))
+               (incf *successful-destroys*)))
+           *rendered-text-textures*)
+  (clrhash *rendered-text-textures*))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *loaded-fonts* (make-hash-table :test #'equal))
 
@@ -49,24 +64,24 @@
 
 (defun render-text (font text r g b &optional (a 255))
   "Using the provided font, renders the text string with a specified rgba color.
-   This calls the underlying ttf-render-utf8-blended function.
-   An lgame.texture:texture is returned, which must be destroyed manually."
-  ; todo improvement, add support for an optional cached? parameter.
-  ; when t, and *texture-loader* has been created,
-  ; the (font+text) key is used to cache the created texture.
-  ; This way, a game can naively call render-text every frame
-  ; and live-change it without having to worry about unloading
-  ; the former texture/storing it outside the draw call.
-  ; Can also consider a draw-text that also takes a top-left
-  ; coordinate and directly calls the render-copy function.
-  ; Maybe just do that and have implicit caching there.
 
+   This calls the underlying ttf-render-utf8-blended function.
+
+   An lgame.texture:texture is returned. You should destroy this texture
+   manually, but if you know it won't be claimed by the garbage collector prior
+   to lgame:quit, then it will be destroyed automatically during lgame:quit."
   (let ((c (pack-sdl-color r g b a)))
     (let* ((surf (lgame.font.ffi:ttf-render-utf8-blended font text c))
            (tex (make-instance 'lgame.texture:texture :sdl-texture (lgame::sdl-create-texture-from-surface lgame:*renderer* surf))))
-      ;(format t "w/h: ~a ~a~%" (lgame.texture:.width tex) (lgame.texture:.height tex))
       (lgame::sdl-free-surface surf)
+      (setf (gethash *rendered-texts-count* *rendered-text-textures*) tex)
+      (incf *rendered-texts-count*)
       tex)))
+
+; Alternative/supplemental implemenations of render-text to consider:
+; a render text that caches the texture instead of the weak hash table scheme, like texture loader
+; a render text that takes a top-left coord to draw, or a box, and draws immediately (and destroys immediately or caches)
+; a render text that takes an (r g b) or (r g b a) list instead of separate params
 
 (defun get-default-font ()
   (asdf:system-relative-pathname :lgame "assets/open-sans/OpenSans-Regular.ttf"))

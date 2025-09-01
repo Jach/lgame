@@ -144,7 +144,8 @@ original to accomplish that.
                          chimp fist)))
 
       ; cleanup
-      (lgame.texture:destroy-texture banner-txt)
+      ;(lgame.texture:destroy-texture banner-txt) ; this is arguably best practice, BUT banner-txt is still reachable here so we know it hasn't been
+                                                  ; claimed by the GC yet and thus the underlying texture can be automatically destroyed in lgame:quit
       (sdl2-mixer:free-chunk whiff-sound)
       (sdl2-mixer:free-chunk punch-sound)
       (lgame:quit))))

@@ -9,7 +9,7 @@
            #:.height
            #:.sdl-texture
            #:destroy-texture
-           #:create-sdl-texture))
+           #:create-empty-sdl-texture))
 
 (defpackage #:lgame.box
   (:use #:common-lisp)
@@ -232,11 +232,12 @@
     "Provides higher level font rendering utilities, like loading (and caching) fonts,
      a default font path, and a render-text function that returns a texture.")
      (:export #:load-font
-              #:unload-fonts
               #:render-text
               #:get-default-font
               #:get-default-mono-font
-              #:find-font-path))
+              #:find-font-path
+              #:unload-fonts
+              #:destroy-rendered-text-textures))
 
 (defpackage #:lgame.render
   (:use #:common-lisp)

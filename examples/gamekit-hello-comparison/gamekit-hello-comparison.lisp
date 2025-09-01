@@ -43,7 +43,6 @@ running. As you can see, lgame is quite a bit more verbose.
       (loop while (lgame.time:clock-running?) do
             (game-tick txt txt-box))
 
-      (lgame.texture:destroy-texture txt)
       (lgame:quit))))
 
 (defun game-tick (txt txt-box)

@@ -250,8 +250,8 @@ Differences:
   (lgame::sdl-raise-window lgame:*screen*)
 
   (let ((bg-tile (lgame.loader:get-texture "background.png")))
-    (setf background (lgame.texture:create-sdl-texture lgame:*renderer* lgame::+sdl-pixelformat-rgba8888+ lgame::+sdl-textureaccess-target+
-                                                       (first +screen-size+) (second +screen-size+)))
+    (setf background (lgame.texture:create-empty-sdl-texture lgame:*renderer* lgame::+sdl-textureaccess-target+
+                                                             (first +screen-size+) (second +screen-size+)))
     (lgame.render:with-render-target background
       (loop for x from 0 below (first +screen-size+) by (lgame.texture:.width bg-tile) do
             (with-box-as-sdl-rect (r (make-box x 0 (lgame.texture:.width bg-tile) (lgame.texture:.height bg-tile)))

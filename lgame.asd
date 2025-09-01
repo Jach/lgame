@@ -7,6 +7,7 @@
  ;              "trivial-clock" ; more portable nanosecond clock precision? will also be part of sdl3...
                "font-discovery" ; easier to use system fonts
                "pileup" ; for A*, will probably remove eventually
+               "trivial-garbage" ; portable weak hash tables, maybe finalizers later
                )
   :components ((:module "src/"
                         :serial t
