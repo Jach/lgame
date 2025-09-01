@@ -46,8 +46,7 @@
    If it is successfully destroyed, returns t."
   (when (slot-value self 'sdl-texture)
     (if (.destroyed? self)
-        (signal (make-condition 'warning :format-control "Trying to destroy an already-destroyed texture (accessed ~:R times), skipping"
-                                         :format-arguments (list (.access-count self))))
+        (warn "Trying to destroy an already-destroyed texture (accessed ~a times), skipping" (.access-count self))
         (progn
           (sdl2:destroy-texture (slot-value self 'sdl-texture))
           (setf (.destroyed? self) t)))))
