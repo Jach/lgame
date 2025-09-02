@@ -15,6 +15,16 @@
         (dist2 (- b1 b2)))
     (sqrt (+ (* dist1 dist1) (* dist2 dist2)))))
 
+(declaim (inline feuclidean)
+         (ftype (function (fixnum fixnum fixnum fixnum) double-float) feuclidean))
+(defun feuclidean (a1 b1 a2 b2)
+  "Faster version of euclidean..."
+;  (declare (type fixnum a1 b1 a2 b2))
+  (declare (optimize (speed 3) (safety 1)))
+  (let* ((da (float (- a1 a2) 1d0))
+         (db (float (- b1 b2) 1d0)))
+    (sqrt (+ (* da da) (* db db)))))
+
 (defun octile (a1 b1 a2 b2)
   "Octile distance formula for a pair of points
    (a1, b1) and (a2, b2)."

@@ -50,7 +50,7 @@ If playing with this interactively from your slime editor, I suggest this order 
   (:import-from #:lgame.pathfinding
                 #:A*
                 #:compute-path
-                #:found-shortest-path
+                #:shortest-path
                 #:.start-pos
                 #:.end-pos
                 #:goal-row
@@ -102,7 +102,7 @@ If playing with this interactively from your slime editor, I suggest this order 
   (print *maze-obj*)
   (draw-maze)
   (setf *pathfinder-step-started* nil)
-  (setf *pathfinder* (make-instance 'lgame.pathfinding::A*
+  (setf *pathfinder* (make-instance 'lgame.pathfinding:A*
                                     :size (.dims *maze-obj*)
                                     :end-pos (list (1- (first (.dims *maze-obj*))) ; bottom-right
                                                    (1- (second (.dims *maze-obj*))))
@@ -176,19 +176,32 @@ If playing with this interactively from your slime editor, I suggest this order 
                  (.start-pos *pathfinder*)
                  (.end-pos *pathfinder*))
         (setf *pathfinder-step-started* nil)
-        (when (and (time (lgame.pathfinding::compute-path *pathfinder*))
+        (when (and (time (lgame.pathfinding::compute-path *pathfinder* :new-request? (eql (type-of *pathfinder*) 'lgame.pathfinding:A*)))
                    *print-path?*)
-            (format t "Found path: ~a~%Cost: ~a~%" (found-shortest-path *pathfinder*) (lgame.pathfinding::seen-path-node-best-real-cost
-                                                                                        (aref (lgame.pathfinding::.seen-nodes *pathfinder*) (goal-row *pathfinder*) (goal-col *pathfinder*))))))
+          (format t "Found path: ~a~%Cost: ~a~%" (shortest-path *pathfinder*) (lgame.pathfinding::seen-path-node-best-real-cost
+                                                                                (aref (lgame.pathfinding::.seen-nodes *pathfinder*) (goal-row *pathfinder*) (goal-col *pathfinder*))))))
 
       (when (and (= (lgame.event:key-scancode event) lgame::+sdl-scancode-s+)
                  (.start-pos *pathfinder*)
                  (.end-pos *pathfinder*))
         (when (and (lgame.pathfinding::compute-path *pathfinder* :compute-in-single-step? nil :new-request? (not *pathfinder-step-started*))
                    *print-path?*)
-          (format t "Found path: ~a~%Cost: ~a~%" (found-shortest-path *pathfinder*) (lgame.pathfinding::seen-path-node-best-real-cost
-                                                                                      (aref (lgame.pathfinding::.seen-nodes *pathfinder*) (goal-row *pathfinder*) (goal-col *pathfinder*)))))
+          (format t "Found path: ~a~%Cost: ~a~%" (shortest-path *pathfinder*) (lgame.pathfinding::seen-path-node-best-real-cost
+                                                                                (aref (lgame.pathfinding::.seen-nodes *pathfinder*) (goal-row *pathfinder*) (goal-col *pathfinder*)))))
         (setf *pathfinder-step-started* t))
+
+      (when (and (= (lgame.event:key-scancode event) lgame::+sdl-scancode-w+)
+                 (.start-pos *pathfinder*)
+                 (.end-pos *pathfinder*))
+        (setf *pathfinder* (make-instance 'lgame.pathfinding:floyd-warshall
+                                    :size (.dims *maze-obj*)
+                                    :end-pos (list (1- (first (.dims *maze-obj*))) ; bottom-right
+                                                   (1- (second (.dims *maze-obj*))))
+                                    :start-pos '(0 0) ; top-left
+                                    :clear-path?-fn (lambda (r0 c0 r1 c1)
+                                                      (clear-path? (.maze *maze-obj*) r0 c0 r1 c1))))
+        (multiple-value-bind (path secs) (lgame.pathfinding:compute-path *pathfinder*)
+          (format t "Computed matrix and checked path (~a) in ~f secs~%" path secs)))
 
       (when (= (lgame.event:key-scancode event) lgame::+sdl-scancode-0+)
         (setf *maze-mode* 0))
@@ -253,7 +266,7 @@ If playing with this interactively from your slime editor, I suggest this order 
                     (lgame.rect::with-rect (r (+ 4 (* cell-width col)) (+ 4 (* cell-height row)) (- cell-width 8) (- cell-height 8))
                       (sdl2:render-fill-rect lgame:*renderer* r)))))
 
-      (alexandria:when-let ((best-node (and (not (found-shortest-path *pathfinder*))
+      (alexandria:when-let ((best-node (and (not (shortest-path *pathfinder*))
                                             (lgame.data-structures:priority-queue-top (lgame.pathfinding::.open-nodes *pathfinder*)))))
         (sdl2:set-render-draw-color lgame:*renderer* 255 255 0 255)
         (let ((row (lgame.pathfinding::open-path-node-row best-node))
@@ -261,11 +274,11 @@ If playing with this interactively from your slime editor, I suggest this order 
           (lgame.rect::with-rect (r (+ 4 (* cell-width col)) (+ 4 (* cell-height row)) (- cell-width 8) (- cell-height 8))
             (sdl2:render-fill-rect lgame:*renderer* r))))))
 
-  (when (found-shortest-path *pathfinder*)
+  (when (shortest-path *pathfinder*)
     (sdl2:set-render-draw-color lgame:*renderer* 0 255 0 255)
     (multiple-value-bind (rows cols cell-width cell-height) (get-draw-dims)
       (declare (ignore rows cols))
-      (loop for waypoint in (found-shortest-path *pathfinder*) do
+      (loop for waypoint in (shortest-path *pathfinder*) do
             (lgame.rect::with-rect (r (+ 4 (* cell-width (second waypoint))) (+ 4 (* cell-height (first waypoint))) (- cell-width 8) (- cell-height 8))
               (sdl2:render-fill-rect lgame:*renderer* r)))))
 
@@ -286,7 +299,6 @@ If playing with this interactively from your slime editor, I suggest this order 
 (defun cleanup ()
   (sdl2:destroy-texture *maze-texture*)
   (lgame:quit))
-
 
 (eval-when (:execute)
   (main))

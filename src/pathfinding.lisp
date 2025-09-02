@@ -1,6 +1,6 @@
 (in-package #:lgame.pathfinding)
 
-(defclass A* ()
+(defclass pathfinding ()
   ((size :accessor .size
          :initarg :size
          :type sequence
@@ -13,15 +13,34 @@
             :initarg :end-pos
             :type sequence
             :documentation "The end or goal position, given as a (row column) pair")
-   (neighbor-fn :accessor .neighbor-fn
+
+   (waypoint-list :accessor .waypoint-list
+                  :initform (list)
+                  :type list
+                  :documentation "A list of (row column) locations, from start-pos to end-pos inclusive,
+                                  representing the shortest path of node locations to travel to in order to reach the end-pos.
+                                  When COMPUTE-PATH returns true, this list will be non-empty to access the path found if it exists.
+                                  It will remain nil when no path can or has yet been found."
+                  ))
+  (:documentation "The primary common structure of any pathfinding algorithm with the first three initargs always expected as input
+                   and a waypoint list for the path as the output."))
+
+(defmethod shortest-path ((self pathfinding))
+  "Returns the shortest path as a list of ( (row column) ...) locations,
+   with the first item being equivalent to the starting position, and the final item being equivalent to the ending position.
+   If there is no path known or computed yet, this will return nil."
+  (.waypoint-list self))
+
+(defclass A* (pathfinding)
+  ((neighbor-fn :accessor .neighbor-fn
                 :initarg :neighbor-fn
                 :initform (lambda (row col) (declare (ignorable row col)))
                 :type function
                 :documentation "A function taking a (row column) pair representing a source location, and returning a sequence of neighbor locations
                                 with the associated numerical costs to move from the source location to the neighbor.
                                 i.e. ( ((neighbor1-row neighbor2-col) cost)
-                                       ((neighbor2-row neighbor2-col) cost)
-                                       ...).
+                                      ((neighbor2-row neighbor2-col) cost)
+                                      ...).
                                 For 8-directional movement on an empty grid, costs to the orthogonally adjacent neighbors would typically be 1,
                                 and costs to diagonal neighbors would typically be (sqrt 2) ~= 1.41.
                                 A neighboring spot might not necessarily be open but could be e.g. a sand trap and thus have a higher cost, like 5.
@@ -31,7 +50,9 @@
               :initarg :heuristic
               :initform :euclidean
               :type (member :euclidean :octile :chebyshev :manhattan :zero)
+
               :documentation "Specify which supported distance heuristic to use, including a :zero metric which effectively turns A* into djikstra's algorithm.")
+
    (%heuristic-fn :accessor .heuristic-fn
                   :initform #'euclidean
                   :documentation "Internal heuristic function that is called, set after construction and selection of an heuristic.")
@@ -41,13 +62,6 @@
                      :type single-float
                      :documentation "Specify a weight to apply to heuristic calculations. 1 is standard A*, 0 turns A* into djikstra regardless of heuristic,
                                      and higher values turn it more into a greedy best-first search.")
-
-   (waypoint-list :accessor .waypoint-list
-                  :initform (list)
-                  :type list
-                  :documentation "A list of (row column) locations, from start-pos to end-pos inclusive,
-                                  representing the shortest path of node locations to travel to in order to reach the end-pos.
-                                  When COMPUTE-PATH returns true, this list will be non-empty to access the path found.")
 
    (%open-nodes :accessor .open-nodes
                :type lgame.data-structures:priority-queue
@@ -97,11 +111,6 @@
                                           :comparison-fn #'node-compare))
   (setf (.seen-nodes self) (make-array (.size self) :initial-element nil)))
 
-(defmethod found-shortest-path ((self A*))
-  "Returns the shortest path as a list of ( (row column) ...) locations,
-   with the first item being equivalent to the starting position, and the final item being equivalent to the ending position.
-   If there is no path known or computed yet, this will return nil."
-  (.waypoint-list self))
 
 (defstruct open-path-node
   "A node in the graph put on the open nodes collection with data about the path from the starting location to this node.
@@ -128,17 +137,23 @@
   "Compare two path nodes for the open-nodes priority queue."
   (< (open-path-node-total-estimated-cost node1) (open-path-node-total-estimated-cost node2)))
 
-(defmacro start-row (pathfinder)
-  `(elt (.start-pos ,pathfinder) 0))
+(declaim (inline start-row start-col goal-row goal-col))
 
-(defmacro start-col (pathfinder)
-  `(elt (.start-pos ,pathfinder) 1))
+(declaim (ftype (function (pathfinding) fixnum) start-row))
+(defun start-row (pathfinder)
+  (elt (.start-pos pathfinder) 0))
 
-(defmacro goal-row (pathfinder)
-  `(elt (.end-pos ,pathfinder) 0))
+(declaim (ftype (function (pathfinding) fixnum) start-col))
+(defun start-col (pathfinder)
+  (elt (.start-pos pathfinder) 1))
 
-(defmacro goal-col (pathfinder)
-  `(elt (.end-pos ,pathfinder) 1))
+(declaim (ftype (function (pathfinding) fixnum) goal-row))
+(defun goal-row (pathfinder)
+  (elt (.end-pos pathfinder) 0))
+
+(declaim (ftype (function (pathfinding) fixnum) goal-col))
+(defun goal-col (pathfinder)
+  (elt (.end-pos pathfinder) 1))
 
 (declaim (inline elapsed))
 (defun elapsed (start-time)
@@ -165,7 +180,7 @@
    The third value is always nil in the case of the default keyword arguments. When COMPUTE-IN-SINGLE-STEP? is nil, then this third value is T if there is more work to be done,
    or nil if no more work can be done. (Either the path was found or not findable according to the first value.)
 
-   When a path is found, FOUND-SHORTEST-PATH can be used to retrieve it."
+   When a path is found, SHORTEST-PATH can be used to retrieve it."
   (setf start-secs (lgame.time:now-seconds))
   (when new-request?
     (cleanup-for-new-request self))
@@ -218,7 +233,7 @@
   (and (= (open-path-node-row best-node) (goal-row self))
        (= (open-path-node-col best-node) (goal-col self))))
 
-(defun construct-waypoint-list (self)
+(defmethod construct-waypoint-list ((self A*))
   (setf (.waypoint-list self) (list))
   (push (.end-pos self) (.waypoint-list self))
   ; walk the parents of seen-nodes[goal] backwards until we hit the start pos
@@ -232,32 +247,121 @@
   ; push starting pos on at last
   (push (.start-pos self) (.waypoint-list self)))
 
-(defun calc-heuristic-and-push-to-open-nodes (
-                                              self
-                                              path-row-to-push
-                                              path-col-to-push
-                                              real-cost-to-path-node-from-best-node
-                                              best-parent-node
-                                              )
+(defun calc-heuristic-and-push-to-open-nodes (self new-path-row new-path-col
+                                                   new-real-cost ; from best node, to path node
+                                                   best-parent-node)
   "Pushes the path-node-to-push to the open-nodes collection along with its full estimated cost that includes the heuristic cost,
-   so long as it hasn't been pushed before, or so long as the real-cost of this path is lower than an existing cost.
+   so long as it hasn't been pushed before, or so long as the new-real-cost of this path is lower than an existing cost.
    Updates the seen nodes to include it as well."
   (let* ((best-parent-row (open-path-node-row best-parent-node))
          (best-parent-col (open-path-node-col best-parent-node))
-         (seen-info (aref (.seen-nodes self) path-row-to-push path-col-to-push)))
-    (unless (or (not seen-info)
-                (< real-cost-to-path-node-from-best-node
-                   (seen-path-node-best-real-cost seen-info)))
+         (seen-info (aref (.seen-nodes self) new-path-row new-path-col)))
+    ; if we have seen the new path row,col before and our new cost is >= the already seen cost, bail early as this new one isn't better
+    (when (and seen-info
+               (>= new-real-cost (seen-path-node-best-real-cost seen-info)))
       (return-from calc-heuristic-and-push-to-open-nodes nil))
 
     (let ((heuristic-cost (* (.heuristic-weight self)
-                             (funcall (.heuristic-fn self) path-row-to-push path-col-to-push (goal-row self) (goal-col self)))))
+                             (funcall (.heuristic-fn self) new-path-row new-path-col (goal-row self) (goal-col self)))))
       (lgame.data-structures:priority-queue-push (.open-nodes self) (make-open-path-node
-                                                                      :row path-row-to-push :col path-col-to-push
-                                                                      :real-cost real-cost-to-path-node-from-best-node
-                                                                      :total-estimated-cost (+ heuristic-cost real-cost-to-path-node-from-best-node))))
+                                                                      :row new-path-row :col new-path-col
+                                                                      :real-cost new-real-cost
+                                                                      :total-estimated-cost (+ heuristic-cost new-real-cost))))
 
-    (setf (aref (.seen-nodes self) path-row-to-push path-col-to-push) (make-seen-path-node
+    (setf (aref (.seen-nodes self) new-path-row new-path-col) (make-seen-path-node
                                                                         :parent-row best-parent-row :parent-col best-parent-col
-                                                                        :best-real-cost real-cost-to-path-node-from-best-node))))
+                                                                        :best-real-cost new-real-cost))))
 
+
+(defclass floyd-warshall (pathfinding)
+  ((clear-path?-fn :accessor .clear-path?-fn
+                   :initarg :clear-path?-fn
+                   :initform (lambda (r0 c0 r1 c1) (declare (ignore r0 c0 r1 c1)))
+                   :documentation "A function provided by the map/terrain that takes a starting location at (row0, col0) and an ending location at (row1, col1).
+                                   It should return true if there is a clear path (free of impassable obstacles) from (row0, col0) to (row1, col1)."
+                   )
+
+   (%dist :accessor .dist
+          :documentation "Array of distance calculations, stored for multiple calls to COMPUTE-PATH with changing start/end positions.")
+   (%parent :accessor .parent
+            :documentation "Array of parent indices."))
+  (:documentation "Floyd-Warshall is a pathfinding algorithm that computes the transitive closure of a graph, which means it computes the shortest
+                   paths from every node to every other node. It is an expensive calculation but if a map is static it beats redoing A* a bunch."))
+
+(defmethod compute-path ((self floyd-warshall) &key (compute-in-single-step? t) (new-request? t) &aux start-secs)
+  "Computes the Floyd-Warshall matrix if NEW-REQUEST?. A new request is not needed if the goal changes, only if the map changes.
+   Returns multiple values.
+   Warning, the initial computation is expensive, with O(V^3) where V = map vertices = (* rows cols).
+   If a path from the start to the goal position is found, returns T as the first value. The path will be available with SHORTEST-PATH.
+   If a path can't be found, returns nil as the first value.
+   The second value is always the measured execution time of the function call in floating point seconds.
+   The keyword argument compute-in-single-step? is ignored." ; todo, make this an A* property.
+  (declare (ignore compute-in-single-step?))
+  (declare (optimize (speed 3)))
+  ;  (declare (optimize (debug 3)))
+  (setf start-secs (lgame.time:now-seconds))
+  (let* ((rows (the fixnum (elt (.size self) 0)))
+         (cols (the fixnum (elt (.size self) 1)))
+         (v (the fixnum (* rows cols)))
+         (clear-path? (the function (.clear-path?-fn self))))
+    (flet ((idx (r c) (the fixnum (+ c (the fixnum (* cols r))))))
+      (when new-request?
+        (let ((dist (make-array (list v v) :element-type 'double-float :initial-element most-positive-double-float))
+              (parent (make-array (list v v) :element-type 'fixnum :initial-element -1)))
+          (setf (.dist self) dist
+                (.parent self) parent)
+          (loop for r0 below rows do
+                (loop for c0 below cols
+                      for cell0 = (idx r0 c0) do
+                      (loop for r1 below rows do
+                            (loop for c1 below cols
+                                  for cell1 = (idx r1 c1) do
+                                  (setf (aref parent cell0 cell1) cell0)
+                                  (cond
+                                    ((eql cell0 cell1)
+                                     (setf (aref dist cell0 cell1) 0.0d0))
+                                    ((funcall clear-path? r0 c0 r1 c1) ; straight-line connection
+                                     (setf (aref dist cell0 cell1) (feuclidean r0 c0 r1 c1))))))))
+          ;; Core Floyd-Warshall
+          (loop for k below v do
+                (loop for i below v
+                      for dik = (aref dist i k)
+                      unless (eql dik most-positive-double-float) do
+                      (loop for j below v
+                            for kj = (aref dist k j)
+                            for dij = (aref dist i j)
+                            unless (eql kj most-positive-double-float) do
+                            (let ((sum (+ dik kj)))
+                              (when (< sum dij)
+                                (setf (aref dist i j) sum
+                                      (aref parent i j) (aref parent k j)))))))))
+
+      (let ((start (idx (start-row self) (start-col self)))
+            (goal (idx (goal-row self) (goal-col self))))
+        (if (eql most-positive-fixnum (aref (.dist self) start goal))
+          (values nil (elapsed start-secs))
+          (progn (construct-waypoint-list self)
+                 (values T (elapsed start-secs))))))))
+
+
+(defmethod construct-waypoint-list ((self floyd-warshall))
+  "For Floyd-Warshall, the shortest path is also automatically pruned to skip any intermediate points.
+   That is, if there's a clear path from A to C, there's no need to stop at intermediary points B.
+   Thus consider linearly interpolating the path if you don't want the appearance of 'teleporting'."
+  (let* ((cols (elt (.size self) 1)))
+    (flet ((idx (r c) (+ c (* cols r)))
+           (row-of (idx) (floor idx cols))
+           (col-of (idx) (mod idx cols)))
+      (let* ((start-r (start-row self))
+             (start-c (start-col self))
+             (goal-r (goal-row self))
+             (goal-c (goal-col self))
+             (start (idx start-r start-c))
+             (goal (idx goal-r goal-c)))
+        (setf (.waypoint-list self) (list))
+        (loop until (eql start goal) do
+          (push (list goal-r goal-c) (.waypoint-list self))
+          (setf goal (aref (.parent self) start goal)
+                goal-r (row-of goal)
+                goal-c (col-of goal)))
+        (push (list start-r start-c) (.waypoint-list self))))))

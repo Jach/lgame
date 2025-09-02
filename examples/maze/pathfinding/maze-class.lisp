@@ -135,3 +135,6 @@ The actual maze structure, independent of the GUI
                              ((and (= row-cel row-nei) (= col-cel (1- col-nei))) ; neighbor is to the east, check cell's east wall
                               (node-east-wall (aref maze row-cel col-cel))))))
                        neighbors))))
+
+(defun clear-path? (maze r0 c0 r1 c1)
+  t)

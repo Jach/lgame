@@ -280,9 +280,10 @@
     "Provides a fairly generic A* algorithm protocol for grids with several customization knobs.")
   (:export #:A*
            #:a-star
+           #:floyd-warshall
 
            #:compute-path
-           #:found-shortest-path))
+           #:shortest-path))
 
 (defpackage #:lgame.util
   (:use #:common-lisp)
