@@ -136,5 +136,78 @@ The actual maze structure, independent of the GUI
                               (node-east-wall (aref maze row-cel col-cel))))))
                        neighbors))))
 
-(defun clear-path? (maze r0 c0 r1 c1)
+
+;;;; Below used for Floyd-Warshall
+;;;; It's not quite correct I think when it comes to diagonal travel until I expanded the puff size to 0.51 (0.05 should be more normal?)
+;;;; but seems fine enough now, just going to leave it. It works!
+;;;; Takes about 4-7 seconds on my machine to generate the FW matrix on the biggest map...but then waypoint lists are ~free.
+
+(defun clear-path? (maze r0 c0 r1 c1 &key (puff 0.51))
+  "Return T if the straight path from (r0,c0) to (r1,c1) is clear of walls.
+   Puff adds tolerance around walls."
+  ;; The general strategy here is to create a bounding box around the start and end locations,
+  ;; say each cell has unit width/height and construct a line segment from the middle of
+  ;; the start cell to the middle of the end cell.
+  ;; Go through each cell in the bounding box, and if there is a wall, test for whether
+  ;; the line segment intersects with that wall or not.
+  (let* ((x0 (+ c0 0.5))
+         (y0 (+ r0 0.5))
+         (x1 (+ c1 0.5))
+         (y1 (+ r1 0.5))
+         (min-row (min r0 r1))
+         (max-row (max r0 r1))
+         (min-col (min c0 c1))
+         (max-col (max c0 c1)))
+    (loop for row from min-row to max-row do
+          (loop for col from min-col to max-col
+                for node = (aref maze row col)
+                do
+                ;; South wall of this cell
+                (when (node-south-wall node)
+                  (let ((wx0 (- col puff))
+                        (wy0 (+ row 1))
+                        (wx1 (+ col 1 puff))
+                        (wy1 (+ row 1)))
+                    (when (segments-intersect? x0 y0 x1 y1 wx0 wy0 wx1 wy1)
+                      (return-from clear-path? nil))))
+                ;; East wall of this cell
+                (when (node-east-wall node)
+                  (let ((wx0 (+ col 1))
+                        (wy0 (- row puff))
+                        (wx1 (+ col 1))
+                        (wy1 (+ row 1 puff)))
+                    (when (segments-intersect? x0 y0 x1 y1 wx0 wy0 wx1 wy1)
+                      (return-from clear-path? nil)))))))
   t)
+
+#+nil
+(progn
+(segments-intersect? 0 0 2 2 0 2 2 0) ; T (cross)
+(segments-intersect? 0 0 1 1 2 2 3 3) ; NIL (parallel disjoint)
+(segments-intersect? 0 0 2 2 1 1 3 3) ; T (collinear overlap)
+(segments-intersect? 0 0 0 2 0 1 0 3) ; T (collinear vertical overlap)
+)
+
+(defun orientation (x1 y1 x2 y2 x3 y3)
+  "Return the orientation of the triplet (p1, p2, p3).
+   >0 = counterclockwise, <0 = clockwise, =0 = collinear."
+  (- (* (- y2 y1) (- x3 x2))
+     (* (- x2 x1) (- y3 y2))))
+
+(defun on-segment? (x1 y1 x2 y2 x3 y3)
+  "Check if (x2, y2) lies on the segment (x1, y1) - (x3, y3)."
+  (and (<= (min x1 x3) x2 (max x1 x3))
+       (<= (min y1 y3) y2 (max y1 y3))))
+
+(defun segments-intersect? (x1 y1 x2 y2 x3 y3 x4 y4)
+  "Return T if segment (x1,y1)-(x2,y2) intersects (x3,y3)-(x4,y4)."
+  (let ((o1 (orientation x1 y1 x2 y2 x3 y3))
+        (o2 (orientation x1 y1 x2 y2 x4 y4))
+        (o3 (orientation x3 y3 x4 y4 x1 y1))
+        (o4 (orientation x3 y3 x4 y4 x2 y2)))
+    (or (and (< (* o1 o2) 0) (< (* o3 o4) 0)) ; proper intersection
+        (and (zerop o1) (on-segment? x1 y1 x3 y3 x2 y2))
+        (and (zerop o2) (on-segment? x1 y1 x4 y4 x2 y2))
+        (and (zerop o3) (on-segment? x3 y3 x1 y1 x4 y4))
+        (and (zerop o4) (on-segment? x3 y3 x2 y2 x4 y4)))))
+;(lgame.display:screenshot-png "/tmp/fw.png")

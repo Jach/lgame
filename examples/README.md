@@ -125,6 +125,14 @@ become familiar with SDL2's API to be fully effective.
   also an example of using the A\* pathfinding hook in lgame to solve the maze.
 
   ![maze](screenshots/maze.png)
+    * The next 3 screenshots show a solved maze with A\*, and then
+    a custom map with a solved path using A\* with the Manhattan distance heuristic,
+    then using the Euclidean distance heuristic, and finally using the Floyd-Warshall
+    algorithm.
+  ![solved-maze](screenshots/solved-maze.png)
+  ![astar-man](screenshots/astar-man.png)
+  ![astar-euc](screenshots/astar-euc.png)
+  ![floyd-warshall](screenshots/floydwarshall.png)
 
 ## External
 
