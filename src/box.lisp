@@ -11,7 +11,9 @@
 
 (defun make-box (x y width height)
   "Creates a new Box from x, y, width, and height.
-   The box has its top-left corner at the given x,y."
+   The box has its top-left corner at the given x,y.
+   Width and height must be positive."
+  (declare (type (real 0) width height))
   (make-instance 'box
                  :min-x x
                  :min-y y

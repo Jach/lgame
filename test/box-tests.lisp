@@ -372,4 +372,139 @@
                                (write-to-string b))
              "output was not as expected -- was ~a" (write-to-string b))))
 
+;;; Tests for Edge Cases and Error Conditions
+(test box-zero-dimensions
+  (let ((b-zero-width (make-box 10 20 0 30))
+        (b-zero-height (make-box 10 20 30 0))
+        (b-zero-both (make-box 10 20 0 0)))
+    ;; Zero width box
+    (is (= 0 (box-width b-zero-width)))
+    (is (= 10 (.min-x b-zero-width)))
+    (is (= 10 (.max-x b-zero-width))) ; .min-x + 0
+
+    ;; Zero height box
+    (is (= 0 (box-height b-zero-height)))
+    (is (= 20 (.min-y b-zero-height)))
+    (is (= 20 (.max-y b-zero-height))) ; .min-y + 0
+
+    ;; Zero area box
+    (is (= 0 (box-width b-zero-both)))
+    (is (= 0 (box-height b-zero-both)))))
+
+(test box-negative-dimensions
+  ;; Test that negative dimensions are handled
+  (signals type-error (make-box 10 20 -5 30))
+  (signals type-error (make-box 10 20 30 -10))
+  (signals type-error (make-box 10 20 -30 -10)))
+
+(test box-collision-edge-cases
+  ;; Test collision detection with zero-area boxes
+  (let ((normal-box (make-box 10 10 10 10))    ; 10,10 to 20,20
+        (zero-width (make-box 15 12 0 5))      ; 15,12 to 15,17 (line)
+        (zero-height (make-box 12 15 5 0))     ; 12,15 to 17,15 (line)
+        (zero-area (make-box 15 15 0 0))       ; point at 15,15
+        (identical1 (make-box 5 5 10 10))
+        (identical2 (make-box 5 5 10 10)))
+
+    ;; Zero-width box intersecting normal box
+    (is-true (boxes-intersect? normal-box zero-width) "Normal box should intersect zero-width box inside it")
+
+    ;; Zero-height box intersecting normal box
+    (is-true (boxes-intersect? normal-box zero-height) "Normal box should intersect zero-height box inside it")
+
+    ;; Point (zero-area) intersecting normal box
+    (is-true (boxes-intersect? normal-box zero-area) "Normal box should intersect point inside it")
+
+    ;; Identical boxes
+    (is-true (boxes-intersect? identical1 identical2) "Identical boxes should intersect")
+
+    ;; Point outside normal box
+    (let ((point-outside (make-box 25 25 0 0)))
+      (is-false (boxes-intersect? normal-box point-outside) "Point outside should not intersect"))
+
+    ;; Zero-area boxes intersecting each other
+    (let ((point1 (make-box 5 5 0 0))
+          (point2 (make-box 5 5 0 0))
+          (point3 (make-box 6 6 0 0)))
+      (is-true (boxes-intersect? point1 point2) "Identical points should intersect")
+      (is-false (boxes-intersect? point1 point3) "Different points should not intersect"))))
+
+(test box-collision-boundary-precision
+  ;; Test precise boundary conditions
+  (let ((box1 (make-box 0 0 10 10))     ; 0,0 to 10,10
+        (box2 (make-box 10 0 10 10)))   ; 10,0 to 20,10 (touching right edge)
+
+    ;; Boxes touching at edge should intersect (inclusive boundary)
+    (is-true (boxes-intersect? box1 box2) "Boxes touching at edge should intersect")
+
+    ;; Test all four edge touching cases
+    (let ((touching-top (make-box 0 -10 10 10))     ; 0,-10 to 10,0 (touching top)
+          (touching-bottom (make-box 0 10 10 10))   ; 0,10 to 10,20 (touching bottom)
+          (touching-left (make-box -10 0 10 10)))   ; -10,0 to 0,10 (touching left)
+
+      (is-true (boxes-intersect? box1 touching-top) "Should intersect when touching top edge")
+      (is-true (boxes-intersect? box1 touching-bottom) "Should intersect when touching bottom edge")
+      (is-true (boxes-intersect? box1 touching-left) "Should intersect when touching left edge"))
+
+    ;; Boxes separated by tiny amount should not intersect
+    (let ((almost-touching (make-box 10.001 0 10 10)))
+      (is-false (boxes-intersect? box1 almost-touching) "Boxes separated by tiny gap should not intersect"))))
+
+(test box-large-numbers
+  ;; Test with very large coordinate values
+  (let ((big-box (make-box 1e6 1e6 1e3 1e3)))
+    (is (= 1e6 (box-x big-box)) "Large X coordinate should be preserved")
+    (is (= 1e6 (box-y big-box)) "Large Y coordinate should be preserved")
+    (is (= 1e3 (box-width big-box)) "Large width should be preserved")
+    (is (= 1e3 (box-height big-box)) "Large height should be preserved")
+    (is (= (+ 1e6 1e3) (.max-x big-box)) "Max-x calculation should work with large numbers"))
+
+  ;; Test collision detection with large numbers
+  (let ((big1 (make-box 1e6 1e6 100 100))
+        (big2 (make-box (+ 1e6 50) (+ 1e6 50) 100 100)))
+    (is-true (boxes-intersect? big1 big2) "Large boxes should intersect correctly")))
+
+(test box-containment-edge-cases
+  (let ((outer (make-box 0 0 100 100)))
+
+    ;; Test point containment at exact boundaries
+    (is-true (box-contains-point? outer 0 0) "Should contain point at min corner")
+    (is-false (box-contains-point? outer 100 100) "Should NOT contain point at max corner (exclusive)")
+    (is-false (box-contains-point? outer 100 0) "Should NOT contain point at max-x boundary")
+    (is-false (box-contains-point? outer 0 100) "Should NOT contain point at max-y boundary")
+    (is-true (box-contains-point? outer 99.999 99.999) "Should contain point just inside max boundary")
+
+    ;; Test with negative coordinates
+    (let ((negative-box (make-box -50 -50 100 100))) ; -50,-50 to 50,50
+      (is-true (box-contains-point? negative-box -25 -25) "Should contain point in negative coordinate box")
+      (is-true (box-contains-point? negative-box 0 0) "Should contain origin in negative coordinate box")
+      (is-false (box-contains-point? negative-box 50 0) "Should not contain point at max boundary"))))
+
+(test box-mixed-numeric-types
+  ;; Test mixing integers and floats
+  (let ((mixed-box (make-box 10 20.5 30 40.25)))
+    (is (= 10 (box-x mixed-box)) "Integer X should be preserved")
+    (is (= 20.5 (box-y mixed-box)) "Float Y should be preserved")
+    (is (= 30 (box-width mixed-box)) "Integer width should be preserved")
+    (is (= 40.25 (box-height mixed-box)) "Float height should be preserved")
+    (is (= 40 (.max-x mixed-box)) "Max-x should be sum of int + int")
+    (is (= 60.75 (.max-y mixed-box)) "Max-y should be sum of float + float"))
+
+  ;; Test arithmetic operations preserve type appropriately
+  (let ((b (make-box 10.5 20.5 5 5)))
+    (setf (box-width b) 10.25)
+    (is (= 20.75 (.max-x b)) "Mixed arithmetic should work correctly")))
+
+(test box-attr-error-conditions
+  ;; Test invalid attribute keys (if they cause errors vs return nil)
+  (let ((b (make-box 10 20 30 40)))
+    (signals error (box-attr b :invalid-key) "Invalid attribute key should signal error")
+    (signals error (box-attr b nil) "Nil attribute key should signal error")
+    (signals error (setf (box-attr b :invalid-key) 100) "Setting invalid attribute should signal error")))
+
+(test box-copy-independence
+  ;; Test that copied boxes are different
+  (let ((b (make-box 1 2 3 4)))
+    (is-false (eq b (copy-box b)))))
+
 
