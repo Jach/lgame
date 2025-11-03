@@ -48,8 +48,9 @@
     (if (.destroyed? self)
         (warn "Trying to destroy an already-destroyed texture (accessed ~a times), skipping" (.access-count self))
         (progn
-          (sdl2:destroy-texture (slot-value self 'sdl-texture))
-          (setf (.destroyed? self) t)))))
+          (when (autowrap:valid-p (slot-value self 'sdl-texture))
+            (sdl2:destroy-texture (slot-value self 'sdl-texture))
+            (setf (.destroyed? self) t))))))
 
 
 (defun create-empty-sdl-texture (renderer access width height &optional (pixel-format lgame::+sdl-pixelformat-rgba8888+))

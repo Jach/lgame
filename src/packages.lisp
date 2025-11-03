@@ -213,7 +213,9 @@
               #:ordered-group
 
               #:group-single
-              #:.sprite))
+              #:.sprite
+              #:enable-alpha-blending
+              #:set-alpha))
 
 (defpackage #:lgame.font.ffi
   (:use #:cl)
@@ -272,7 +274,8 @@
 
               #:create-texture-loader
               #:get-texture
-              #:unload-textures))
+              #:unload-textures
+              #:get-texture-frames-from-horizontal-strip))
 
 (defpackage #:lgame.pathfinding
   (:use #:common-lisp)
