@@ -20,6 +20,14 @@ urge to throw it all away and start over with something new. Something that's
 multi-threaded and something that takes care of garbage memory, particularly the
 foreign-allocated stuff, automatically.
 
+# Projects Using lgame
+
+* [ecs-compare](https://github.com/Jach/ecs-compare) -- a comparison of a typical 'game object' oriented way of doing the asteroid fields demo from the ecs
+  framework tutorial
+* [SolarDragon](https://github.com/Jach/solardragon) -- WIP reimplementation of SolarWolf
+* [lgame-examples](https://github.com/Jach/lgame/tree/examples) -- various small examples. Some based on pygame's examples, some more unique.
+
+
 # Example
 
 Compared to the 4-line example shown by
@@ -68,6 +76,8 @@ file and load it, or paste it directly into your REPL:
 (main)
 ```
 
+## Explanation
+
 If you are using SLIME, the use of the livesupport calls should prevent your
 main REPL loop from being taken over. This is great for interactive development,
 and makes making a single-game-thread sort of small game not too terrible.
@@ -110,11 +120,6 @@ bouncing around, instead of checking every object against every other object for
 collisions, you probably want to have some sort of collision manager / service /
 singleton that every object registers itself to and updates if needed, and then
 the collision manager itself can resolve collisions in a more efficient manner.)
-
-# Projects Using lgame
-
-* [ecs-compare](https://github.com/Jach/ecs-compare) -- a comparison of a typical 'game object' oriented way of doing the asteroid fields demo from the ecs
-  framework tutorial
 
 # Usage
 
