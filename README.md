@@ -25,7 +25,7 @@ foreign-allocated stuff, automatically.
 * [ecs-compare](https://github.com/Jach/ecs-compare) -- a comparison of a typical 'game object' oriented way of doing the asteroid fields demo from the ecs
   framework tutorial
 * [SolarDragon](https://github.com/Jach/solardragon) -- WIP reimplementation of SolarWolf
-* [lgame-examples](https://github.com/Jach/lgame/tree/examples) -- various small examples. Some based on pygame's examples, some more unique.
+* [lgame-examples](https://github.com/Jach/lgame/tree/master/examples) -- various small examples. Some based on pygame's examples, some more unique.
 
 
 # Example
@@ -139,7 +139,7 @@ make sure libsdl2 includes things like haptic support. This is because by
 default lgame tries to initialize SDL with "everything".
 
 After verifying it loads, you can try running some of the examples in
-[lgame-examples](https://github.com/Jach/lgame/tree/examples) to see that it
+[lgame-examples](https://github.com/Jach/lgame/tree/master/examples) to see that it
 works. They're written to be runnable standalone with `sbcl --script` or except
 for `taste.lisp` to be runnable by
 loading the file and executing `(main)`. Some examples will take over the REPL
