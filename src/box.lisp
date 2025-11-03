@@ -315,6 +315,6 @@
            (setf ,rect ,rect-ptr)
            ,@body)))))
 
-(defun get-texture-box (texture)
-  "Returns a box object representing the bounding box of the passed 2D texture, initially positioned with x, y = 0, 0."
-  (make-box 0 0 (lgame.texture:.width texture) (lgame.texture:.height texture)))
+(defun get-texture-box (texture &key (x 0) (y 0))
+  "Returns a box object representing the bounding box of the passed 2D texture, initially positioned with top-left x, y = 0, 0 unless position overrides are given."
+  (make-box x y (lgame.texture:.width texture) (lgame.texture:.height texture)))
