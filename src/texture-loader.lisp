@@ -44,7 +44,7 @@
    If the texture has already been loaded, it will return the texture from cache.
 
    If skip-caching? is set to t, then the loaded texture will not be stored in the cache,
-   and this behaves similarly to the load-texture function.
+   and this behaves similarly to the load-texture function. However, the texture itself may still be put in the cache manually and will still be retrieved from there.
 
    All loaded textures can be freed and unloaded by calling unload-textures, which is done
    by default in lgame:quit if *texture-loader* has been set."
@@ -67,10 +67,12 @@
 
 (defun valid-texture-or-array (texture)
   (if (arrayp texture)
-      (every #'if-valid-texture-or-array texture)
+      (every #'valid-texture-or-array texture)
       (autowrap:valid-p (lgame.texture:.sdl-texture texture))))
 
+
 (defmethod unload-textures ((self texture-loader))
+  "Destroys the texture resources for all textures in the loader cache and clears the cache."
   (maphash (lambda (key val)
              (declare (ignore key))
              (if (arrayp val)
@@ -78,8 +80,6 @@
                  (lgame.texture:destroy-texture val)))
            (.textures self))
   (clrhash (.textures self)))
-
-
 
 
 (defun get-texture-frames-from-horizontal-strip (key-or-name &key (frame-width 0) (offset 0) (estimate-width? nil) dir color-key)
@@ -97,20 +97,23 @@
    Like textures fetched via get-texture, these textures are automatically cached -- just the frames though, not the original whole strip --
    so repeat calls will return the same array."
   (declare (ignorable estimate-width?))
-  (let* ((texture (get-texture-internal lgame.state:*texture-loader* key-or-name :dir dir :color-key color-key :skip-caching? t))
-         (frame-height (lgame.texture:.height texture)))
-    (when (zerop frame-width)
-      (setf frame-width frame-height))
-    (let* ((frame-count (truncate (/ (lgame.texture:.width texture) frame-width)))
-           (frames (make-array frame-count :fill-pointer 0))
-           (clip-src (lgame.box:make-box 0 0 frame-width frame-height)))
-      (loop for i below frame-count do
-            (let ((frame-texture (lgame.texture:create-empty-sdl-texture lgame.state:*renderer* lgame::+sdl-textureaccess-target+
-                                                                         frame-width frame-height)))
-              (lgame.render:with-render-target frame-texture
-                (lgame.render:blit texture nil clip-src))
-              (vector-push frame-texture frames)
-              (lgame.box:move-box clip-src (+ frame-width offset) 0)))
-      (setf (gethash key-or-name (.textures lgame.state:*texture-loader*)) frames)
-      (lgame.texture:destroy-texture texture)
-      frames)))
+  (let ((texture (get-texture-internal lgame.state:*texture-loader* key-or-name :dir dir :color-key color-key :skip-caching? t)))
+    (if (arrayp texture) ; cached result is actaully texture frames array
+        texture
+
+        (let ((frame-height (lgame.texture:.height texture)))
+          (when (zerop frame-width)
+            (setf frame-width frame-height))
+          (let* ((frame-count (truncate (/ (lgame.texture:.width texture) frame-width)))
+                 (frames (make-array frame-count :fill-pointer 0))
+                 (clip-src (lgame.box:make-box 0 0 frame-width frame-height)))
+            (loop for i below frame-count do
+                  (let ((frame-texture (lgame.texture:create-empty-sdl-texture lgame.state:*renderer* lgame::+sdl-textureaccess-target+
+                                                                               frame-width frame-height)))
+                    (lgame.render:with-render-target frame-texture
+                      (lgame.render:blit texture nil clip-src))
+                    (vector-push frame-texture frames)
+                    (lgame.box:move-box clip-src (+ frame-width offset) 0)))
+            (setf (gethash key-or-name (.textures lgame.state:*texture-loader*)) frames)
+            (lgame.texture:destroy-texture texture)
+            frames)))))
