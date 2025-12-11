@@ -13,6 +13,14 @@
             :initarg :end-pos
             :type sequence
             :documentation "The end or goal position, given as a (row column) pair")
+   (sparse? :accessor .sparse?
+            :initarg :sparse?
+            :type boolean
+            :initform nil
+            :documentation "If given to be true, the underlying implementation should use a sparse hash table instead of a full multi-dimensional grid, which can use less memory.
+                            Not valid for Floyd-Warshall.
+                            It is suggested to also use :pileup-heap as the constructor's :backing-collection priority queue type, instead of the default :unsorted-vector,
+                            as presumably a sparse graph is done for huge graphs and the big-O complexity of the properly created heap type will then win out over the simple vector version.")
 
    (waypoint-list :accessor .waypoint-list
                   :initform (list)
@@ -38,8 +46,8 @@
                 :type function
                 :documentation "A function taking a (row column) pair representing a source location, and returning a sequence of neighbor locations
                                 with the associated numerical costs to move from the source location to the neighbor.
-                                i.e. ( ((neighbor1-row neighbor2-col) cost)
-                                      ((neighbor2-row neighbor2-col) cost)
+                                i.e. ( ((neighbor1-row neighbor1-col) cost)
+                                       ((neighbor2-row neighbor2-col) cost)
                                       ...).
                                 For 8-directional movement on an empty grid, costs to the orthogonally adjacent neighbors would typically be 1,
                                 and costs to diagonal neighbors would typically be (sqrt 2) ~= 1.41.
@@ -77,8 +85,8 @@
                                If this collection is empty, that means the algorithm has run out of potential locations to
                                search for a path to the goal, and thus there is no path.")
    (%seen-nodes :accessor .seen-nodes
-                  :type array
-                  :documentation "A multi-dimensional array of the same size as the given .size.
+                  :type (or array hash-table)
+                  :documentation "A multi-dimensional array of the same size as the given .size. Or a hash table, if .sparse? is true.
 
                                   Each element is either nil or a SEEN-PATH-NODE structure at location [row][col]
                                   indicating that said location (row col) has been or is still on the open-nodes.
@@ -99,6 +107,13 @@
 
 
 (defmethod initialize-instance :after ((self A*) &key (backing-collection :unsorted-vector))
+  "Constructor for A*. An optional keyword argument :backing-collection allows a choice of the underlying
+   priority queue type. Mini experiments suggest a simple unsorted vector is faster than a typical binary-tree-style heap
+   for smallish grids, but if a grid is giant (such that :sparse? is given as true) then it is recommended to pass
+   :pileup-heap instead of :unsorted-vector.
+   Warning: :pileup-heap is implemented by the library called pileup. This library may be removed as a dependency from lgame in the future,
+   but pileup-heap will still be accepted and just point to a different binary-tree-style heap implementation that should offer roughly the same performance or better."
+
   (setf (.heuristic-fn self) (case (.heuristic self)
                                (:euclidean #'euclidean)
                                (:manhattan #'manhattan)
@@ -107,9 +122,11 @@
                                (:zero #'zero)))
   (setf (.open-nodes self) (make-instance 'lgame.data-structures:priority-queue
                                           :backing-collection backing-collection
-                                          :size (apply #'* (.size self))
+                                          :size (if (.sparse? self) 16 (apply #'* (.size self)))
                                           :comparison-fn #'node-compare))
-  (setf (.seen-nodes self) (make-array (.size self) :initial-element nil)))
+  (if (not (.sparse? self))
+      (setf (.seen-nodes self) (make-array (.size self) :initial-element nil))
+      (setf (.seen-nodes self) (make-hash-table :test #'equalp))))
 
 
 (defstruct open-path-node
@@ -118,8 +135,8 @@
    The REAL-COST, also known as the g-cost, is the cumulative cost of the path from the starting location to this node.
    The TOTAL-ESTIMATED-COST, also known as the f-cost, is the REAL-COST + estimated heuristic-cost (h-cost), where the h-cost represents a guess at the cost from this node to the goal node.
    "
-  (row 0 :type fixnum :read-only t)
-  (col 0 :type fixnum :read-only t)
+  (row 0 :type number :read-only t)
+  (col 0 :type number :read-only t)
   (real-cost 0.0d0 :type double-float :read-only t)
   (total-estimated-cost 0.0d0 :type double-float :read-only t))
 
@@ -128,8 +145,8 @@
    PARENT-ROW and PARENT-COL are the location of the parent node from which a path to this node comes from.
    BEST-REAL-COST is the cumulative cost (g-cost) of the path from the starting node, through the parent node, and to this node, known so far.
    The values of these attributes may be changed if another path to this node from a different parent with a lower cost to this node is found."
-  (parent-row 0 :type fixnum)
-  (parent-col 0 :type fixnum)
+  (parent-row 0 :type number)
+  (parent-col 0 :type number)
   (best-real-cost 0.0d0 :type double-float))
 
 (declaim (ftype (function (open-path-node open-path-node) boolean) node-compare))
@@ -139,19 +156,19 @@
 
 (declaim (inline start-row start-col goal-row goal-col))
 
-(declaim (ftype (function (pathfinding) fixnum) start-row))
+(declaim (ftype (function (pathfinding) number) start-row))
 (defun start-row (pathfinder)
   (elt (.start-pos pathfinder) 0))
 
-(declaim (ftype (function (pathfinding) fixnum) start-col))
+(declaim (ftype (function (pathfinding) number) start-col))
 (defun start-col (pathfinder)
   (elt (.start-pos pathfinder) 1))
 
-(declaim (ftype (function (pathfinding) fixnum) goal-row))
+(declaim (ftype (function (pathfinding) number) goal-row))
 (defun goal-row (pathfinder)
   (elt (.end-pos pathfinder) 0))
 
-(declaim (ftype (function (pathfinding) fixnum) goal-col))
+(declaim (ftype (function (pathfinding) number) goal-col))
 (defun goal-col (pathfinder)
   (elt (.end-pos pathfinder) 1))
 
@@ -214,9 +231,11 @@
 
 (defun cleanup-for-new-request (self)
   ;; make sure seen-nodes is clear
-  (loop for row below (elt (.size self) 0) do
-        (loop for col below (elt (.size self) 1) do
-              (setf (aref (.seen-nodes self) row col) nil)))
+  (if (not (.sparse? self))
+      (loop for row below (elt (.size self) 0) do
+            (loop for col below (elt (.size self) 1) do
+                  (setf (aref (.seen-nodes self) row col) nil)))
+      (setf (.seen-nodes self) (make-hash-table :test #'equalp)))
 
   ;; make sure open-nodes is empty
   (loop until (lgame.data-structures:priority-queue-empty? (.open-nodes self)) do
@@ -237,13 +256,17 @@
   (setf (.waypoint-list self) (list))
   (push (.end-pos self) (.waypoint-list self))
   ; walk the parents of seen-nodes[goal] backwards until we hit the start pos
-  (let ((parent (aref (.seen-nodes self) (goal-row self) (goal-col self))))
+  (let ((parent (if (not (.sparse? self))
+                    (aref (.seen-nodes self) (goal-row self) (goal-col self))
+                    (gethash (list (goal-row self) (goal-col self)) (.seen-nodes self)))))
     (loop until (and (= (start-row self) (seen-path-node-parent-row parent))
                      (= (start-col self) (seen-path-node-parent-col parent)))
           do
           (push (list (seen-path-node-parent-row parent) (seen-path-node-parent-col parent))
                 (.waypoint-list self))
-          (setf parent (aref (.seen-nodes self) (seen-path-node-parent-row parent) (seen-path-node-parent-col parent)))))
+          (setf parent (if (not (.sparse? self))
+                           (aref (.seen-nodes self) (seen-path-node-parent-row parent) (seen-path-node-parent-col parent))
+                           (gethash (list (seen-path-node-parent-row parent) (seen-path-node-parent-col parent)) (.seen-nodes self))))))
   ; push starting pos on at last
   (push (.start-pos self) (.waypoint-list self)))
 
@@ -255,7 +278,9 @@
    Updates the seen nodes to include it as well."
   (let* ((best-parent-row (open-path-node-row best-parent-node))
          (best-parent-col (open-path-node-col best-parent-node))
-         (seen-info (aref (.seen-nodes self) new-path-row new-path-col)))
+         (seen-info (if (not (.sparse? self))
+                        (aref (.seen-nodes self) new-path-row new-path-col)
+                        (gethash (list new-path-row new-path-col) (.seen-nodes self)))))
     ; if we have seen the new path row,col before and our new cost is >= the already seen cost, bail early as this new one isn't better
     (when (and seen-info
                (>= new-real-cost (seen-path-node-best-real-cost seen-info)))
@@ -267,10 +292,12 @@
                                                                       :row new-path-row :col new-path-col
                                                                       :real-cost new-real-cost
                                                                       :total-estimated-cost (+ heuristic-cost new-real-cost))))
-
-    (setf (aref (.seen-nodes self) new-path-row new-path-col) (make-seen-path-node
-                                                                        :parent-row best-parent-row :parent-col best-parent-col
-                                                                        :best-real-cost new-real-cost))))
+    (let ((new-node (make-seen-path-node
+                      :parent-row best-parent-row :parent-col best-parent-col
+                      :best-real-cost new-real-cost)))
+      (if (not (.sparse? self))
+          (setf (aref (.seen-nodes self) new-path-row new-path-col) new-node)
+          (setf (gethash (list new-path-row new-path-col) (.seen-nodes self)) new-node)))))
 
 
 (defclass floyd-warshall (pathfinding)
