@@ -198,15 +198,18 @@
 (defun enable-alpha-blending (sprite)
   "Sets the blend mode of the sprite's underlying texture to prepare it for properly rendering at
    different transparencies."
-  (lgame::sdl-set-texture-blend-mode (lgame.texture:.sdl-texture (.image sprite))
-                                     lgame::+sdl-blendmode-blend+))
+  (lgame.texture:enable-alpha-blending (.image sprite)))
 
 (defun set-alpha (sprite alpha)
   "Sets the alpha transparency for a sprite's image. Values should be
    between 0.0 (fully transparent) and 1.0 (fully opaque).
-   The sprite should have already been previously prepared for blending by calling enable-alpha-blending on it first."
-  (lgame::sdl-set-texture-alpha-mod (lgame.texture:.sdl-texture (.image sprite))
-                                    (truncate (mod (* alpha 255) 256))))
+   The sprite should have already been previously prepared for blending by calling enable-alpha-blending on it first.
+
+   May raise an sdl-rc-error if the setting fails.
+
+   Returns the sprite itself."
+  (lgame.texture:set-alpha (.image sprite) alpha)
+  sprite)
 
 
 ;;;; Methods for default group

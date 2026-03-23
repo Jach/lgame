@@ -1,10 +1,11 @@
 (in-package #:lgame.loader)
 
-(defun load-texture (absolute-path-or-file &key color-key)
+(defun load-texture (absolute-path-or-file &key color-key alpha-blending?)
   "Always returns a new texture made from a absolute-path-or-file name pointing to an image on disk.
    Uses the default *renderer*, wraps the underlying object within a lgame.texture:texture object.
 
    An optional color-key may be given, which is a list of R G B, that will be used to set the color key of the loaded image.
+   An optional alpha-blending? may be given, which if true makes sure that the SDL_BlendMode is set to BLEND to support proper alpha blending.
 
    Image file types are those supported by sdl2-image's init, by default JPGs and PNGs.
    The caller is responsible for freeing the returned SDL_Texture."
@@ -13,9 +14,11 @@
       (lgame::sdl-set-color-key surface 1 (apply #'lgame::sdl-map-rgb (sdl2:surface-format surface) color-key)))
     (let ((texture (sdl2:create-texture-from-surface lgame:*renderer* surface)))
       (lgame::sdl-free-surface surface)
-      (make-instance 'lgame.texture:texture :sdl-texture texture :width (sdl2:texture-width texture) :height (sdl2:texture-height texture)))))
-
-
+      (let ((lgame-text (make-instance 'lgame.texture:texture
+                                       :sdl-texture texture :width (sdl2:texture-width texture) :height (sdl2:texture-height texture))))
+        (when alpha-blending?
+          (lgame.texture:enable-alpha-blending lgame-text))
+        lgame-text))))
 
 
 (defclass texture-loader ()
@@ -26,28 +29,30 @@
   "Factory for a default lgame:*texture-loader*."
   (setf lgame.state:*texture-loader* (make-instance 'texture-loader :default-dir default-dir)))
 
-(defun get-texture (key-or-name &key dir color-key)
-  "Get a texture using the default *texture-loader*
-   Assumes the texture-loader has been previously created"
-  (get-texture-internal lgame.state:*texture-loader* key-or-name :dir dir :color-key color-key))
-
-(defmethod get-texture-internal ((self texture-loader) key-or-name &key dir color-key skip-caching?)
-  "Load asset specified by, if given a keyword, converting it to a lowercase png file name inside dir,
+(defun get-texture (key-or-name &key dir color-key alpha-blending?)
+  "Load asset specified by, if given a keyword in KEY-OR-NAME, converting it to a lowercase png file name inside DIR, if specified.
    Otherwise expects a namestring of a file relative to the dir.
 
-   If dir is not given, uses the default-dir of the texture loader.
+   If DIR is not given, uses the default-dir of the texture loader.
+   This function uses the default *texture-loader* which is expected to already be set or dynamically bound.
 
-   An optional color-key may be given, which is a list of R G B, that will be used to set the color key of the loaded image.
+   An optional COLOR-KEY may be given, which is a list of R G B, that will be used to set the color key of the loaded image (making that color transparent).
+
+   An optional ALPHA-BLENDING? may be given, which makes sure to set the SDL_BlendMode of the texture to SDL_BLENDMODE_BLEND.
 
    Returns a lgame.texture:texture that currently wraps an SDL_Texture.
 
    If the texture has already been loaded, it will return the texture from cache.
 
-   If skip-caching? is set to t, then the loaded texture will not be stored in the cache,
-   and this behaves similarly to the load-texture function. However, the texture itself may still be put in the cache manually and will still be retrieved from there.
-
    All loaded textures can be freed and unloaded by calling unload-textures, which is done
    by default in lgame:quit if *texture-loader* has been set."
+  (get-texture-internal lgame.state:*texture-loader* key-or-name :dir dir :color-key color-key :alpha-blending? alpha-blending?))
+
+(defmethod get-texture-internal ((self texture-loader) key-or-name &key dir color-key alpha-blending? skip-caching?)
+  "Identical to GET-TEXTURE but for a specific texture loader object, and has an additional keyword to skip the cache.
+
+   If skip-caching? is set to t, then the loaded texture will not be stored in the cache,
+   and this behaves similarly to the load-texture function. However, the texture itself may still be put in the cache manually and will still be retrieved from there."
   (when (null dir)
     (setf dir (.default-dir self)))
   (alexandria:if-let ((texture (gethash key-or-name (.textures self))))
@@ -55,12 +60,12 @@
         texture
         (progn ; something invalidated it, force a reload
           (setf (gethash key-or-name (.textures self)) nil)
-          (get-texture-internal self key-or-name :dir dir :color-key color-key)))
+          (get-texture-internal self key-or-name :dir dir :color-key color-key :alpha-blending? alpha-blending?)))
 
     (let* ((filename (format nil "~a/~a" dir (if (keywordp key-or-name)
                                                  (uiop:strcat (string-downcase key-or-name) ".png")
                                                  key-or-name)))
-           (texture (load-texture filename :color-key color-key)))
+           (texture (load-texture filename :color-key color-key :alpha-blending? alpha-blending?)))
       (unless skip-caching?
         (setf (gethash key-or-name (.textures self)) texture))
       texture)))
@@ -82,10 +87,10 @@
   (clrhash (.textures self)))
 
 
-(defun get-texture-frames-from-horizontal-strip (key-or-name &key (frame-width 0) (offset 0) (estimate-width? nil) dir color-key)
+(defun get-texture-frames-from-horizontal-strip (key-or-name &key (frame-width 0) (offset 0) (estimate-width? nil) dir color-key alpha-blending?)
   "Given a key-or-name path that represents a horizontal strip of sprite animation frames, each of
    a certain frame-width and offset from each other by frame-width + offset, return an array containing
-   the frames as individual textures in order. If color-key is given, it is applied to each frame.
+   the frames as individual textures in order. If color-key is given, it is applied to each frame. Same with the alpha-blending? option.
 
    Example strip that has 0 pixels of extra offset/border between frames: https://opengameart.org/content/simple-rotating-coin
 
@@ -97,7 +102,7 @@
    Like textures fetched via get-texture, these textures are automatically cached -- just the frames though, not the original whole strip --
    so repeat calls will return the same array."
   (declare (ignorable estimate-width?))
-  (let ((texture (get-texture-internal lgame.state:*texture-loader* key-or-name :dir dir :color-key color-key :skip-caching? t)))
+  (let ((texture (get-texture-internal lgame.state:*texture-loader* key-or-name :dir dir :color-key color-key :alpha-blending? alpha-blending? :skip-caching? t)))
     (if (arrayp texture) ; cached result is actaully texture frames array
         texture
 

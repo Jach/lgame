@@ -57,3 +57,22 @@
   "Creates a new lgame.texture:texture object with a backing sdl-texture
    created by calling sdl2:create-texture with these function arguments."
   (make-instance 'texture :sdl-texture (sdl2:create-texture renderer pixel-format access width height)))
+
+(defmethod enable-alpha-blending ((self texture))
+  "Sets the blend mode of the texture to prepare it for properly rendering at
+   different transparencies."
+  (lgame::sdl-set-texture-blend-mode (.sdl-texture self)
+                                     lgame::+sdl-blendmode-blend+))
+
+(defmethod set-alpha ((self texture) alpha)
+  "Sets the alpha transparency for the texture. Values should be
+   between 0.0 (fully transparent) and 1.0 (fully opaque).
+   The texture should have already been previously prepared for blending by calling enable-alpha-blending on it first.
+
+   May raise an sdl-rc-error if the setting fails.
+
+   Returns the texture itself."
+  (sdl2::check-rc
+    (lgame::sdl-set-texture-alpha-mod (lgame.texture:.sdl-texture self)
+                                      (truncate (mod (* alpha 255) 256))))
+  self)

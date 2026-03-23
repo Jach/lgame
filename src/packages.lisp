@@ -9,7 +9,9 @@
            #:.height
            #:.sdl-texture
            #:destroy-texture
-           #:create-empty-sdl-texture))
+           #:create-empty-sdl-texture
+           #:enable-alpha-blending
+           #:set-alpha))
 
 (defpackage #:lgame.box
   (:use #:common-lisp)
