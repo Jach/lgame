@@ -261,7 +261,8 @@
   (:documentation
     "Provides additional drawing routines, like circles or rounded corner rects.")
   (:export #:render-fill-circle
-           #:render-rounded-filled-rect))
+           #:render-rounded-filled-rect
+           #:render-fill-box))
 
 (defpackage #:lgame.loader
   (:use #:common-lisp)

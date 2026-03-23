@@ -43,3 +43,10 @@
     ; right
     (with-rect (r (+ x0 w0 (- radius)) (+ y0 radius) radius (- h0 (* radius 2)))
       (sdl2:render-fill-rect renderer r))))
+
+;; Box-based wrappers
+
+(defun render-fill-box (renderer box)
+  "Like sdl2:render-fill-rect, but with a lgame box."
+  (lgame.box:with-box-as-sdl-rect (rect box)
+    (sdl2:render-fill-rect renderer rect)))

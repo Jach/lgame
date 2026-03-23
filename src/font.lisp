@@ -49,7 +49,10 @@
 
         (if (lgame:null-ptr? font)
             (restart-case (error 'lgame:lgame-error :msg (lgame::sdl-get-error))
-              (use-default-font () (return-from load-font (load-font (get-default-font) pt-size)))))
+              (use-default-font () (return-from load-font (load-font (get-default-font) pt-size)))
+              (reinitialize-font-and-retry () (progn ; "Library not initialized" error somehow happened despite lgame.init being called?
+                                                (lgame.font.ffi:ttf-init)
+                                                (return-from load-font (load-font font-path pt-size))))))
 
         (setf (gethash (cons (namestring font-path) pt-size) *loaded-fonts*) font)))
 
