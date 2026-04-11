@@ -230,6 +230,13 @@
        (< (.min-y b1) (.min-y b2))
        (< (.max-y b2) (.max-y b1))))
 
+(defun box-outside-box? (b1 b2)
+  "Is box b1 completely outside b2? That is, they don't collide at all."
+  (not (boxes-collide? b1 b2)))
+
+(defun outside-screen? (box)
+  (box-outside-box? lgame.state:*screen-box* box))
+
 ;;; Box mutation
 
 (defun move-box (box x y)
@@ -318,3 +325,4 @@
 (defun get-texture-box (texture &key (x 0) (y 0))
   "Returns a box object representing the bounding box of the passed 2D texture, initially positioned with top-left x, y = 0, 0 unless position overrides are given."
   (make-box x y (lgame.texture:.width texture) (lgame.texture:.height texture)))
+

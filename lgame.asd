@@ -13,13 +13,13 @@
                         :serial t
                         :components ((:file "packages")
 
-                                     ;; files wrapping or replacing key sdl data structures
-                                     (:file "texture")
-                                     (:file "box")
-
                                      ;; global utilities and global state/singletons
                                      (:file "state")
                                      (:file "globals")
+
+                                     ;; files wrapping or replacing key sdl data structures
+                                     (:file "texture")
+                                     (:file "box")
 
                                      ;; data structures, should be fairly independent of the rest of lgame
                                      (:file "data-structures")

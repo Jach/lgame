@@ -11,7 +11,38 @@
            #:destroy-texture
            #:create-empty-sdl-texture
            #:enable-alpha-blending
-           #:set-alpha))
+           #:set-alpha
+           #:.destroyed?))
+
+(defpackage #:lgame.state
+  (:use #:common-lisp)
+  (:documentation
+    "This package is to manage state shared among the various lgame modules and a game.
+     lgame is currently designed to only handle one game at a time, so there is typically
+     just one window/screen, one renderer, one resource manager for each resource type...")
+  (:export #:*screen*
+           #:*screen-rect*
+           #:*screen-box*
+           #:*renderer*
+           #:*texture-loader*))
+
+(defpackage #:lgame
+  (:shadowing-import-from #:sdl2-ffi.functions #:sdl-thread-id)
+  (:use #:common-lisp #:sdl2-ffi.functions #:sdl2-ffi
+        #:lgame.state)
+  (:documentation
+    "lgame is composed of several packages of the form lgame.foo, where foo generally corresponds
+     to a filename. The top-level lgame package itself is for re-exporting lgame.state,
+     and to :use but not export all symbols in sdl2-ffi.functions and sdl2-ffi.")
+  (:export #:init
+           #:quit
+           #:*screen*
+           #:*screen-rect*
+           #:*screen-box*
+           #:*renderer*
+           #:*texture-loader*
+           #:lgame-error
+           #:null-ptr?))
 
 (defpackage #:lgame.box
   (:use #:common-lisp)
@@ -43,6 +74,8 @@
               #:boxes-collide?
               #:box-contains?
               #:box-properly-contains?
+              #:box-outside-box?
+              #:outside-screen?
 
               #:move-box
               #:set-box
@@ -51,35 +84,6 @@
 
               #:with-moved-box))
 
-(defpackage #:lgame.state
-  (:use #:common-lisp)
-  (:documentation
-    "This package is to manage state shared among the various lgame modules and a game.
-     lgame is currently designed to only handle one game at a time, so there is typically
-     just one window/screen, one renderer, one resource manager for each resource type...")
-  (:export #:*screen*
-           #:*screen-rect*
-           #:*screen-box*
-           #:*renderer*
-           #:*texture-loader*))
-
-(defpackage #:lgame
-  (:shadowing-import-from #:sdl2-ffi.functions #:sdl-thread-id)
-  (:use #:common-lisp #:sdl2-ffi.functions #:sdl2-ffi
-        #:lgame.state)
-  (:documentation
-    "lgame is composed of several packages of the form lgame.foo, where foo generally corresponds
-     to a filename. The top-level lgame package itself is for re-exporting lgame.state,
-     and to :use but not export all symbols in sdl2-ffi.functions and sdl2-ffi.")
-  (:export #:init
-           #:quit
-           #:*screen*
-           #:*screen-rect*
-           #:*screen-box*
-           #:*renderer*
-           #:*texture-loader*
-           #:lgame-error
-           #:null-ptr?))
 
 (defpackage #:lgame.data-structures
   (:use #:cl)
@@ -208,6 +212,7 @@
               #:.groups
 
               #:add-groups-mixin
+              #:draw-solid-background-mixin
 
               #:group
               #:.sprites

@@ -14,11 +14,11 @@
       (lgame::sdl-set-color-key surface 1 (apply #'lgame::sdl-map-rgb (sdl2:surface-format surface) color-key)))
     (let ((texture (sdl2:create-texture-from-surface lgame:*renderer* surface)))
       (lgame::sdl-free-surface surface)
-      (let ((lgame-text (make-instance 'lgame.texture:texture
-                                       :sdl-texture texture :width (sdl2:texture-width texture) :height (sdl2:texture-height texture))))
+      (let ((lgame-texture (make-instance 'lgame.texture:texture
+                                          :sdl-texture texture :width (sdl2:texture-width texture) :height (sdl2:texture-height texture))))
         (when alpha-blending?
-          (lgame.texture:enable-alpha-blending lgame-text))
-        lgame-text))))
+          (lgame.texture:enable-alpha-blending lgame-texture))
+        lgame-texture))))
 
 
 (defclass texture-loader ()
@@ -56,12 +56,14 @@
   (when (null dir)
     (setf dir (.default-dir self)))
   (alexandria:if-let ((texture (gethash key-or-name (.textures self))))
+    ;; In cache:
     (if (valid-texture-or-array texture) ; get it from cache
         texture
         (progn ; something invalidated it, force a reload
           (setf (gethash key-or-name (.textures self)) nil)
           (get-texture-internal self key-or-name :dir dir :color-key color-key :alpha-blending? alpha-blending?)))
 
+    ;; Else, not in cache:
     (let* ((filename (format nil "~a/~a" dir (if (keywordp key-or-name)
                                                  (uiop:strcat (string-downcase key-or-name) ".png")
                                                  key-or-name)))
@@ -99,6 +101,8 @@
    If estimate-width? is set to t, then currently there's no difference, but in the future we may try to apply some sort of
    heuristic to make a best-guess at the width and go with that.
 
+   So currently for robust usage, unless your frames are squares, you must supply a frame-width and if needed an offset between frames.
+
    Like textures fetched via get-texture, these textures are automatically cached -- just the frames though, not the original whole strip --
    so repeat calls will return the same array."
   (declare (ignorable estimate-width?))
@@ -115,6 +119,8 @@
             (loop for i below frame-count do
                   (let ((frame-texture (lgame.texture:create-empty-sdl-texture lgame.state:*renderer* lgame::+sdl-textureaccess-target+
                                                                                frame-width frame-height)))
+                    (when alpha-blending?
+                      (lgame.texture:enable-alpha-blending frame-texture))
                     (lgame.render:with-render-target frame-texture
                       (lgame.render:blit texture nil clip-src))
                     (vector-push frame-texture frames)

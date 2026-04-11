@@ -127,6 +127,19 @@
       (apply #'add-groups self groups)))
 
 
+(defclass draw-solid-background-mixin ()
+  ((bg-color :initarg :bg-color :initform '(255 0 0)))
+  (:documentation
+    "A sprite class mixin that draws a solid rectangle background behind the sprite before the sprite is drawn, matching the
+     boundaries of the sprite's box. Can be helpful to visualize collision boxes as well as debug issues when trying to use
+     the 'free' angle or flip properties of a sprite.
+     Children can provide their own (:default-initargs :bg-color '(r g b)) value to override the default color of red."))
+
+(defmethod draw :before ((self draw-solid-background-mixin))
+  (lgame.render:with-draw-color ((slot-value self 'bg-color))
+    (lgame.draw:render-fill-box lgame:*renderer* (.box self))))
+
+
 ;;;; Group classes
 
 (defclass group ()
