@@ -42,7 +42,8 @@
            #:*renderer*
            #:*texture-loader*
            #:lgame-error
-           #:null-ptr?))
+           #:null-ptr?
+           #:with-overlays))
 
 (defpackage #:lgame.box
   (:use #:common-lisp)

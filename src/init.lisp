@@ -60,3 +60,13 @@
   (setf *screen-rect* nil)
   (setf *screen-box* nil)
   (lgame::sdl-quit))
+
+(defmacro with-overlays (&body body)
+  "Useful to wrap a game's (main) function with. Due to a bug in SBCL (https://bugs.launchpad.net/sbcl/+bug/1519630), without this then overlay tools like Mangohud won't work properly.
+   On non-SBCL, there's no wrapper."
+  #-sbcl
+  `(progn ,@body)
+  #+sbcl
+  `(sb-int:with-float-traps-masked
+     (:divide-by-zero :invalid)
+     ,@body))

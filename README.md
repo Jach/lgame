@@ -423,6 +423,10 @@ You can of course explicitly use `sdl2-ffi.functions:sdl-create-texture-from-sur
 Similarly using things like either `lgame::+sdl-windowpos-centered+` vs. `sdl2-ffi:+sdl-windowpos-centered+` is up to you. Eventually I might wrap some and put
 them in logical packages.
 
+An additional macro is exported, `with-overlays`, which is meant to wrap your
+main function call. This allows overlays like Mangohud to work properly with
+SBCL.
+
 ### lgame.display
 
 Exports functions for setting up your game window.
