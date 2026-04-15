@@ -136,8 +136,9 @@
      Children can provide their own (:default-initargs :bg-color '(r g b)) value to override the default color of red."))
 
 (defmethod draw :before ((self draw-solid-background-mixin))
-  (lgame.render:with-draw-color ((slot-value self 'bg-color))
-    (lgame.draw:render-fill-box lgame:*renderer* (.box self))))
+  (let ((bg-color (slot-value self 'bg-color)))
+    (lgame.render:with-draw-color (bg-color)
+      (lgame.draw:render-fill-box lgame:*renderer* (.box self)))))
 
 
 ;;;; Group classes

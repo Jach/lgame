@@ -25,6 +25,7 @@
                                      (:file "data-structures")
 
                                      (:file "display")
+                                     (:file "render")
                                      (:file "event")
                                      (:file "mouse")
                                      (:file "time")
@@ -34,7 +35,6 @@
                                      (:file "sprite")
                                      (:file "font.ffi")
                                      (:file "font")
-                                     (:file "render")
                                      (:file "draw")
 
                                      (:file "texture-loader")
