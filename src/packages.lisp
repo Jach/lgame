@@ -258,7 +258,9 @@
            #:present
            #:set-draw-color
            #:with-draw-color
-           #:with-render-target))
+           #:with-render-target
+           #:set-texture-color-mod
+           #:with-texture-color-mod))
 
 (defpackage #:lgame.draw
   (:use #:common-lisp)

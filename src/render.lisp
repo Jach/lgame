@@ -55,3 +55,23 @@
          (sdl2:set-render-target lgame:*renderer* (lgame.texture:.sdl-texture ,target-texture))
          ,@body)
        (sdl2:set-render-target lgame:*renderer* ,old-target)))))
+
+(defun set-texture-color-mod (texture &optional (color-or-r 255) (g 255) (b 255))
+  "Sets an additional color value to multiply texture colors with on render according to:
+   srcC = srcC * (color / 255)
+   Expects an lgame.texture:texture as the first argument.
+   Can pass rgb as individual arguments after, or as a single color list of 3 elements as the one and only first argument.
+   Passing no color will result in no change."
+  (let ((sdl-texture (lgame.texture:.sdl-texture texture)))
+    (if (typep color-or-r 'list)
+        (apply #'sdl2:set-texture-color-mod sdl-texture color-or-r)
+        (sdl2:set-texture-color-mod sdl-texture color-or-r g b))))
+
+(defmacro with-texture-color-mod ((texture &optional (color-or-r 255) (g 255) (b 255)) &body body)
+  "Given an lgame.texture:texture and a color, allows rendering the texture with a color mod, then restoring the original color mod after.
+   See SET-TEXTURE-MOD for more."
+  (let ((current (gensym)))
+    `(let ((,current (multiple-value-list (sdl2:get-texture-color-mod (lgame.texture:.sdl-texture ,texture)))))
+       (set-texture-color-mod ,texture ,color-or-r ,g ,b)
+       ,@body
+       (set-texture-color-mod ,texture ,current))))
