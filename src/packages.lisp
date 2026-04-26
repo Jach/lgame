@@ -24,7 +24,8 @@
            #:*screen-rect*
            #:*screen-box*
            #:*renderer*
-           #:*texture-loader*))
+           #:*texture-loader*
+           #:*opened-gamepads*))
 
 (defpackage #:lgame
   (:shadowing-import-from #:sdl2-ffi.functions #:sdl-thread-id)
@@ -120,7 +121,12 @@
               #:event-type
               #:key-scancode
               #:key-pressed?
-              #:modifier-pressed?))
+              #:modifier-pressed?
+              #:open-gamepads
+              #:gamepad-attached?
+              #:close-gamepads
+              #:gamepad-name
+              #:gamepad-id-names))
 
 (defpackage #:lgame.mouse
   (:use #:common-lisp)
@@ -200,6 +206,7 @@
               #:remove-all-sprites
               #:sprite-count
               #:empty?
+              #:pop-sprite
               #:sprite-collide
               #:group-collide
               #:group-query-class

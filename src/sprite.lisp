@@ -56,6 +56,10 @@
   (:documentation
     "True if a group contains sprites, nil otherwise."))
 
+(defgeneric pop-sprite (group)
+  (:documentation
+    "Removes a sprite from the group, returning it."))
+
 (defgeneric sprite-collide (sprite group)
   (:documentation
     "Checks to see if the .box of the sprite collides with any of the boxes of the sprites within group.
@@ -79,7 +83,7 @@
 
 (defclass sprite ()
   ((image :accessor .image :initarg :image :type (or null sdl2-ffi:sdl-texture))
-   (box :accessor .box :initarg :box :type (or null lgame.box:box))
+   (box :accessor .box :initarg :box :initform nil :type (or null lgame.box:box))
    (angle :accessor .angle :initarg :angle :type double-float :initform 0.0d0
           :documentation "Angle in degrees applied to the box when rendering, rotating it clockwise")
    (flip :accessor .flip :initarg :flip ; :type ;sdl2-ffi:sdl-renderer-flip ? it's an enum with values 0-2
@@ -265,6 +269,12 @@
 (defmethod empty? ((self group))
   (null (.sprites self)))
 
+(defmethod pop-sprite ((self group))
+  "Pops a random sprite from the group, removing it from the group and returning it."
+  (let ((random-sprite (alexandria:random-elt (.sprites self))))
+    (remove-sprites self random-sprite)
+    random-sprite))
+
 (defmethod sprite-collide ((sprite sprite) (group group))
   (let ((collisions (list)))
     (do-sprite (group-sprite group)
@@ -307,6 +317,11 @@
     (setf (.sprites self) (remove sprite (.sprites self) :test #'equal))
     (setf (.groups sprite) (set-difference (.groups sprite) (list self)))))
 
+(defmethod pop-sprite ((self ordered-group))
+  "Pops a sprite from the group, in order added. (FIFO.)"
+  (let ((sprite (first (.sprites self))))
+    (remove-sprites self sprite)
+    sprite))
 
 ;;;; Methods for group-single
 

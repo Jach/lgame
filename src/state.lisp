@@ -15,3 +15,7 @@
 (defvar *texture-loader* nil
   "This should probably not be used by outside code directly, as it represents a global texture cache from calls to lgame.texture:get-texture and
    is automatically cleared on lgame.quit")
+
+(defvar *opened-gamepads* nil
+  "A map of device ID to an opened sdl-game-controller object. Initially populated by lgame.event:open-gamepads. Can be added to by games responding to
+   device-added events. Lgame will automatically close any devices still open in lgame.quit.")

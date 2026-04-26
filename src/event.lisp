@@ -65,3 +65,39 @@
             (if all
                 (every test all))))))
 
+;;; Joysticks / gamepads
+
+(defun open-gamepads ()
+  "Opens any connected gamepads and populates lgame.state:*opened-gamepads* as a map from integer id -> gamepad. Returns the map for convenience."
+  (dotimes (id (lgame::sdl-num-joysticks))
+    (when (= 1 (lgame::sdl-is-game-controller id))
+      (let ((pad (lgame::sdl-game-controller-open id)))
+        (unless (lgame:null-ptr? pad)
+          (setf (gethash id lgame.state:*opened-gamepads*) pad)))))
+  lgame.state:*opened-gamepads*)
+
+(defun gamepad-attached? (&key id gamepad)
+  "Checks whether a controller has been opened and is currently attached.
+   Takes either an :id argument which is the key of the lgame.state:*opened-gamepads* map, or a :gamepad argument which is a value of the map."
+  (alexandria:when-let ((to-check (or gamepad (gethash id lgame.state:*opened-gamepads*))))
+    (= 1 (lgame::sdl-game-controller-get-attached to-check))))
+
+(defun close-gamepads ()
+  "Closes any gamepads in lgame.state:*opened-gamepads* that are still connected."
+  (maphash (lambda (k v)
+             (declare (ignore k))
+             (when (gamepad-attached? :gamepad v)
+               (lgame::sdl-game-controller-close v)))
+           lgame.state:*opened-gamepads*)
+  (clrhash lgame.state:*opened-gamepads*))
+
+(defun gamepad-name (gamepad)
+  (lgame::sdl-game-controller-name gamepad))
+
+(defun gamepad-id-names ()
+  "Returns a map of id -> name for the opened controllers in lgame.state:*opened-gamepads*."
+  (let ((map (make-hash-table)))
+    (maphash (lambda (k v)
+               (setf (gethash k map) (gamepad-name v)))
+             lgame.state:*opened-gamepads*)
+    map))

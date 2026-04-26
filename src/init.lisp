@@ -29,6 +29,9 @@
     (sdl2-mixer:open-audio 44100 :s16sys 2 4096)
 
     (lgame.font.ffi:ttf-init)
+
+    (setf lgame.state:*opened-gamepads* (make-hash-table))
+    (lgame.event:open-gamepads)
     ))
 
 (defun quit ()
@@ -59,6 +62,9 @@
     (sdl2:free-rect *screen-rect*))
   (setf *screen-rect* nil)
   (setf *screen-box* nil)
+
+  (lgame.event:close-gamepads)
+
   (lgame::sdl-quit))
 
 (defmacro with-overlays (&body body)
