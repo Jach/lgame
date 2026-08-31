@@ -18,29 +18,28 @@
 (defvar *ticked-frames* 0
   "Count of how many times or frames that clock-tick has been called.")
 
-(declaim (inline now-seconds)
-         (ftype (function () double-float) now-seconds))
-(defun now-seconds ()
-  "Represents a floating-point number of seconds from some epoch. Under SBCL, this is the unix epoch and has nanosecond resolution.
-   Under other implementations, it is implementation-defined and has resolution of INTERNAL-TIME-UNITS-PER-SECOND."
-  #+sbcl (multiple-value-bind (s ns) (sb-unix:clock-gettime sb-unix:clock-realtime)
-           (+ s (* ns 1d-9)))
-  #-sbcl (float (/ (get-internal-real-time) internal-time-units-per-second) 1.0d0))
 
-#+sbcl
-(declaim (inline now-us)
-         (ftype (function () (values (signed-byte 64))) now-us))
-#+sbcl
-(defun now-us ()
-  "Microseconds since unix epoch"
-  (multiple-value-bind (s us) (sb-ext:get-time-of-day)
-    (+ us (* #.(truncate 1e6) s))))
+(defvar *counter-base* 0)
+(defvar *counter-freq* 1d0)
+(defun clock-sync ()
+  "Latch the counter origin and rate. Called once after SDL is initialized."
+  (setf *counter-base* (lgame::sdl-get-performance-counter)
+        *counter-freq* (/ 1d9 (coerce (lgame::sdl-get-performance-frequency) 'double-float))))
 
-#+sbcl
+(declaim (inline now-ns) (ftype (function () fixnum) now-ns))
 (defun now-ns ()
-  "Nanoseconds since unix epoch"
-  (multiple-value-bind (s ns) (sb-unix:clock-gettime sb-unix:clock-realtime)
-    (+ ns (* #.(truncate 1e9) s))))
+  "Nanoseconds since some epoch"
+  (truncate (* (- (lgame::sdl-get-performance-counter) *counter-base*) *counter-freq*)))
+
+(declaim (inline now-us) (ftype (function () fixnum) now-us))
+(defun now-us ()
+  "Microseconds since some epoch"
+  (truncate (now-ns) 1000))
+
+(declaim (inline now-seconds) (ftype (function () double-float) now-seconds))
+(defun now-seconds ()
+  "Floating-point seconds since some epoch"
+  (* (now-ns) 1d-9))
 
 (defvar %running? nil
   "T if the lgame clock has been started/restarted and not stopped.")

@@ -148,6 +148,9 @@
            #:clock-time
            #:dt
            #:now-seconds
+           #:now-us
+           #:now-ns
+           #:clock-sync
            #:*last-any-delay*
            #:*last-frame-duration*
            #:*tick-us*
@@ -207,6 +210,8 @@
               #:sprite-count
               #:empty?
               #:pop-sprite
+              #:random-sprite
+
               #:sprite-collide
               #:group-collide
               #:group-query-class

@@ -24,6 +24,7 @@
               (lgame::sdl-init lgame::+sdl-init-everything+))
       (error (format nil "Could not initialize SDL: ~a" (sdl2-ffi.functions:sdl-get-error))))
 
+    (lgame.time:clock-sync)
     (sdl2-image:init '(:png :jpg))
     (sdl2-mixer:init :mp3); :wave)
     (sdl2-mixer:open-audio 44100 :s16sys 2 4096)
