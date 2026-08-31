@@ -1,9 +1,13 @@
 (in-package #:lgame.font.ffi)
 
 (cffi:define-foreign-library lgame-sdl2-ttf
-  (:unix "libSDL2_ttf.so")
+  (:darwin (:or (:framework "SDL2_ttf")
+                "libSDL2_ttf-2.0.0.dylib"
+                (:default "libSDL2_ttf")))
   (:windows "SDL2_ttf.dll")
-  (:darwin (:or (:framework "SDL2_ttf") (:default "libSDL2_ttf"))))
+  (:unix (:or "libSDL2_ttf-2.0.so.0" "libSDL2_ttf.so.0"
+              "libSDL2_ttf.so" "libSDL2_ttf"))
+  (t (:default "libSDL2_ttf")))
 
 (cffi:use-foreign-library lgame-sdl2-ttf)
 
