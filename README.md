@@ -26,6 +26,7 @@ foreign-allocated stuff, automatically.
   framework tutorial
 * [SolarDragon](https://github.com/Jach/solardragon) -- WIP reimplementation of SolarWolf
 * [lgame-examples](https://github.com/Jach/lgame/tree/master/examples) -- various small examples. Some based on pygame's examples, some more unique.
+* [The Descendant](https://github.com/Jach/descendant) -- AI Sloppa reimplementation of an old C game
 
 
 # Example
