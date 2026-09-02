@@ -60,6 +60,10 @@
   (:documentation
     "Removes a sprite from the group, returning it."))
 
+(defgeneric random-sprite (group)
+  (:documentation
+    "Picks and returns a sprite from the group at random."))
+
 (defgeneric sprite-collide (sprite group)
   (:documentation
     "Checks to see if the .box of the sprite collides with any of the boxes of the sprites within group.
@@ -271,9 +275,12 @@
 
 (defmethod pop-sprite ((self group))
   "Pops a random sprite from the group, removing it from the group and returning it."
-  (let ((random-sprite (alexandria:random-elt (.sprites self))))
+  (let ((random-sprite (random-sprite self)))
     (remove-sprites self random-sprite)
     random-sprite))
+
+(defmethod random-sprite ((self group))
+  (alexandria:random-elt (.sprites self)))
 
 (defmethod sprite-collide ((sprite sprite) (group group))
   (let ((collisions (list)))
