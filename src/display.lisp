@@ -5,7 +5,7 @@
    Also sets lgame:*screen-rect* and lgame:*screen-box* to use the window width and height."
   (setf lgame.state:*screen* (lgame::sdl-create-window title x y w h flags))
   (if (lgame::null-ptr? lgame:*screen*)
-      (error 'sdl-error :msg (lgame::sdl-get-error)))
+      (error 'lgame:lgame-error :msg (lgame::sdl-get-error)))
   (setf lgame.state:*screen-rect* (sdl2:make-rect 0 0 w h)
         lgame.state:*screen-box*  (lgame.box:make-box 0 0 w h))
   lgame.state:*screen*)
@@ -18,7 +18,7 @@
    Default values are lgame:*screen*, default monitor, and no special flags."
   (setf lgame.state:*renderer* (lgame::sdl-create-renderer window index flags))
   (if (lgame::null-ptr? lgame.state:*renderer*)
-      (error 'sdl-error :msg (lgame::sdl-get-error)))
+      (error 'lgame:lgame-error :msg (lgame::sdl-get-error)))
   lgame.state:*renderer*)
 
 (defun set-logical-size (w h &optional (renderer lgame.state:*renderer*) (linear-scaling? T))
@@ -29,7 +29,7 @@
       (lgame::sdl-set-hint lgame::+sdl-hint-render-scale-quality+ "linear"))
   (unless (zerop
             (lgame::sdl-render-set-logical-size renderer w h))
-    (error 'sdl-error :msg (lgame::sdl-get-error)))
+    (error 'lgame:lgame-error :msg (lgame::sdl-get-error)))
   (when lgame.state:*screen-rect*
       (sdl2:free-rect lgame.state:*screen-rect*))
   (setf lgame.state:*screen-rect* (sdl2:make-rect 0 0 w h)
